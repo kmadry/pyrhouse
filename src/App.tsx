@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css'
 import LoginForm from './components/LoginForm';
 import Home from './components/Home';
+import List from './components/List';
 import PrivateRoute from './components/Authorisation'; // Import PrivateRoute
 
 function App() {
@@ -15,6 +16,15 @@ function App() {
             // <PrivateRoute requiredRole="user">
             <PrivateRoute> 
               <Home />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/list"
+          element={
+            // <PrivateRoute requiredRole="user">
+            <PrivateRoute> 
+              <List />
             </PrivateRoute>
           }
         />

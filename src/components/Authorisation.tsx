@@ -20,6 +20,9 @@ const rolesHierarchy: { [key: string]: number } = {
 };
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) => {
+  //remove auth
+  return <>{children}</>;
+
   let token = null;
   if (typeof localStorage !== 'undefined') {
     token = localStorage.getItem('token');
