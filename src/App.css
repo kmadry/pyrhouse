@@ -1,45 +1,52 @@
 /* Root container for centering */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left; /* Align content to the left */
 }
 
 /* General centering for forms */
 form {
   max-width: 500px;
   margin: 0 auto;
-  text-align: left; /* Left align inputs within the form */
+  text-align: left;
   padding: 2rem;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Specific style for the Add Asset form container */
-.add-asset-container {
+/* Full width layout for location management */
+.full-width-container {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 2rem; /* Add some padding for spacing */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem; /* Add spacing between components */
+  align-items: flex-start; /* Align items to the top left */
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th,
+table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Button container for alignment */
+.button-container {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 2rem;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-.add-asset-form {
-  flex: 1;
-  max-width: 60%; /* Allow space for the barcode */
-}
-
-.barcode-container {
-  flex: 1;
-  max-width: 35%;
-  text-align: center;
-  background-color: #fff;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  align-items: center;
+  width: 100%;
 }
 
 /* Miscellaneous */
@@ -51,5 +58,5 @@ body {
 }
 
 .App {
-  padding: 20px;
+  padding: 0;
 }

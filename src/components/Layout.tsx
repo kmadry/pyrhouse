@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   AppBar,
   Box,
@@ -13,16 +13,10 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
-
-const drawerWidth = 240;
+import styles from './Layout.styles';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -30,30 +24,33 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const drawer = (
-    <Box sx={{ width: drawerWidth, mt: 2 }}>
       <List>
-        <ListItem button component={Link} to="/home">
+        <ListItem component={Link} to="/home">
           <ListItemText primary="Home" />
         </ListItem>
-        <ListItem button component={Link} to="/list">
+        <ListItem component={Link} to="/list">
           <ListItemText primary="Lista sprzętu" />
         </ListItem>
-        <ListItem button component={Link} to="/add-asset">
+        <ListItem component={Link} to="/add-item">
           <ListItemText primary="Dodaj sprzęt" />
         </ListItem>
+        <ListItem component={Link} to="/transfers">
+          <ListItemText primary="Wydaj sprzęt" />
+        </ListItem>
+        <ListItem component={Link} to="/locations">
+          <ListItemText primary="Lokalizacje" />
+        </ListItem>
       </List>
-    </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <>
       <CssBaseline />
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton
             color="inherit"
             edge="start"
-            onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
@@ -68,36 +65,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </AppBar>
 
       <Drawer
-        variant="temporary"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-        }}
-      >
-        {drawer}
-      </Drawer>
-
-      <Drawer
         variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-        }}
-        open
+        anchor="left"
+        open={true}
+        ModalProps={{ keepMounted: true }}
+        sx={styles.navigation}
       >
         {drawer}
       </Drawer>
 
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, mt: 8, ml: { sm: `${drawerWidth}px` } }}
+        sx={styles.mainContent}
       >
         {children}
       </Box>
-    </Box>
+      </>
   );
 };
 
