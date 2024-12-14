@@ -15,7 +15,7 @@ const AddItemPage: React.FC = () => {
         Dodaj Przedmiot
       </Typography>
 
-      <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
+      <Tabs value={currentTab} onChange={(_e,newValue) => setCurrentTab(newValue)}>
         <Tab label="Wartościowe (Sprzęt)" />
         <Tab label="Zasoby (Magazyn)" />
       </Tabs>

@@ -9,13 +9,13 @@ import {
 } from '@mui/material';
 import Barcode from 'react-barcode';
 
-export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories, loading }) => {
+export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories }) => {
   const [serial, setSerial] = useState('');
   const [origin, setOrigin] = useState('druga-era');
   const [customOrigin, setCustomOrigin] = useState('');
   const [categoryID, setCategoryID] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

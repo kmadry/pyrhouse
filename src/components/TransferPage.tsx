@@ -30,7 +30,7 @@ const TransferPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { categories, error: categoryError, loading: categoryLoading } = useCategories();
+  const { categories, loading: categoryLoading } = useCategories();
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -62,22 +62,23 @@ const TransferPage: React.FC = () => {
 
   const handleAddItem = async (index: number) => {
     const currentItem = items[index];
-
+  
     if (!currentItem.id && currentItem.type === 'pyr_code') {
       setError('Pyr Code is required');
       return;
     }
-
+  
     if (!currentItem.quantity && currentItem.type === 'kategoria') {
       setError('Quantity is required for category-based items');
       return;
     }
-
+  
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      let response;
-
+      let response: Response | null = null; 
+      let data: any;
+  
       if (currentItem.type === 'pyr_code') {
         response = await fetch(
           `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/serial/${currentItem.id}`,
@@ -86,29 +87,41 @@ const TransferPage: React.FC = () => {
           }
         );
       } else if (currentItem.type === 'kategoria') {
-        response = { ok: true, json: async () => ({ id: currentItem.id, quantity: currentItem.quantity }) };
+        response = {
+          ok: true,
+          status: 200,
+          json: async () => ({ id: currentItem.id, quantity: currentItem.quantity }),
+        } as unknown as Response;
       }
-
-      if (!response.ok) throw new Error('Failed to add item');
-
-      const data = await response.json();
+  
+      if (!response) throw new Error('Unexpected error: No response received.');
+  
+      data = await response.json();
+  
+      if (!response.ok || response.status !== 200) {
+        throw new Error(JSON.stringify(data, null, 2));
+      }
+  
       setItems((prev) => {
         const updated = [...prev];
         updated[index].status = 'success';
         return [...updated, { id: '', type: 'pyr_code', quantity: '', status: '' }];
       });
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Error adding item:', err.message || err);
+  
       setItems((prev) => {
         const updated = [...prev];
         updated[index].status = 'failure';
         return updated;
       });
+  
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
-
+  
   const handleRemoveItem = (index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
@@ -241,28 +254,28 @@ const TransferPage: React.FC = () => {
                   )}
                   {item.type === 'kategoria' && (
                     <Autocomplete
-                      options={categories}
-                      getOptionLabel={(option: any) => option.label || ''}
-                      loading={categoryLoading}
-                      onChange={(e, value) => handleItemChange(index, 'id', value?.id || '')}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Kategoria"
-                          fullWidth
-                          InputProps={{
-                            ...params.InputProps,
-                            endAdornment: (
-                              <>
-                                {categoryLoading ? <CircularProgress size={20} /> : null}
-                                {params.InputProps.endAdornment}
-                              </>
-                            ),
-                          }}
-                          disabled={item.status === 'success'}
-                        />
-                      )}
+                    options={categories}
+                    getOptionLabel={(option: any) => option.label || ''}
+                    loading={categoryLoading}
+                    onChange={(_, value) => handleItemChange(index, 'id', value?.id || '')}
+                    renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        label="Kategoria"
+                        fullWidth
+                        InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                            <>
+                            {categoryLoading ? <CircularProgress size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                            </>
+                        ),
+                        }}
+                        disabled={item.status === 'success'}
                     />
+                    )}
+                    />                  
                   )}
                 </TableCell>
                 <TableCell>

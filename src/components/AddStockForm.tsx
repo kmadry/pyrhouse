@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Box, Button, Select, MenuItem, TextField, CircularProgress } from '@mui/material';
 
-export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories, loading }) => {
+export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories }) => {
   const [stockCategoryID, setStockCategoryID] = useState('');
   const [quantity, setQuantity] = useState<number | string>('');
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
