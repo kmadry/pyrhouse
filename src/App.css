@@ -1,3 +1,4 @@
+/* Root container for centering */
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -5,38 +6,50 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* General centering for forms */
+form {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: left; /* Left align inputs within the form */
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Specific style for the Add Asset form container */
+.add-asset-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.add-asset-form {
+  flex: 1;
+  max-width: 60%; /* Allow space for the barcode */
 }
 
-.card {
-  padding: 2em;
+.barcode-container {
+  flex: 1;
+  max-width: 35%;
+  text-align: center;
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.read-the-docs {
-  color: #888;
+/* Miscellaneous */
+body {
+  margin: 0;
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: #f7f7f7;
+  color: #333333;
+}
+
+.App {
+  padding: 20px;
 }
