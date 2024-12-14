@@ -11,25 +11,32 @@ import AddItemPage from './components/AddItemPage';
 import LocationManagementPage from './components/LocationManagementPage';
 
 const theme = createTheme({
-  palette: {
-    mode: 'light',
+  colorSchemes: {
+    light: true,
+    dark: {
+      palette: {
+        primary: {
+          main: '#ff9800',
+        }
+      },
+    }
+   },
+   palette: {
     primary: {
-      main: '#ff9800', // Orange accent
+      main: '#ff9800',
+    }
+   },
+   components: { // probably bad solution, to refactor
+    MuiListItem: {
+      styleOverrides: {
+        root: {
+          color: 'inherit',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1)', // Hardcoded hover color
+          },
+        },
+      },
     },
-    secondary: {
-      main: '#ffffff', // White accent
-    },
-    background: {
-      // default: '#f7f7f7', // Light gray background
-      paper: '#ffffff', // White for cards and containers
-    },
-    text: {
-      primary: '#333333', // Dark gray text
-      secondary: '#757575', // Lighter gray text
-    },
-  },
-  typography: {
-    fontFamily: `'Roboto', 'Arial', sans-serif`,
   },
 });
 

@@ -11,7 +11,7 @@ import Barcode from 'react-barcode';
 
 export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories }) => {
   const [serial, setSerial] = useState('');
-  const [origin, setOrigin] = useState('druga-era');
+  const [origin, setOrigin] = useState('probis');
   const [customOrigin, setCustomOrigin] = useState('');
   const [categoryID, setCategoryID] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -55,7 +55,7 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
       // Reset form
       setSerial('');
       setCategoryID('');
-      setOrigin('druga-era');
+      setOrigin('probis');
       setCustomOrigin('');
     } catch (err: any) {
       setError(err.message);
