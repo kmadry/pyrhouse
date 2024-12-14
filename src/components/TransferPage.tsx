@@ -81,7 +81,7 @@ const TransferPage: React.FC = () => {
   
       if (currentItem.type === 'pyr_code') {
         response = await fetch(
-          `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/serial/${currentItem.id}`,
+          `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/pyrcode/${currentItem.id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
