@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, TextField, Typography, Container } from '@mui/material';
+import { Box, Button, TextField, Typography, Container, useTheme } from '@mui/material';
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const navigate = useNavigate();
+  const theme = useTheme(); // Access the current theme
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
@@ -36,17 +37,18 @@ const LoginForm: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh', // Full viewport height
-        backgroundColor: '#f7f7f7',
+        minHeight: '100vh',
+        backgroundColor: theme.palette.background.default,
       }}
     >
       <Container
         maxWidth="sm"
         sx={{
-          backgroundColor: 'white',
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
           p: 4,
           borderRadius: 2,
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          boxShadow: theme.shadows[3],
         }}
       >
         <form onSubmit={handleSubmit}>
