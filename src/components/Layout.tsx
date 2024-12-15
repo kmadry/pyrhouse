@@ -17,6 +17,11 @@ import styles from './Layout.styles';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const [open, setOpen] = React.useState(true); // Set drawer to be visible initially
+
+  const toggleDrawer = () => {
+    setOpen((prevOpen) => !prevOpen); // Toggle the open state
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -24,43 +29,50 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const drawer = (
-      <List>
-        <ListItem component={Link} to="/home">
-          <Icons.Home />
-          <ListItemText primary="Home" />
-        </ListItem>
-        <ListItem component={Link} to="/transfers">
-          <Icons.LocalShipping />
-          <ListItemText primary="Wydanie sprzętu" />
-        </ListItem>
-        <ListItem component={Link} to="/list">
-          <Icons.List />
-          <ListItemText primary="Lista sprzętu" />
-        </ListItem>
-        <ListItem component={Link} to="/add-item">
-          <Icons.Add />
-          <ListItemText primary="Dodaj sprzęt" />
-        </ListItem>
-        <ListItem component={Link} to="/locations">
-          <Icons.EditLocationAlt />
-          <ListItemText primary="Lokalizacje" />
-        </ListItem>
-        <ListItem component={Link} to="/users">
-          <Icons.People />
-          <ListItemText primary="Użyszkodnicy" />
-        </ListItem>
-      </List>
+    <List>
+      <ListItem component={Link} to="/home" onClick={toggleDrawer}>
+        <Icons.Home />
+        <ListItemText primary="Home" />
+      </ListItem>
+      <ListItem component={Link} to="/transfers" onClick={toggleDrawer}>
+        <Icons.LocalShipping />
+        <ListItemText primary="Wydanie sprzętu" />
+      </ListItem>
+      <ListItem component={Link} to="/list" onClick={toggleDrawer}>
+        <Icons.List />
+        <ListItemText primary="Lista sprzętu" />
+      </ListItem>
+      <ListItem component={Link} to="/add-item" onClick={toggleDrawer}>
+        <Icons.Add />
+        <ListItemText primary="Dodaj sprzęt" />
+      </ListItem>
+      <ListItem component={Link} to="/categories" onClick={toggleDrawer}>
+        <Icons.Category />
+        <ListItemText primary="Kategorie" />
+      </ListItem>
+      <ListItem component={Link} to="/locations" onClick={toggleDrawer}>
+        <Icons.EditLocationAlt />
+        <ListItemText primary="Lokalizacje" />
+      </ListItem>
+      <ListItem component={Link} to="/users" onClick={toggleDrawer}>
+        <Icons.People />
+        <ListItemText primary="Użyszkodnicy" />
+      </ListItem>
+    </List>
   );
 
   return (
     <>
-      <CssBaseline /> 
+      <CssBaseline />
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton
-            color="inherit"
+            size="large"
             edge="start"
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            color="inherit"
+            aria-label="menu"
+            sx={{ mr: 2 }}
+            onClick={toggleDrawer} // Toggle drawer visibility
           >
             <Icons.Menu />
           </IconButton>
@@ -74,10 +86,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </AppBar>
 
       <Drawer
-        variant="permanent"
+        variant="persistent" // Persistent drawer that stays open initially
         anchor="left"
-        open={true}
-        ModalProps={{ keepMounted: true }}
+        open={open} // Controlled by the `open` state
         sx={styles.navigation}
       >
         {drawer}
@@ -85,11 +96,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       <Box
         component="main"
-        sx={styles.mainContent}
+        sx={{
+          ...styles.mainContent,
+          marginLeft: open ? '240px' : '0px', // Adjust content margin based on drawer state
+          transition: 'margin 0.3s', // Smooth transition
+        }}
       >
         {children}
       </Box>
-      </>
+    </>
   );
 };
 

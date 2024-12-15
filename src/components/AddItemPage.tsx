@@ -3,7 +3,7 @@ import { Container, Typography, Tabs, Tab } from '@mui/material';
 import { AddAssetForm } from './AddAssetForm';
 import { AddStockForm } from './AddStockForm';
 import { ErrorMessage } from './ErrorMessage';
-import { useCategories } from './useCategories';
+import { useCategories } from '../hooks/useCategories';
 
 const AddItemPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0); // 0 = "Wartościowe", 1 = "Zasoby"

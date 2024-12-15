@@ -20,10 +20,10 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Autocomplete from '@mui/material/Autocomplete'; // Make sure this is included
-import { useCategories } from './useCategories'; // Import the useCategories hook
+import { useCategories } from '../hooks/useCategories'; // Import the useCategories hook
+import { useLocations } from '../hooks/useLocations'; // Custom hook for locations
 
 const TransferPage: React.FC = () => {
-  const [locations, setLocations] = useState([]);
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
   const [items, setItems] = useState<any[]>([{ id: '', type: 'pyr_code', quantity: '', status: '' }]);
@@ -31,26 +31,7 @@ const TransferPage: React.FC = () => {
   const [error, setError] = useState('');
 
   const { categories, loading: categoryLoading } = useCategories();
-
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) throw new Error('Failed to fetch locations');
-        const data = await response.json();
-        setLocations(data);
-      } catch (err) {
-        console.error(err);
-        setError('Failed to load locations');
-      }
-    };
-
-    fetchLocations();
-  }, []);
+  const { locations, loading: locationsLoading, error: locationsError } = useLocations();
 
   const handleItemChange = (index: number, field: string, value: string | number) => {
     setItems((prev) => {

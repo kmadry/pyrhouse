@@ -10,6 +10,7 @@ import TransferPage from './components/TransferPage'; // Import the TransferPage
 import AddItemPage from './components/AddItemPage';
 import LocationManagementPage from './components/LocationManagementPage';
 import UserManagementPage from './components/UserManagementPage';
+import CategoryManagementPage from './components/CategoryManagementPage';
 
 const theme = createTheme({
   colorSchemes: {
@@ -59,6 +60,7 @@ function App() {
                     <Route path="/add-item" element={<AddItemPage />} />
                     <Route path="/transfers" element={<PrivateRoute><TransferPage /></PrivateRoute>}/>
                     <Route path="/locations" element={<PrivateRoute><LocationManagementPage /></PrivateRoute>}/>
+                    <Route path="/categories" element={<PrivateRoute><CategoryManagementPage /></PrivateRoute>}/>
                     <Route path="/users" element={<PrivateRoute><UserManagementPage /></PrivateRoute>}/>
                     <Route path="*" element={<Navigate to="/home" replace />} />
                   </Routes>
