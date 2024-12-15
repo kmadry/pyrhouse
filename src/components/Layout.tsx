@@ -11,7 +11,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 
@@ -26,19 +26,28 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const drawer = (
       <List>
         <ListItem component={Link} to="/home">
+          <Icons.Home />
           <ListItemText primary="Home" />
         </ListItem>
+        <ListItem component={Link} to="/transfers">
+          <Icons.LocalShipping />
+          <ListItemText primary="Wydanie sprzętu" />
+        </ListItem>
         <ListItem component={Link} to="/list">
+          <Icons.List />
           <ListItemText primary="Lista sprzętu" />
         </ListItem>
         <ListItem component={Link} to="/add-item">
+          <Icons.Add />
           <ListItemText primary="Dodaj sprzęt" />
         </ListItem>
-        <ListItem component={Link} to="/transfers">
-          <ListItemText primary="Wydaj sprzęt" />
-        </ListItem>
         <ListItem component={Link} to="/locations">
+          <Icons.EditLocationAlt />
           <ListItemText primary="Lokalizacje" />
+        </ListItem>
+        <ListItem component={Link} to="/users">
+          <Icons.People />
+          <ListItemText primary="Użyszkodnicy" />
         </ListItem>
       </List>
   );
@@ -53,7 +62,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             edge="start"
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
-            <MenuIcon />
+            <Icons.Menu />
           </IconButton>
           <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
             Pyrhouse App
