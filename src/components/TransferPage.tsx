@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -31,7 +31,7 @@ const TransferPage: React.FC = () => {
   const [error, setError] = useState('');
 
   const { categories, loading: categoryLoading } = useCategories();
-  const { locations, loading: locationsLoading, error: locationsError } = useLocations();
+  const { locations } = useLocations();
 
   const handleItemChange = (index: number, field: string, value: string | number) => {
     setItems((prev) => {
