@@ -20,6 +20,7 @@ export const useLocations = () => {
         const data = await response.json();
         setLocations(data);
       } catch (err: any) {
+        console.error(err);
         setError(err.message || 'An unexpected error occurred.');
       } finally {
         setLoading(false);

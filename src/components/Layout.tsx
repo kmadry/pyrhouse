@@ -30,33 +30,33 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const drawer = (
     <List>
-      <ListItem component={Link} to="/home" onClick={toggleDrawer}>
-        <Icons.Home />
+      <ListItem component={Link} to="/home">
         <ListItemText primary="Home" />
+        <Icons.Home />
       </ListItem>
-      <ListItem component={Link} to="/transfers" onClick={toggleDrawer}>
-        <Icons.LocalShipping />
-        <ListItemText primary="Wydanie sprzętu" />
+      <ListItem component={Link} to="/transfers">
+        <ListItemText primary="Wydania" />
+        <Icons.PublishedWithChanges />
       </ListItem>
-      <ListItem component={Link} to="/list" onClick={toggleDrawer}>
+      <ListItem component={Link} to="/list">
+        <ListItemText primary="Stan Magazynowy" />
         <Icons.List />
-        <ListItemText primary="Lista sprzętu" />
       </ListItem>
-      <ListItem component={Link} to="/add-item" onClick={toggleDrawer}>
-        <Icons.Add />
+      <ListItem component={Link} to="/add-item">
         <ListItemText primary="Dodaj sprzęt" />
+        <Icons.Add />
       </ListItem>
-      <ListItem component={Link} to="/categories" onClick={toggleDrawer}>
-        <Icons.Category />
+      <ListItem component={Link} to="/categories">
         <ListItemText primary="Kategorie" />
+        <Icons.Category />
       </ListItem>
-      <ListItem component={Link} to="/locations" onClick={toggleDrawer}>
-        <Icons.EditLocationAlt />
+      <ListItem component={Link} to="/locations">
         <ListItemText primary="Lokalizacje" />
+        <Icons.EditLocationAlt />
       </ListItem>
-      <ListItem component={Link} to="/users" onClick={toggleDrawer}>
-        <Icons.People />
+      <ListItem component={Link} to="/users">
         <ListItemText primary="Użyszkodnicy" />
+        <Icons.People />
       </ListItem>
     </List>
   );

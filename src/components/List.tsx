@@ -11,8 +11,10 @@ import {
   Paper,
   TextField,
   CircularProgress,
+  Button,
 } from '@mui/material';
 import { ArrowDropUp, ArrowDropDown } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
 interface Location {
   id: number;
@@ -36,6 +38,7 @@ const EquipmentList: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEquipment = async () => {
@@ -114,9 +117,18 @@ const EquipmentList: React.FC = () => {
 
   return (
     <Box sx={{ margin: '0 auto', padding: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Equipment List
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <Typography variant="h4" gutterBottom>
+          Stan magazynowy
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => navigate('/add-item')}
+        >
+          Dodaj Nowy Sprzęt
+        </Button>
+      </Box>
       <Box sx={{ display: 'flex', gap: 2, marginBottom: 2 }}>
         <TextField
           label="Filter"
