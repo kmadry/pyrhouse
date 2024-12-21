@@ -7,13 +7,13 @@ import {
   CardContent,
   CardActions,
   Button,
-  Stepper,
-  Step,
-  StepLabel,
   CircularProgress,
   Grid,
   Paper,
+  Chip,
+  Divider,
 } from '@mui/material';
+import { ArrowRightAlt } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
@@ -27,8 +27,6 @@ const HomePage: React.FC = () => {
     fetchTransfers();
   }, [fetchTransfers]);
 
-  const steps = ['Created', 'In Transit', 'Delivered'];
-
   // Filter transfers to show only those "in transit"
   const inTransitTransfers = transfers.filter(
     (transfer) => transfer.status === 'in_transit'
@@ -37,7 +35,7 @@ const HomePage: React.FC = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Welcome to the Transfer Management App
+        Witaj w Pyrhouse-app
       </Typography>
 
       {error && <ErrorMessage message={error} />}
@@ -61,21 +59,22 @@ const HomePage: React.FC = () => {
                     <Typography variant="h6" gutterBottom>
                       Transfer #{transfer.id}
                     </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      From: {transfer.from_location.name}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      To: {transfer.to_location.name}
-                    </Typography>
-                    <Box sx={{ mt: 2 }}>
-                      <Stepper activeStep={1}>
-                        {steps.map((label, index) => (
-                          <Step key={index}>
-                            <StepLabel>{label}</StepLabel>
-                          </Step>
-                        ))}
-                      </Stepper>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                      <Typography variant="body2" sx={{ flex: 1, textAlign: 'center' }}>
+                        {transfer.from_location.name}
+                      </Typography>
+                      <ArrowRightAlt sx={{ fontSize: 32, color: 'gray' }} />
+                      <Typography variant="body2" sx={{ flex: 1, textAlign: 'center' }}>
+                        {transfer.to_location.name}
+                      </Typography>
                     </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Chip
+                      label={transfer.status.replace('_', ' ').toUpperCase()}
+                      color="primary"
+                      variant="outlined"
+                      sx={{ width: '100%', fontSize: '0.875rem' }}
+                    />
                   </CardContent>
                   <CardActions>
                     <Button
