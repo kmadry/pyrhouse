@@ -54,6 +54,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <ListItemText primary="Lokalizacje" />
         <Icons.EditLocationAlt />
       </ListItem>
+      <ListItem component={Link} to="/quests">
+        <ListItemText primary="Quest Board" />
+        <Icons.Security />
+      </ListItem>
       <ListItem component={Link} to="/users">
         <ListItemText primary="Użyszkodnicy" />
         <Icons.People />

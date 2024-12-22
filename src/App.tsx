@@ -13,6 +13,7 @@ import UserManagementPage from './components/UserManagementPage';
 import CategoryManagementPage from './components/CategoryManagementPage';
 import TransfersListPage from './components/TransferListPage';
 import TransferDetailsPage from './components/TransferDetailsPage';
+import QuestBoard from './components/QuestBoardPage';
 
 const theme = createTheme({
   colorSchemes: {
@@ -66,6 +67,7 @@ function App() {
                     <Route path="/transfers" element={<TransfersListPage />} />
                     <Route path="/transfers/:id" element={<TransferDetailsPage />} />
                     <Route path="/users" element={<PrivateRoute><UserManagementPage /></PrivateRoute>}/>
+                    <Route path="/quests" element={<QuestBoard />} />
                     <Route path="*" element={<Navigate to="/home" replace />} />
                   </Routes>
                 </Layout>

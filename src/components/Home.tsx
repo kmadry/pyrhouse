@@ -12,8 +12,10 @@ import {
   Paper,
   Chip,
   Divider,
+  Stack,
+  Grid2,
 } from '@mui/material';
-import { ArrowRightAlt } from '@mui/icons-material';
+import { ArrowForwardIos, LocalShipping } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
@@ -50,30 +52,44 @@ const HomePage: React.FC = () => {
           <Typography>No transfers are currently in transit.</Typography>
         )}
 
-        {inTransitTransfers.length > 0 && (
-          <Grid container spacing={2}>
+          {inTransitTransfers.length > 0 && (
+          <Grid2 container spacing={3}>
             {inTransitTransfers.map((transfer) => (
-              <Grid item xs={12} md={6} lg={4} key={transfer.id}>
-                <Card>
+              <Grid item xs={12} sm={6} lg={4} key={transfer.id}>
+                <Card
+                  sx={{
+                    borderLeft: '5px solid orange',
+                    boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Transfer #{transfer.id}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                      <Typography variant="body2" sx={{ flex: 1, textAlign: 'center' }}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <LocalShipping />
+                      <Typography variant="h6">Transfer #{transfer.id}</Typography>
+                    </Stack>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        mt: 2,
+                      }}
+                    >
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
                         {transfer.from_location.name}
                       </Typography>
-                      <ArrowRightAlt sx={{ fontSize: 32, color: 'gray' }} />
-                      <Typography variant="body2" sx={{ flex: 1, textAlign: 'center' }}>
+                      <ArrowForwardIos sx={{ mx:2, color:'orange' }}/>
+                      {/* <ArrowRightAlt sx={{ fontSize: 32, color: 'gray', mx: 2 }} /> */}
+                      <Typography variant="body1" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
                         {transfer.to_location.name}
                       </Typography>
                     </Box>
+
                     <Divider sx={{ my: 2 }} />
                     <Chip
                       label={transfer.status.replace('_', ' ').toUpperCase()}
-                      color="primary"
-                      variant="outlined"
-                      sx={{ width: '100%', fontSize: '0.875rem' }}
+                      sx={{ width: '100%', fontSize: '0.875rem', fontWeight: 'bold' }}
                     />
                   </CardContent>
                   <CardActions>
@@ -88,7 +104,7 @@ const HomePage: React.FC = () => {
                 </Card>
               </Grid>
             ))}
-          </Grid>
+          </Grid2>
         )}
       </Box>
 
