@@ -5,12 +5,10 @@ import {
   Container,
   Card,
   CardContent,
-  CardActions,
   Button,
   CircularProgress,
   Grid,
   Paper,
-  Chip,
   Divider,
   Stack,
   Grid2,
@@ -47,7 +45,7 @@ const HomePage: React.FC = () => {
         <Typography variant="h6" gutterBottom>
           Transfers In Transit
         </Typography>
-
+        
         {inTransitTransfers.length === 0 && !loading && (
           <Typography>No transfers are currently in transit.</Typography>
         )}
@@ -87,12 +85,10 @@ const HomePage: React.FC = () => {
                     </Box>
 
                     <Divider sx={{ my: 2 }} />
-                    <Chip
+                    {/* <Chip
                       label={transfer.status.replace('_', ' ').toUpperCase()}
                       sx={{ width: '100%', fontSize: '0.875rem', fontWeight: 'bold' }}
-                    />
-                  </CardContent>
-                  <CardActions>
+                    /> */}
                     <Button
                       size="small"
                       color="primary"
@@ -100,7 +96,7 @@ const HomePage: React.FC = () => {
                     >
                       View Details
                     </Button>
-                  </CardActions>
+                  </CardContent>
                 </Card>
               </Grid>
             ))}
