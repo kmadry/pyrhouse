@@ -12,20 +12,18 @@ import {
   TextField,
   CircularProgress,
   Button,
+  Autocomplete,
 } from '@mui/material';
+import { CheckCircle, ErrorOutline, LocalShipping } from '@mui/icons-material';
 import { ArrowDropUp, ArrowDropDown } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-
-interface Location {
-  id: number;
-  name: string;
-}
+import { useLocations } from '../hooks/useLocations';
 
 interface Equipment {
   id: number;
   category: string;
   quantity?: number;
-  location: Location;
+  location: { id: number; name: string };
   state: string;
   pyr_code?: string;
   origin: string;
@@ -34,11 +32,14 @@ interface Equipment {
 const EquipmentList: React.FC = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [filter, setFilter] = useState<string>('');
+  const [selectedLocations, setSelectedLocations] = useState<any[]>([]);
   const [sortField, setSortField] = useState<string>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
+
+  const { locations, loading: locationsLoading } = useLocations();
 
   useEffect(() => {
     const fetchEquipment = async () => {
@@ -80,11 +81,15 @@ const EquipmentList: React.FC = () => {
   };
 
   const filteredEquipment = equipment.filter((item) => {
-    return (
+    const matchesFilter =
       item.category.toLowerCase().includes(filter.toLowerCase()) ||
       item.state.toLowerCase().includes(filter.toLowerCase()) ||
-      item?.pyr_code?.toLowerCase().includes(filter.toLowerCase())
-    );
+      item?.pyr_code?.toLowerCase().includes(filter.toLowerCase());
+
+    const matchesSelectedLocations =
+      selectedLocations.length === 0 || selectedLocations.some((loc) => loc.id === item.location.id);
+
+    return matchesFilter && matchesSelectedLocations;
   });
 
   const sortedEquipment = [...filteredEquipment].sort((a, b) => {
@@ -97,6 +102,19 @@ const EquipmentList: React.FC = () => {
       return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
     }
   });
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'in_stock':
+        return <CheckCircle sx={{ color: 'green' }} />;
+      case 'in_transit':
+        return <LocalShipping sx={{ color: 'orange' }} />;
+      case 'delivered':
+        return <CheckCircle sx={{ color: 'orange' }} />;
+      default:
+        return <ErrorOutline sx={{ color: 'red' }} />;
+    }
+  };
 
   if (loading) {
     return (
@@ -129,12 +147,29 @@ const EquipmentList: React.FC = () => {
           Dodaj Nowy Sprzęt
         </Button>
       </Box>
-      <Box sx={{ display: 'flex', gap: 2, marginBottom: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, marginBottom: 2 }}>
         <TextField
-          label="Filter"
+          label="Filter by Name/Status"
           variant="outlined"
           value={filter}
           onChange={handleFilterChange}
+          fullWidth
+        />
+        <Autocomplete
+          multiple
+          options={locations}
+          getOptionLabel={(option) => option.name}
+          value={selectedLocations}
+          loading={locationsLoading}
+          onChange={(_, value) => setSelectedLocations(value)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Filter by Locations"
+              variant="outlined"
+              fullWidth
+            />
+          )}
         />
       </Box>
       <TableContainer component={Paper}>
@@ -155,12 +190,25 @@ const EquipmentList: React.FC = () => {
           </TableHead>
           <TableBody>
             {sortedEquipment.map((item) => (
-              <TableRow key={item.id}>
+              <TableRow
+                key={item.id}
+                sx={{
+                  bgcolor: item.state === 'in_stock' ? 'rgba(200, 255, 200, 0.2)' : 'inherit',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{item.category}</TableCell>
-                <TableCell>{item.quantity ?? '-'}</TableCell>
+                <TableCell>
+                  <Typography fontWeight="bold">{item.quantity ?? '-'}</Typography>
+                </TableCell>
                 <TableCell>{item.location.name}</TableCell>
-                <TableCell>{item.state}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {getStatusIcon(item.state)}
+                    {item.state}
+                  </Box>
+                </TableCell>
                 <TableCell>{item.pyr_code ?? '-'}</TableCell>
                 <TableCell>{item.origin}</TableCell>
               </TableRow>

@@ -13,6 +13,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  Chip,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -154,10 +155,15 @@ const TransferDetailsPage: React.FC = () => {
         {transfer.stock_items && transfer.stock_items.length > 0 ? (
           <List>
             {transfer.stock_items.map((stock: any) => (
-              <ListItem key={stock.id}>
+              <ListItem key={stock.id} sx={{ display: 'flex', alignItems: 'center' }}>
                 <ListItemText
                   primary={`Category: ${stock.category?.label || 'N/A'}`}
-                  secondary={`Quantity: ${stock.quantity}, Origin: ${stock.origin || 'N/A'}`}
+                  secondary={`Origin: ${stock.origin || 'N/A'}`}
+                />
+                <Chip
+                  label={`Qty: ${stock.quantity}`}
+                  color="primary"
+                  sx={{ ml: 2 }}
                 />
               </ListItem>
             ))}

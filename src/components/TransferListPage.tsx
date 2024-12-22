@@ -11,11 +11,16 @@ import {
   Paper,
   CircularProgress,
   Button,
+  Chip,
+  TextField,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
 import { Transfer } from '../models/transfer';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 const TransfersListPage: React.FC = () => {
   const { transfers, loading, error, fetchTransfers } = useTransfers();
@@ -32,10 +37,30 @@ const TransfersListPage: React.FC = () => {
     return new Date(b.transfer_date).getTime() - new Date(a.transfer_date).getTime();
   });
 
+  const getStatusChip = (status: string) => {
+    switch (status) {
+      case 'in_transit':
+        return <Chip icon={<LocalShippingIcon />} label="In Transit" color="warning" />;
+      case 'completed':
+        return <Chip icon={<CheckCircleIcon />} label="Completed" color="success" />;
+      case 'created':
+        return <Chip icon={<HourglassEmptyIcon />} label="Created" color="default" />;
+      default:
+        return <Chip label="Unknown" />;
+    }
+  };
+
   return (
     <Box sx={{ p: 2 }}>
+      {/* Header with Search and Create Button */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">Lista Transferów</Typography>
+        <TextField
+          placeholder="Search transfers..."
+          variant="outlined"
+          size="small"
+          sx={{ mr: 2, flexGrow: 1 }}
+        />
         <Button
           variant="contained"
           color="primary"
@@ -45,19 +70,22 @@ const TransfersListPage: React.FC = () => {
         </Button>
       </Box>
 
+      {/* Loading and Error States */}
       {loading && <CircularProgress />}
       {error && <ErrorMessage message="Nie udało się załadować transferów" details={error} />}
 
+      {/* Transfer Table */}
       {!loading && !error && (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Z lokalizacji</TableCell>
-                <TableCell>Do lokalizacji</TableCell>
-                <TableCell>Data transferu</TableCell>
-                <TableCell>Status</TableCell>
+                <TableCell><strong>ID</strong></TableCell>
+                <TableCell><strong>Z lokalizacji</strong></TableCell>
+                <TableCell><strong>Do lokalizacji</strong></TableCell>
+                <TableCell><strong>Data transferu</strong></TableCell>
+                <TableCell><strong>Status</strong></TableCell>
+                <TableCell align="center"><strong>Akcje</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -66,20 +94,24 @@ const TransfersListPage: React.FC = () => {
                   key={transfer.id}
                   sx={{
                     cursor: 'pointer',
-                    bgcolor:
-                      transfer.status === 'in_transit'
-                        ? 'rgba(255, 245, 157, 0.5)'
-                        : 'inherit',
                   }}
-                  onClick={() => navigate(`/transfers/${transfer.id}`)}
                 >
                   <TableCell>{transfer.id}</TableCell>
-                  <TableCell>{transfer.from_location.name}</TableCell>
-                  <TableCell>{transfer.to_location.name}</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>{transfer.from_location.name}</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>{transfer.to_location.name}</TableCell>
                   <TableCell>
                     {new Date(transfer.transfer_date).toLocaleString('pl-PL')}
                   </TableCell>
-                  <TableCell>{transfer.status}</TableCell>
+                  <TableCell>{getStatusChip(transfer.status)}</TableCell>
+                  <TableCell align="center">
+                    <Button
+                      variant="text"
+                      color="primary"
+                      onClick={() => navigate(`/transfers/${transfer.id}`)}
+                    >
+                      Details
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
