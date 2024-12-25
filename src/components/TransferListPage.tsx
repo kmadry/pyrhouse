@@ -64,7 +64,7 @@ const TransfersListPage: React.FC = () => {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => navigate('/transfer/create')}
+          onClick={() => navigate('/transfers/create')}
         >
           Utwórz Nowy Transfer
         </Button>
