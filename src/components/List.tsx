@@ -16,6 +16,7 @@ import {
   Chip,
 } from '@mui/material';
 import { CheckCircle, ErrorOutline, LocalShipping, ArrowDropUp, ArrowDropDown } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../hooks/useLocations';
 import { useCategories } from '../hooks/useCategories';
 import { ErrorMessage } from './ErrorMessage';
@@ -28,6 +29,7 @@ interface Equipment {
   state: string;
   pyr_code?: string;
   origin: string;
+  type: 'asset' | 'stock'; // Include type from response
 }
 
 interface QuickFilter {
@@ -45,6 +47,7 @@ const EquipmentList: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const navigate = useNavigate();
 
   const { locations, loading: locationsLoading } = useLocations();
   const { categories, loading: categoriesLoading } = useCategories();
@@ -83,13 +86,14 @@ const EquipmentList: React.FC = () => {
       const data = await response.json();
 
       const transformedData = data.map((item: any) => ({
-        id: item.id, // Ensure proper keying
+        id: item.id,
         category: item.category?.label || 'Unknown',
         quantity: item.quantity,
         location: item.location,
         state: item.status,
         pyr_code: item.pyrcode || undefined,
         origin: item.origin,
+        type: item.category?.type || 'asset', // Get type from category
       }));
 
       setEquipment(transformedData);
@@ -138,17 +142,13 @@ const EquipmentList: React.FC = () => {
   const quickFilters: QuickFilter[] = [{ id: 1, name: 'Magazyn Techniczny' }];
 
   const applyQuickFilter = (filter: QuickFilter) => {
-    // TODO oh god
-    // @ts-ignore
     const location = locations.find((loc) => loc.id === filter.id);
-    // @ts-ignore
     if (location && !selectedLocations.some((loc) => loc.id === location.id)) {
       setSelectedLocations((prev) => [...prev, location]);
     }
   };
 
   const removeQuickFilter = (filter: QuickFilter) => {
-    // @ts-ignore
     setSelectedLocations((prev) => prev.filter((loc) => loc.id !== filter.id));
   };
 
@@ -247,11 +247,12 @@ const EquipmentList: React.FC = () => {
             )}
             {equipment.map((item) => (
               <TableRow
-                key={`${item.id}-${item.category}`}
+                key={item.id}
                 sx={{
                   bgcolor: item.state === 'in_stock' ? 'rgba(200, 255, 200, 0.2)' : 'inherit',
-                  '&:hover': { bgcolor: 'action.hover' },
+                  '&:hover': { bgcolor: 'action.hover', cursor: 'pointer' },
                 }}
+                onClick={() => navigate(`/details/${item.id}?type=${item.type}`)} // Pass type to details
               >
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{item.category}</TableCell>

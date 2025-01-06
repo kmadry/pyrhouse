@@ -14,6 +14,7 @@ import CategoryManagementPage from './components/CategoryManagementPage';
 import TransfersListPage from './components/TransferListPage';
 import TransferDetailsPage from './components/TransferDetailsPage';
 import QuestBoard from './components/QuestBoardPage';
+import EquipmentDetails from './components/EquipmentDetails';
 
 const theme = createTheme({
   colorSchemes: {
@@ -61,6 +62,7 @@ function App() {
                     <Route path="/home" element={<Home />} />
                     <Route path="/list" element={<List />} />
                     <Route path="/add-item" element={<AddItemPage />} />
+                    <Route path="/details/:id" element={<EquipmentDetails type="asset" />} />
                     <Route path="/transfers/create" element={<PrivateRoute><TransferPage /></PrivateRoute>}/>
                     <Route path="/locations" element={<PrivateRoute><LocationManagementPage /></PrivateRoute>}/>
                     <Route path="/categories" element={<PrivateRoute><CategoryManagementPage /></PrivateRoute>}/>
