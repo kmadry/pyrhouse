@@ -9,9 +9,7 @@ import {
   Chip,
   Card,
   CardContent,
-  List,
-  ListItem,
-  ListItemText,
+  List
 } from '@mui/material';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -20,7 +18,6 @@ import {
   Schedule,
   History,
   Info,
-  Warning,
 } from '@mui/icons-material';
 import { ErrorMessage } from './ErrorMessage';
 

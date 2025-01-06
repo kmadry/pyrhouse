@@ -62,7 +62,7 @@ function App() {
                     <Route path="/home" element={<Home />} />
                     <Route path="/list" element={<List />} />
                     <Route path="/add-item" element={<AddItemPage />} />
-                    <Route path="/details/:id" element={<EquipmentDetails type="asset" />} />
+                    <Route path="/details/:id" element={<EquipmentDetails />} />
                     <Route path="/transfers/create" element={<PrivateRoute><TransferPage /></PrivateRoute>}/>
                     <Route path="/locations" element={<PrivateRoute><LocationManagementPage /></PrivateRoute>}/>
                     <Route path="/categories" element={<PrivateRoute><CategoryManagementPage /></PrivateRoute>}/>

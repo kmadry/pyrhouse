@@ -21,15 +21,25 @@ import { useLocations } from '../hooks/useLocations';
 import { useCategories } from '../hooks/useCategories';
 import { ErrorMessage } from './ErrorMessage';
 
+interface Location {
+  id: number;
+  name: string;
+}
+
+interface Category {
+  id: number;
+  label: string;
+}
+
 interface Equipment {
   id: number;
   category: string;
   quantity?: number;
-  location: { id: number; name: string };
+  location: Location;
   state: string;
   pyr_code?: string;
   origin: string;
-  type: 'asset' | 'stock'; // Include type from response
+  type: 'asset' | 'stock';
 }
 
 interface QuickFilter {
@@ -40,8 +50,8 @@ interface QuickFilter {
 const EquipmentList: React.FC = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [filter, setFilter] = useState<string>('');
-  const [selectedLocations, setSelectedLocations] = useState<{ id: number; name: string }[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<{ id: number; label: string } | null>(null);
+  const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryType, setCategoryType] = useState<'asset' | 'stock' | ''>('');
   const [sortField, setSortField] = useState<string>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -49,12 +59,16 @@ const EquipmentList: React.FC = () => {
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
-  const { locations, loading: locationsLoading } = useLocations();
+  const { locations: rawLocations, loading: locationsLoading } = useLocations();
   const { categories, loading: categoriesLoading } = useCategories();
+
+  // Ensure locations have a default empty array type
+  const locations: Location[] = rawLocations || [];
 
   const fetchEquipment = async () => {
     try {
       setLoading(true);
+      setEquipment([]); // Clear the list before fetching new data
       const params = new URLSearchParams();
 
       if (selectedLocations.length > 0) {
@@ -93,7 +107,7 @@ const EquipmentList: React.FC = () => {
         state: item.status,
         pyr_code: item.pyrcode || undefined,
         origin: item.origin,
-        type: item.category?.type || 'asset', // Get type from category
+        type: item.category?.type || 'asset',
       }));
 
       setEquipment(transformedData);
@@ -142,8 +156,8 @@ const EquipmentList: React.FC = () => {
   const quickFilters: QuickFilter[] = [{ id: 1, name: 'Magazyn Techniczny' }];
 
   const applyQuickFilter = (filter: QuickFilter) => {
-    const location = locations.find((loc) => loc.id === filter.id);
-    if (location && !selectedLocations.some((loc) => loc.id === location.id)) {
+    const location = locations.find((loc) => loc.id === filter.id); // locations is explicitly typed
+    if (location && !selectedLocations.some((selectedLoc) => selectedLoc.id === location.id)) {
       setSelectedLocations((prev) => [...prev, location]);
     }
   };
