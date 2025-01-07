@@ -9,30 +9,32 @@ import {
   TableHead,
   TableRow,
   Paper,
-  TextField,
   Typography,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  TextField,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
 import { ErrorMessage } from './ErrorMessage';
 
 const LocationManagementPage: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
-  const [newLocation, setNewLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newLocation, setNewLocation] = useState({ name: '', details: '' });
+  const [editingLocationId, setEditingLocationId] = useState<number | null>(null);
+  const [editingValues, setEditingValues] = useState<{ name?: string; details?: string }>({});
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteLocationId, setDeleteLocationId] = useState<number | null>(null);
   const [deleteLocationName, setDeleteLocationName] = useState('');
   const [confirmDeleteName, setConfirmDeleteName] = useState('');
-  const [editingLocationId, setEditingLocationId] = useState<number | null>(null);
-  const [editingLocationName, setEditingLocationName] = useState('');
 
   useEffect(() => {
     fetchLocations();
@@ -58,7 +60,7 @@ const LocationManagementPage: React.FC = () => {
   };
 
   const handleAddLocation = async () => {
-    if (!newLocation.trim()) return;
+    if (!newLocation.name.trim()) return;
     setLoading(true);
     setError('');
     try {
@@ -69,7 +71,7 @@ const LocationManagementPage: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: newLocation.trim() }),
+        body: JSON.stringify(newLocation),
       });
 
       if (!response.ok) {
@@ -79,7 +81,47 @@ const LocationManagementPage: React.FC = () => {
 
       const data = await response.json();
       setLocations((prev) => [...prev, data]);
-      setNewLocation('');
+      setAddModalOpen(false);
+      setNewLocation({ name: '', details: '' });
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditLocation = (id: number, name: string, details: string | null) => {
+    setEditingLocationId(id);
+    setEditingValues({ name, details: details || '' });
+  };
+
+  const handleSaveLocation = async () => {
+    if (!editingLocationId || !Object.keys(editingValues).length) return;
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations/${editingLocationId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(editingValues),
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update location');
+
+      const updatedLocation = await response.json();
+      setLocations((prev) =>
+        prev.map((loc) => (loc.id === editingLocationId ? updatedLocation : loc))
+      );
+
+      setEditingLocationId(null);
+      setEditingValues({});
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
@@ -132,45 +174,6 @@ const LocationManagementPage: React.FC = () => {
     }
   };
 
-  const handleEditLocation = (id: number, name: string) => {
-    setEditingLocationId(id);
-    setEditingLocationName(name);
-  };
-
-  const handleSaveLocation = async () => {
-    if (!editingLocationName.trim()) return;
-
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations/${editingLocationId}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ name: editingLocationName.trim() }),
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to update location');
-
-      setLocations((prev) =>
-        prev.map((loc) =>
-          loc.id === editingLocationId ? { ...loc, name: editingLocationName.trim() } : loc
-        )
-      );
-
-      setEditingLocationId(null);
-      setEditingLocationName('');
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" gutterBottom>
@@ -179,20 +182,14 @@ const LocationManagementPage: React.FC = () => {
 
       {error && <ErrorMessage message={error} />}
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          label="Nowa lokalizacja"
-          value={newLocation}
-          onChange={(e) => setNewLocation(e.target.value)}
-          fullWidth
-        />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Button
           variant="contained"
           color="primary"
-          onClick={handleAddLocation}
-          disabled={!newLocation.trim() || loading}
+          startIcon={<AddIcon />}
+          onClick={() => setAddModalOpen(true)}
         >
-          {loading ? <CircularProgress size={24} /> : 'Dodaj'}
+          Dodaj Lokalizację
         </Button>
       </Box>
 
@@ -202,6 +199,7 @@ const LocationManagementPage: React.FC = () => {
             <TableRow>
               <TableCell>ID</TableCell>
               <TableCell>Nazwa Lokalizacji</TableCell>
+              <TableCell>Detale</TableCell>
               <TableCell>Akcje</TableCell>
             </TableRow>
           </TableHead>
@@ -212,8 +210,10 @@ const LocationManagementPage: React.FC = () => {
                 <TableCell>
                   {editingLocationId === location.id ? (
                     <TextField
-                      value={editingLocationName}
-                      onChange={(e) => setEditingLocationName(e.target.value)}
+                      value={editingValues.name || ''}
+                      onChange={(e) =>
+                        setEditingValues((prev) => ({ ...prev, name: e.target.value }))
+                      }
                       fullWidth
                     />
                   ) : (
@@ -222,14 +222,27 @@ const LocationManagementPage: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   {editingLocationId === location.id ? (
-                    <Button color="primary" onClick={handleSaveLocation}>
+                    <TextField
+                      value={editingValues.details || ''}
+                      onChange={(e) =>
+                        setEditingValues((prev) => ({ ...prev, details: e.target.value }))
+                      }
+                      fullWidth
+                    />
+                  ) : (
+                    location.details || '-'
+                  )}
+                </TableCell>
+                <TableCell>
+                  {editingLocationId === location.id ? (
+                    <Button color="primary" onClick={handleSaveLocation} disabled={loading}>
                       <SaveIcon /> Zapisz
                     </Button>
                   ) : (
                     <>
                       <Button
                         color="primary"
-                        onClick={() => handleEditLocation(location.id, location.name)}
+                        onClick={() => handleEditLocation(location.id, location.name, location.details)}
                       >
                         <EditIcon /> Edytuj
                       </Button>
@@ -247,6 +260,33 @@ const LocationManagementPage: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)}>
+        <DialogTitle>Dodaj Lokalizację</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Nazwa Lokalizacji"
+            value={newLocation.name}
+            onChange={(e) => setNewLocation((prev) => ({ ...prev, name: e.target.value }))}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Detale"
+            value={newLocation.details}
+            onChange={(e) => setNewLocation((prev) => ({ ...prev, details: e.target.value }))}
+            fullWidth
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddModalOpen(false)} color="secondary">
+            Anuluj
+          </Button>
+          <Button onClick={handleAddLocation} color="primary" disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Dodaj'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={deleteModalOpen} onClose={handleCloseDeleteModal}>
         <DialogTitle>Potwierdź usunięcie</DialogTitle>
