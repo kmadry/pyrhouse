@@ -1,9 +1,25 @@
 import { useState, useEffect } from 'react';
 
+// Define types for category and add category payload
+interface Category {
+  id: number;
+  name?: string;
+  label: string;
+  type: 'asset' | 'stock';
+  pyr_id?: string;
+}
+
+interface AddCategoryPayload {
+  label: string;
+  type: 'asset' | 'stock';
+  name?: string;
+  pyr_id?: string;
+}
+
 export const useCategories = () => {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -20,9 +36,11 @@ export const useCategories = () => {
         }
       );
 
-      if (!response.ok) throw new Error('Failed to fetch categories');
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
 
-      const data = await response.json();
+      const data: Category[] = await response.json();
       setCategories(data);
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
@@ -31,8 +49,9 @@ export const useCategories = () => {
     }
   };
 
-  const addCategory = async (category: { name: string; label: string; type: string }) => {
+  const addCategory = async (payload: AddCategoryPayload) => {
     setLoading(true);
+    setError(null); // Clear previous errors
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
@@ -43,17 +62,17 @@ export const useCategories = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(category),
+          body: JSON.stringify(payload),
         }
       );
 
       if (!response.ok) {
         const errorResponse = await response.json();
-        throw new Error(JSON.stringify(errorResponse, null, 2));
+        throw new Error(errorResponse.error || 'Failed to add category');
       }
 
-      const data = await response.json();
-      setCategories((prev) => [...prev, data]);
+      const newCategory: Category = await response.json();
+      setCategories((prev) => [...prev, newCategory]);
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
@@ -63,6 +82,7 @@ export const useCategories = () => {
 
   const deleteCategory = async (id: number) => {
     setLoading(true);
+    setError(null); // Clear previous errors
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
@@ -73,7 +93,9 @@ export const useCategories = () => {
         }
       );
 
-      if (!response.ok) throw new Error('Failed to delete category');
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
 
       setCategories((prev) => prev.filter((category) => category.id !== id));
     } catch (err: any) {

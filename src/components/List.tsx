@@ -15,7 +15,7 @@ import {
   MenuItem,
   Chip,
 } from '@mui/material';
-import { CheckCircle, ErrorOutline, LocalShipping, ArrowDropUp, ArrowDropDown } from '@mui/icons-material';
+import { CheckCircle, ErrorOutline, LocalShipping, ArrowDropUp, ArrowDropDown, Home } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../hooks/useLocations';
 import { useCategories } from '../hooks/useCategories';
@@ -49,6 +49,7 @@ interface QuickFilter {
 
 const EquipmentList: React.FC = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [filteredEquipment, setFilteredEquipment] = useState<Equipment[]>([]); // For local filtering
   const [filter, setFilter] = useState<string>('');
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -62,13 +63,13 @@ const EquipmentList: React.FC = () => {
   const { locations: rawLocations, loading: locationsLoading } = useLocations();
   const { categories, loading: categoriesLoading } = useCategories();
 
-  // Ensure locations have a default empty array type
   const locations: Location[] = rawLocations || [];
 
   const fetchEquipment = async () => {
     try {
       setLoading(true);
-      setEquipment([]); // Clear the list before fetching new data
+      setEquipment([]); // Clear the state before fetching new data
+
       const params = new URLSearchParams();
 
       if (selectedLocations.length > 0) {
@@ -89,6 +90,7 @@ const EquipmentList: React.FC = () => {
 
       if (response.status === 400 || response.status === 404) {
         setEquipment([]);
+        setFilteredEquipment([]);
         setError('');
         return;
       }
@@ -111,6 +113,7 @@ const EquipmentList: React.FC = () => {
       }));
 
       setEquipment(transformedData);
+      setFilteredEquipment(transformedData); // Initially show all data
       setError('');
     } catch (err: any) {
       setError(err.message);
@@ -123,6 +126,18 @@ const EquipmentList: React.FC = () => {
     fetchEquipment();
   }, [selectedLocations, selectedCategory, categoryType]);
 
+  useEffect(() => {
+    if (!filter.trim()) {
+      setFilteredEquipment(equipment);
+    } else {
+      const lowercasedFilter = filter.toLowerCase();
+      const filtered = equipment.filter((item) =>
+        item.pyr_code?.toLowerCase().includes(lowercasedFilter)
+      );
+      setFilteredEquipment(filtered);
+    }
+  }, [filter, equipment]);  
+
   const handleSort = (field: string) => {
     setSortField(field);
     setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'));
@@ -131,6 +146,7 @@ const EquipmentList: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'in_stock':
+        return <Home />;
       case 'delivered':
         return <CheckCircle sx={{ color: 'green' }} />;
       case 'in_transit':
@@ -156,7 +172,7 @@ const EquipmentList: React.FC = () => {
   const quickFilters: QuickFilter[] = [{ id: 1, name: 'Magazyn Techniczny' }];
 
   const applyQuickFilter = (filter: QuickFilter) => {
-    const location = locations.find((loc) => loc.id === filter.id); // locations is explicitly typed
+    const location = locations.find((loc) => loc.id === filter.id);
     if (location && !selectedLocations.some((selectedLoc) => selectedLoc.id === location.id)) {
       setSelectedLocations((prev) => [...prev, location]);
     }
@@ -191,13 +207,13 @@ const EquipmentList: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, marginBottom: 2 }}>
-        <TextField
-          label="Filter by Name/Status"
-          variant="outlined"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          sx={{ flex: 1 }}
-        />
+      <TextField
+        label="Filter by PYR_CODE"
+        variant="outlined"
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        sx={{ flex: 1 }}
+      />
         <Autocomplete
           multiple
           options={locations}
@@ -250,7 +266,7 @@ const EquipmentList: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!loading && equipment.length === 0 && (
+            {!loading && filteredEquipment.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7}>
                   <Typography sx={{ textAlign: 'center', mt: 2 }}>
@@ -259,11 +275,11 @@ const EquipmentList: React.FC = () => {
                 </TableCell>
               </TableRow>
             )}
-            {equipment.map((item) => (
+            {filteredEquipment.map((item) => (
               <TableRow
-                key={item.id}
+                key={`${item.id}-${item.type}`}
                 sx={{
-                  bgcolor: item.state === 'in_stock' ? 'rgba(200, 255, 200, 0.2)' : 'inherit',
+                  bgcolor: item.state === 'in_transit' ? 'rgba(222, 198, 49, 0.2)' : 'inherit',
                   '&:hover': { bgcolor: 'action.hover', cursor: 'pointer' },
                 }}
                 onClick={() => navigate(`/details/${item.id}?type=${item.type}`)} // Pass type to details

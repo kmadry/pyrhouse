@@ -16,9 +16,12 @@ import {
   TextField,
   Select,
   MenuItem,
+  Collapse,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useCategories } from '../hooks/useCategories';
 import { ErrorMessage } from './ErrorMessage';
 
@@ -27,13 +30,15 @@ const CategoryManagementPage: React.FC = () => {
 
   // State for managing add modal
   const [isAddModalOpen, setAddModalOpen] = useState(false);
-  const [newCategory, setNewCategory] = useState({ name: '', label: '', type: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', label: '', type: '', pyr_id: '' });
   const [formError, setFormError] = useState('');
+  const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
     setFormError('');
-    setNewCategory({ name: '', label: '', type: '' });
+    setNewCategory({ name: '', label: '', type: '', pyr_id: '' });
+    setShowAdditionalOptions(false); // Reset additional options state
   };
 
   const handleCloseAddModal = () => {
@@ -41,13 +46,27 @@ const CategoryManagementPage: React.FC = () => {
   };
 
   const handleAddCategory = async () => {
-    if (!newCategory.name || !newCategory.label || !newCategory.type) {
-      setFormError('All fields are required.');
+    if (!newCategory.label || !newCategory.type) {
+      setFormError('Label and Type are required.');
       return;
     }
 
+    // Construct payload and cast type to match expected values
+    const payload: { label: string; type: 'asset' | 'stock'; name?: string; pyr_id?: string } = {
+      label: newCategory.label,
+      type: newCategory.type as 'asset' | 'stock', // Explicitly cast the type
+    };
+
+    if (newCategory.name.trim()) {
+      payload.name = newCategory.name;
+    }
+
+    if (newCategory.pyr_id.trim()) {
+      payload.pyr_id = newCategory.pyr_id;
+    }
+
     try {
-      await addCategory(newCategory);
+      await addCategory(payload);
       handleCloseAddModal(); // Close modal on success
     } catch (err: any) {
       setFormError(err.message);
@@ -74,9 +93,9 @@ const CategoryManagementPage: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Label</TableCell>
-              <TableCell>Type</TableCell>
+              <TableCell>Label (Name)</TableCell>
+              <TableCell>PyrID</TableCell>
+              <TableCell>Typ</TableCell>
               <TableCell>Akcje</TableCell>
             </TableRow>
           </TableHead>
@@ -84,8 +103,10 @@ const CategoryManagementPage: React.FC = () => {
             {categories.map((category) => (
               <TableRow key={category.id}>
                 <TableCell>{category.id}</TableCell>
-                <TableCell>{category.name}</TableCell>
-                <TableCell>{category.label}</TableCell>
+                <TableCell>
+                  {category.label} {category.name ? `(${category.name})` : ''}
+                </TableCell>
+                <TableCell>{category.pyr_id || '-'}</TableCell>
                 <TableCell>{category.type}</TableCell>
                 <TableCell>
                   <Button color="error" onClick={() => deleteCategory(category.id)}>
@@ -121,14 +142,6 @@ const CategoryManagementPage: React.FC = () => {
           {formError && <ErrorMessage message={formError} />}
 
           <TextField
-            label="Name"
-            value={newCategory.name}
-            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-
-          <TextField
             label="Label"
             value={newCategory.label}
             onChange={(e) => setNewCategory({ ...newCategory, label: e.target.value })}
@@ -149,6 +162,43 @@ const CategoryManagementPage: React.FC = () => {
             <MenuItem value="stock">Stock</MenuItem>
             <MenuItem value="asset">Asset</MenuItem>
           </Select>
+
+          {/* Toggle Additional Options */}
+          <Button
+            variant="text"
+            color="primary"
+            onClick={() => setShowAdditionalOptions((prev) => !prev)}
+            sx={{ mb: 2 }}
+          >
+            {showAdditionalOptions ? (
+              <>
+                <ExpandLessIcon /> Ukryj dodatkowe opcje
+              </>
+            ) : (
+              <>
+                <ExpandMoreIcon /> Pokaż dodatkowe opcje
+              </>
+            )}
+          </Button>
+
+          {/* Additional Options */}
+          <Collapse in={showAdditionalOptions}>
+            <TextField
+              label="PyrID (Opcjonalne)"
+              value={newCategory.pyr_id}
+              onChange={(e) => setNewCategory({ ...newCategory, pyr_id: e.target.value })}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              label="Name (Opcjonalne)"
+              value={newCategory.name}
+              onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+          </Collapse>
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
             <Button variant="outlined" onClick={handleCloseAddModal}>
