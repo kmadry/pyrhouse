@@ -9,9 +9,8 @@ import {
   Chip,
   Card,
   CardContent,
-  List
+  List,
 } from '@mui/material';
-import { useParams, useSearchParams } from 'react-router-dom';
 import {
   CheckCircle,
   LocationOn,
@@ -19,6 +18,8 @@ import {
   History,
   Info,
 } from '@mui/icons-material';
+import { useParams, useSearchParams } from 'react-router-dom';
+import Barcode from 'react-barcode';
 import { ErrorMessage } from './ErrorMessage';
 
 interface AssetLog {
@@ -28,6 +29,7 @@ interface AssetLog {
   action: string;
   data: {
     location_id?: number;
+    pyrcode?: string;
     msg: string;
     quantity?: number;
   };
@@ -97,7 +99,31 @@ const EquipmentDetails: React.FC = () => {
         {type === 'asset' ? 'Asset Details' : 'Stock Details'}
       </Typography>
 
-      {/* Item Information Section */}
+      {/* Quick Stats Section */}
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 4 }}>
+        <Chip
+          icon={<CheckCircle />}
+          label={`Type: ${type.charAt(0).toUpperCase() + type.slice(1)}`}
+          color="success"
+          sx={{ fontSize: '0.875rem' }}
+        />
+        <Chip
+          icon={<LocationOn />}
+          label={`Location: ${details.location?.name || 'Unknown'}`}
+          color="primary"
+          sx={{ fontSize: '0.875rem' }}
+        />
+        {type === 'stock' && (
+          <Chip
+            icon={<Schedule />}
+            label={`Quantity: ${details.quantity || 'N/A'}`}
+            color="secondary"
+            sx={{ fontSize: '0.875rem' }}
+          />
+        )}
+      </Box>
+
+      {/* Basic Information Section */}
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper elevation={3} sx={{ padding: 3 }}>
@@ -119,6 +145,11 @@ const EquipmentDetails: React.FC = () => {
               <Typography>
                 <strong>Origin:</strong> {details.origin || 'N/A'}
               </Typography>
+              {type === 'asset' && (
+                <Typography>
+                  <strong>PyrCode:</strong> {details.pyrcode || 'N/A'}
+                </Typography>
+              )}
               {type === 'stock' && (
                 <Typography>
                   <strong>Quantity:</strong> {details.quantity || 'N/A'}
@@ -128,37 +159,20 @@ const EquipmentDetails: React.FC = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ padding: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              <Info sx={{ verticalAlign: 'bottom', marginRight: 1 }} />
-              Quick Stats
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Chip
-                icon={<CheckCircle />}
-                label={`Type: ${type.charAt(0).toUpperCase() + type.slice(1)}`}
-                color="success"
-                sx={{ fontSize: '0.875rem' }}
-              />
-              <Chip
-                icon={<LocationOn />}
-                label={`Location: ${details.location?.name || 'Unknown'}`}
-                color="primary"
-                sx={{ fontSize: '0.875rem' }}
-              />
-              {type === 'stock' && (
-                <Chip
-                  icon={<Schedule />}
-                  label={`Quantity: ${details.quantity || 'N/A'}`}
-                  color="secondary"
-                  sx={{ fontSize: '0.875rem' }}
-                />
-              )}
-            </Box>
-          </Paper>
-        </Grid>
+        {/* Barcode Section */}
+        {type === 'asset' && details.pyrcode && (
+          <Grid item xs={12} md={6}>
+            <Paper elevation={3} sx={{ padding: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Barcode
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Barcode value={details.pyrcode} />
+              </Box>
+            </Paper>
+          </Grid>
+        )}
       </Grid>
 
       {/* History Logs Section */}

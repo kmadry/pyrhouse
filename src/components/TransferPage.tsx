@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -15,6 +15,8 @@ import {
   TextField,
   Button,
   IconButton,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -23,6 +25,7 @@ import { useLocations } from '../hooks/useLocations';
 import { useStocks } from '../hooks/useStocks';
 import { validatePyrCodeAPI, createTransferAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
+import { useNavigate } from 'react-router-dom';
 
 const TransferPage: React.FC = () => {
   const { control, handleSubmit, setValue, watch, reset } = useForm({
@@ -33,16 +36,17 @@ const TransferPage: React.FC = () => {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'items',
-  });
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const fromLocation = watch('fromLocation');
   const items = watch('items');
 
   const { locations, error: locationError } = useLocations();
   const { stocks, fetchStocks, error: stockError } = useStocks();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (fromLocation) {
@@ -56,13 +60,14 @@ const TransferPage: React.FC = () => {
       setValue(`items.${index}.id`, response.id);
       setValue(`items.${index}.status`, 'success');
     } catch (err: any) {
-      console.error('Validation failed:', err.message);
       setValue(`items.${index}.status`, 'failure');
     }
   };
 
   const onSubmit = async (formData: any) => {
     try {
+      setLoading(true);
+
       const payload = {
         from_location_id: Number(formData.fromLocation),
         location_id: Number(formData.toLocation),
@@ -77,10 +82,19 @@ const TransferPage: React.FC = () => {
       if (!payload.assets?.length) delete payload.assets;
       if (!payload.stocks?.length) delete payload.stocks;
 
-      await createTransferAPI(payload);
+      const response = await createTransferAPI(payload);
+
+      // Display success message and redirect to transfer details page
+      setSuccessMessage('Transfer created successfully!');
+      setTimeout(() => {
+        navigate(`/transfers/${response.id}`);
+      }, 1500);
+
       reset();
     } catch (err: any) {
       console.error('Failed to create transfer:', err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,6 +107,12 @@ const TransferPage: React.FC = () => {
       {/* Display Errors */}
       {locationError && <ErrorMessage message="Error loading locations" details={locationError} />}
       {stockError && <ErrorMessage message="Error loading stocks" details={stockError} />}
+      {successMessage && (
+        <Alert severity="success" sx={{ mt: 2 }}>
+          <CheckCircleIcon sx={{ verticalAlign: 'bottom', mr: 1 }} />
+          {successMessage}
+        </Alert>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
@@ -187,7 +207,7 @@ const TransferPage: React.FC = () => {
                             </MenuItem>
                             {stocks.map((stock: any) => (
                               <MenuItem key={stock.id} value={stock.id}>
-                                {stock.category.label} (Dostępne: {stock.quantity})
+                                {stock.category.label} ({stock.origin}) [Dostępne: {stock.quantity}]
                               </MenuItem>
                             ))}
                           </Select>
@@ -244,10 +264,10 @@ const TransferPage: React.FC = () => {
           variant="contained"
           color="primary"
           type="submit"
-          disabled={!fromLocation || items.length === 0}
+          disabled={!fromLocation || items.length === 0 || loading}
           sx={{ mt: 2, ml: 2 }}
         >
-          Utwórz Transfer
+          {loading ? <CircularProgress size={20} /> : 'Utwórz Transfer'}
         </Button>
       </form>
     </Container>

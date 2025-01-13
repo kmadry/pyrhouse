@@ -14,8 +14,9 @@ import {
   Select,
   MenuItem,
   Chip,
+  Button,
 } from '@mui/material';
-import { CheckCircle, ErrorOutline, LocalShipping, ArrowDropUp, ArrowDropDown, Home } from '@mui/icons-material';
+import { CheckCircle, ErrorOutline, LocalShipping, Home } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../hooks/useLocations';
 import { useCategories } from '../hooks/useCategories';
@@ -54,8 +55,8 @@ const EquipmentList: React.FC = () => {
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryType, setCategoryType] = useState<'asset' | 'stock' | ''>('');
-  const [sortField, setSortField] = useState<string>('id');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  // const [setSortField] = useState<string>('id');
+  // const [setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
@@ -136,18 +137,20 @@ const EquipmentList: React.FC = () => {
       );
       setFilteredEquipment(filtered);
     }
-  }, [filter, equipment]);  
+  }, [filter, equipment]);
 
-  const handleSort = (field: string) => {
-    setSortField(field);
-    setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'));
-  };
+  // const handleSort = (field: string) =>
+      // setSortField(field
+      // setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc')
+    // };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'in_stock':
+      case 'available':
         return <Home />;
       case 'delivered':
+      case 'located':
         return <CheckCircle sx={{ color: 'green' }} />;
       case 'in_transit':
         return <LocalShipping sx={{ color: 'orange' }} />;
@@ -159,14 +162,22 @@ const EquipmentList: React.FC = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'in_stock':
+      case 'available':
         return 'Na Stanie';
       case 'in_transit':
         return 'W trasie';
-      case 'delivered':
-        return 'Dostarczone';
+      case 'located':
+        return 'W lokacji';
       default:
         return '';
     }
+  };
+
+  const getStatusForStock = (item: Equipment) => {
+    if (item.type === 'stock' && item.location.id === 1) {
+      return 'available';
+    }
+    return 'located';
   };
 
   const quickFilters: QuickFilter[] = [{ id: 1, name: 'Magazyn Techniczny' }];
@@ -207,13 +218,13 @@ const EquipmentList: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, marginBottom: 2 }}>
-      <TextField
-        label="Filter by PYR_CODE"
-        variant="outlined"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        sx={{ flex: 1 }}
-      />
+        <TextField
+          label="Filter by PYR_CODE"
+          variant="outlined"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          sx={{ flex: 1 }}
+        />
         <Autocomplete
           multiple
           options={locations}
@@ -255,11 +266,10 @@ const EquipmentList: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              {['ID', 'Typ', 'Ilość', 'Lokalizacja', 'Status', 'PYR_CODE', 'Pochodzenie'].map((field) => (
-                <TableCell key={field} onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
+              {['ID', 'Typ', 'Ilość', 'Lokalizacja', 'Status', 'PYR_CODE', 'Pochodzenie', 'Akcje'].map((field) => (
+                <TableCell key={field} style={{ cursor: 'pointer' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <strong>{field.toUpperCase()}</strong>
-                    {sortField === field && (sortOrder === 'asc' ? <ArrowDropUp /> : <ArrowDropDown />)}
                   </Box>
                 </TableCell>
               ))}
@@ -268,7 +278,7 @@ const EquipmentList: React.FC = () => {
           <TableBody>
             {!loading && filteredEquipment.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7}>
+                <TableCell colSpan={8}>
                   <Typography sx={{ textAlign: 'center', mt: 2 }}>
                     No equipment found for the selected filters.
                   </Typography>
@@ -280,9 +290,7 @@ const EquipmentList: React.FC = () => {
                 key={`${item.id}-${item.type}`}
                 sx={{
                   bgcolor: item.state === 'in_transit' ? 'rgba(222, 198, 49, 0.2)' : 'inherit',
-                  '&:hover': { bgcolor: 'action.hover', cursor: 'pointer' },
                 }}
-                onClick={() => navigate(`/details/${item.id}?type=${item.type}`)} // Pass type to details
               >
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{item.category}</TableCell>
@@ -292,12 +300,31 @@ const EquipmentList: React.FC = () => {
                 <TableCell>{item.location.name}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {getStatusIcon(item.state)}
-                    {getStatusLabel(item.state)}
+                  {item.type === 'stock' ? (
+                  // Content for 'stock' category type
+                    <>
+                      {getStatusIcon(getStatusForStock(item))}
+                      {getStatusLabel(getStatusForStock(item))}
+                    </>
+                  ) : (
+                    <>
+                      {getStatusIcon(item.state)}
+                      {getStatusLabel(item.state)}
+                    </>
+                  )}
                   </Box>
                 </TableCell>
                 <TableCell>{item.pyr_code ?? '-'}</TableCell>
                 <TableCell>{item.origin}</TableCell>
+                <TableCell align="center">
+                  <Button
+                    variant="text"
+                    color="primary"
+                    onClick={() => navigate(`/details/${item.id}?type=${item.type}`)}
+                  >
+                    Details
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

@@ -14,6 +14,7 @@ import {
   ListItem,
   ListItemText,
   Chip,
+  ListItemAvatar,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -89,6 +90,7 @@ const TransferDetailsPage: React.FC = () => {
       case 'in_transit':
         return <LocalShippingIcon sx={{ color: 'orange', ml: 2 }} />;
       case 'delivered':
+      case 'available':
         return <CheckCircleIcon sx={{ color: 'green', ml: 2 }} />;
       case 'returned':
         return <UTurnLeftIcon sx={{ color: 'orange', ml: 2 }} />;
@@ -113,7 +115,7 @@ const TransferDetailsPage: React.FC = () => {
       <Box sx={{ mt: 2 }}>
         <Stepper activeStep={currentStep}>
           {steps.map((label) => (
-            <Step key={label}>
+            <Step key={label} color="info">
               <StepLabel>{label}</StepLabel>
             </Step>
           ))}
@@ -136,11 +138,17 @@ const TransferDetailsPage: React.FC = () => {
           <List>
             {transfer.assets.map((asset: any) => (
               <ListItem key={asset.id} sx={{ display: 'flex', alignItems: 'center' }}>
+                <ListItemAvatar>
+                  <Chip
+                    icon={getStatusIcon(asset.status)}
+                    color="success"
+                    sx={{ mr: 2 }}
+                  />
+                </ListItemAvatar>
                 <ListItemText
-                  primary={`PyrCode: ${asset.pyrcode}`}
-                  secondary={`Typ: ${asset.category?.label || 'N/A'}, Pochodzenie: ${asset.origin || 'N/A'}`}
+                  primary={`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}
+                  secondary={`Pochodzenie: ${asset.origin || 'N/A'}`}
                 />
-                {getStatusIcon(asset.status)}
               </ListItem>
             ))}
           </List>
@@ -156,15 +164,19 @@ const TransferDetailsPage: React.FC = () => {
           <List>
             {transfer.stock_items.map((stock: any) => (
               <ListItem key={stock.id} sx={{ display: 'flex', alignItems: 'center' }}>
+                <ListItemAvatar>
+                  {/* <Avatar alt="Remy Sharp" src="/static/images/avatar/1.jpg" /> */}
+                  <Chip
+                    label={`${stock.quantity}`}
+                    color="primary"
+                    sx={{ mr: 2 }}
+                  />
+                </ListItemAvatar>
                 <ListItemText
-                  primary={`Category: ${stock.category?.label || 'N/A'}`}
-                  secondary={`Origin: ${stock.origin || 'N/A'}`}
+                  primary={`${stock.category?.label || 'N/A'}`}
+                  secondary={`Pochodzenie: ${stock.origin || 'N/A'}`}
                 />
-                <Chip
-                  label={`Qty: ${stock.quantity}`}
-                  color="primary"
-                  sx={{ ml: 2 }}
-                />
+
               </ListItem>
             ))}
           </List>
