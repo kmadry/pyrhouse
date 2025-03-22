@@ -1,34 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Location } from '../models/Location';
 
 export const useLocations = () => {
-  const [locations, setLocations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(
-          'https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations',
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch locations');
-        const data = await response.json();
-        setLocations(data);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || 'An unexpected error occurred.');
-      } finally {
-        setLoading(false);
+  const fetchLocations = useCallback(async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/locations`);
+      if (!response.ok) {
+        throw new Error('Nie udało się pobrać lokalizacji');
       }
-    };
-
-    fetchLocations();
+      const data = await response.json();
+      setLocations(data);
+    } catch (err: any) {
+      setError(err.message);
+    }
   }, []);
 
-  return { locations, loading, error };
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  return { locations, error, refetch: fetchLocations };
 };

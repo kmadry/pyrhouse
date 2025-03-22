@@ -67,5 +67,21 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
     }
   
     return response.json();
+  };
+  
+  export const searchPyrCodesAPI = async (query: string, locationId: number) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations/${locationId}/search?q=${encodeURIComponent(query)}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  
+    if (!response.ok) {
+      throw new Error('Nie udało się wyszukać kodów PYR');
+    }
+  
+    return response.json();
   };  
   

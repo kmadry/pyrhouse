@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -17,20 +17,56 @@ import {
   IconButton,
   CircularProgress,
   Alert,
+  Autocomplete,
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
 import { useLocations } from '../hooks/useLocations';
 import { useStocks } from '../hooks/useStocks';
-import { validatePyrCodeAPI, createTransferAPI } from '../services/transferService';
+import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
 import { useNavigate } from 'react-router-dom';
 
+interface PyrCodeSuggestion {
+  id: number;
+  pyrcode: string;
+  serial: string;
+  location: {
+    id: number;
+    name: string;
+  };
+  category: {
+    id: number;
+    label: string;
+  };
+  status: 'in_stock' | 'available' | 'unavailable';
+}
+
+type ValidationStatus = 'success' | 'failure' | '';
+
+interface FormItem {
+  type: 'pyr_code' | 'stock';
+  id: string;
+  pyrcode: string;
+  quantity: number;
+  status: ValidationStatus;
+  category?: {
+    label: string;
+  };
+}
+
+interface FormData {
+  fromLocation: number;
+  toLocation: string;
+  items: FormItem[];
+}
+
 const TransferPage: React.FC = () => {
-  const { control, handleSubmit, setValue, watch, reset } = useForm({
+  const { control, handleSubmit, setValue, watch, reset } = useForm<FormData>({
     defaultValues: {
-      fromLocation: '',
+      fromLocation: 1,
       toLocation: '',
       items: [{ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' }],
     },
@@ -39,6 +75,13 @@ const TransferPage: React.FC = () => {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [lockedRows, setLockedRows] = useState<Set<number>>(new Set());
+  const [isValidationInProgress, setIsValidationInProgress] = useState<boolean>(false);
+  const [isValidationCompleted, setIsValidationCompleted] = useState<boolean>(false);
+  const nextInputRef = useRef<HTMLInputElement>(null);
+  const rowAddedRef = useRef<boolean>(false);
 
   const fromLocation = watch('fromLocation');
   const items = watch('items');
@@ -48,19 +91,53 @@ const TransferPage: React.FC = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (fromLocation) {
-      fetchStocks(fromLocation);
-    }
-  }, [fromLocation, fetchStocks]);
-
   const handleValidatePyrCode = async (index: number, pyrcode: string) => {
+    if (isValidationInProgress || isValidationCompleted) {
+      return;
+    }
+    
     try {
+      setIsValidationInProgress(true);
       const response = await validatePyrCodeAPI(pyrcode);
       setValue(`items.${index}.id`, response.id);
-      setValue(`items.${index}.status`, 'success');
+      setValue(`items.${index}.status`, 'success' as ValidationStatus);
+      setValue(`items.${index}.category`, response.category);
+      setLockedRows(prev => new Set([...prev, index]));
+      
+      if (!rowAddedRef.current) {
+        append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus });
+        rowAddedRef.current = true;
+        setTimeout(() => {
+          nextInputRef.current?.focus();
+        }, 0);
+      }
     } catch (err: any) {
-      setValue(`items.${index}.status`, 'failure');
+      setValue(`items.${index}.status`, 'failure' as ValidationStatus);
+    } finally {
+      setIsValidationInProgress(false);
+      setIsValidationCompleted(true);
+    }
+  };
+
+  const handlePyrCodeSearch = async (value: string) => {
+    if (!/^[a-zA-Z0-9-]*$/.test(value)) {
+      return;
+    }
+
+    if (value.length < 2) {
+      setPyrCodeSuggestions([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const suggestions = await searchPyrCodesAPI(value, fromLocation);
+      setPyrCodeSuggestions(suggestions);
+      rowAddedRef.current = false;
+    } catch (error) {
+      console.error('Błąd podczas wyszukiwania:', error);
+    } finally {
+      setSearchLoading(false);
     }
   };
 
@@ -84,7 +161,6 @@ const TransferPage: React.FC = () => {
 
       const response = await createTransferAPI(payload);
 
-      // Display success message and redirect to transfer details page
       setSuccessMessage('Transfer created successfully!');
       setTimeout(() => {
         navigate(`/transfers/${response.id}`);
@@ -119,8 +195,14 @@ const TransferPage: React.FC = () => {
           <Controller
             name="fromLocation"
             control={control}
+            defaultValue={1}
             render={({ field }) => (
-              <Select {...field} displayEmpty fullWidth>
+              <Select 
+                {...field} 
+                displayEmpty 
+                fullWidth
+                value={locations.length > 0 ? field.value : ''}
+              >
                 <MenuItem value="" disabled>
                   Wybierz lokalizację źródłową
                 </MenuItem>
@@ -156,7 +238,7 @@ const TransferPage: React.FC = () => {
               <TableRow>
                 <TableCell>Typ</TableCell>
                 <TableCell>ID / Kategoria</TableCell>
-                <TableCell>Ilość</TableCell>
+                <TableCell>Ilość/Typ</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Akcje</TableCell>
               </TableRow>
@@ -169,7 +251,11 @@ const TransferPage: React.FC = () => {
                       name={`items.${index}.type`}
                       control={control}
                       render={({ field }) => (
-                        <Select {...field} fullWidth>
+                        <Select 
+                          {...field} 
+                          fullWidth 
+                          disabled={lockedRows.has(index)}
+                        >
                           <MenuItem value="pyr_code">Pyr Code</MenuItem>
                           <MenuItem value="stock">Stock</MenuItem>
                         </Select>
@@ -182,16 +268,70 @@ const TransferPage: React.FC = () => {
                         name={`items.${index}.pyrcode`}
                         control={control}
                         render={({ field }) => (
-                          <TextField
+                          <Autocomplete
                             {...field}
-                            label="Pyr Code"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleValidatePyrCode(index, field.value);
+                            options={pyrCodeSuggestions}
+                            getOptionLabel={(option) => option.pyrcode || ''}
+                            loading={searchLoading}
+                            disabled={lockedRows.has(index)}
+                            value={field.value ? { pyrcode: field.value } as PyrCodeSuggestion : null}
+                            inputValue={field.value || ''}
+                            autoSelect={false}
+                            onInputChange={(_event, value) => {
+                              field.onChange(value);
+                              handlePyrCodeSearch(value);
+                              setIsValidationCompleted(false);
+                            }}
+                            onChange={(_event, value) => {
+                              if (value?.pyrcode && !lockedRows.has(index)) {
+                                field.onChange(value.pyrcode);
+                                setIsValidationCompleted(false);
+                                handleValidatePyrCode(index, value.pyrcode);
                               }
                             }}
-                            fullWidth
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' && !lockedRows.has(index)) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                const currentValue = field.value;
+                                const matchingOption = pyrCodeSuggestions.find(option => option.pyrcode === currentValue);
+                                if (matchingOption) {
+                                  handleValidatePyrCode(index, currentValue);
+                                }
+                              }
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Pyr Code"
+                                fullWidth
+                                error={items[index].status === 'failure'}
+                                helperText={items[index].status === 'failure' ? 'Nieprawidłowy kod PYR' : ''}
+                                inputRef={index === fields.length - 1 ? nextInputRef : undefined}
+                              />
+                            )}
+                            renderOption={(props, option) => {
+                              const { key, ...otherProps } = props;
+                              return (
+                                <li 
+                                  key={key}
+                                  {...otherProps} 
+                                  onClick={(e) => {
+                                    if (!lockedRows.has(index)) {
+                                      field.onChange(option.pyrcode);
+                                      handleValidatePyrCode(index, option.pyrcode);
+                                    }
+                                  }}
+                                >
+                                  {option.pyrcode} - {option.category?.label || 'Brak kategorii'}
+                                </li>
+                              );
+                            }}
+                            isOptionEqualToValue={(option, value) => {
+                              return option.pyrcode === value.pyrcode;
+                            }}
+                            selectOnFocus
+                            clearOnBlur={false}
                           />
                         )}
                       />
@@ -231,11 +371,24 @@ const TransferPage: React.FC = () => {
                         )}
                       />
                     )}
+                    {items[index].type === 'pyr_code' && items[index].status === 'success' && (
+                      <Typography variant="body2">
+                        {items[index].category?.label || 'Brak kategorii'}
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell>
-                    {items[index].status === 'success' && <CheckCircleIcon color="success" />}
+                    {items[index].status === 'success' && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CheckCircleIcon color="success" />
+                        <Typography variant="body2" color="success.main">Dostępny</Typography>
+                      </Box>
+                    )}
                     {items[index].status === 'failure' && (
-                      <Typography color="error">Błąd</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ErrorIcon color="error" />
+                        <Typography variant="body2" color="error">Nie znaleziono</Typography>
+                      </Box>
                     )}
                   </TableCell>
                   <TableCell>
@@ -253,7 +406,7 @@ const TransferPage: React.FC = () => {
           variant="contained"
           color="secondary"
           onClick={() =>
-            append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' })
+            append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus })
           }
           sx={{ mt: 2 }}
         >
