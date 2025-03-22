@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -87,7 +87,7 @@ const TransferPage: React.FC = () => {
   const items = watch('items');
 
   const { locations, error: locationError } = useLocations();
-  const { stocks, fetchStocks, error: stockError } = useStocks();
+  const { stocks, error: stockError } = useStocks();
 
   const navigate = useNavigate();
 
@@ -316,7 +316,7 @@ const TransferPage: React.FC = () => {
                                 <li 
                                   key={key}
                                   {...otherProps} 
-                                  onClick={(e) => {
+                                  onClick={() => {
                                     if (!lockedRows.has(index)) {
                                       field.onChange(option.pyrcode);
                                       handleValidatePyrCode(index, option.pyrcode);

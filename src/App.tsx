@@ -4,11 +4,10 @@ import CssBaseline from '@mui/material/CssBaseline';
 import LoginForm from './components/LoginForm';
 import Home from './components/Home';
 import List from './components/List';
-import PrivateRoute from './components/Authorisation'; // Import PrivateRoute
-import Layout from './components/Layout'; // Import the new Layout component
-import TransferPage from './components/TransferPage'; // Import the TransferPage component
+import PrivateRoute from './components/Authorisation';
+import Layout from './components/Layout';
+import TransferPage from './components/TransferPage';
 import AddItemPage from './components/AddItemPage';
-import LocationManagementPage from './components/LocationManagementPage';
 import UserManagementPage from './components/UserManagementPage';
 import CategoryManagementPage from './components/CategoryManagementPage';
 import TransfersListPage from './components/TransferListPage';
