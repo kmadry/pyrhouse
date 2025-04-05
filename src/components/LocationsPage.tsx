@@ -127,11 +127,11 @@ const LocationsPage: React.FC = () => {
                       <DeleteIcon />
                     </IconButton>
                     <Button
-                      variant="outlined"
+                      variant="text"
                       color="primary"
                       onClick={() => navigate(`/locations/${location.id}`)}
                     >
-                      Szczegóły
+                      Details
                     </Button>
                   </Box>
                 </TableCell>

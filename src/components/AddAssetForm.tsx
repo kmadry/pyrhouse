@@ -6,22 +6,44 @@ import {
   MenuItem,
   TextField,
   CircularProgress,
+  Dialog,
 } from '@mui/material';
-import Barcode from 'react-barcode';
-import { ErrorMessage } from './ErrorMessage'; // Import the ErrorMessage component
+import { ErrorMessage } from './ErrorMessage';
+import { BarcodeGenerator } from './BarcodeGenerator';
 
 // Origin options array
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
+
+interface Asset {
+  id: number;
+  serial: string;
+  location: {
+    id: number;
+    name: string;
+    details: string | null;
+  };
+  category: {
+    id: number;
+    name: string;
+    label: string;
+    pyr_id: string;
+    type: string;
+  };
+  status: string;
+  pyrcode: string;
+  origin?: string;
+}
 
 export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories }) => {
   const [serial, setSerial] = useState('');
   const [origin, setOrigin] = useState('probis');
   const [customOrigin, setCustomOrigin] = useState('');
   const [categoryID, setCategoryID] = useState('');
-  const [barcode, setBarcode] = useState('');
   const [error, setError] = useState('');
   const [errorDetails, setErrorDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [createdAsset, setCreatedAsset] = useState<Asset | null>(null);
+  const [showBarcode, setShowBarcode] = useState(false);
 
   // Filter categories to only include type "asset"
   const assetCategories = categories.filter((category) => category.type === 'asset');
@@ -31,6 +53,8 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
     setError('');
     setErrorDetails('');
     setSubmitting(true);
+    setCreatedAsset(null);
+    setShowBarcode(false);
 
     // Validate custom origin
     if ((origin === 'personal' || origin === 'other') && !customOrigin.trim()) {
@@ -67,7 +91,8 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
       }
 
       const responseData = await response.json();
-      setBarcode(responseData.pyrcode);
+      setCreatedAsset(responseData);
+      setShowBarcode(true);
 
       // Reset form
       setSerial('');
@@ -152,12 +177,20 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
         {submitting ? <CircularProgress size={24} /> : 'Dodaj sprzęt'}
       </Button>
 
-      {/* Barcode Display */}
-      {barcode && (
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Barcode value={barcode} />
-        </Box>
-      )}
+      {/* Barcode Dialog */}
+      <Dialog
+        open={showBarcode}
+        onClose={() => setShowBarcode(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        {createdAsset && (
+          <BarcodeGenerator
+            assets={[createdAsset]}
+            onClose={() => setShowBarcode(false)}
+          />
+        )}
+      </Dialog>
     </Box>
   );
 };

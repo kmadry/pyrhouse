@@ -83,5 +83,42 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
     }
   
     return response.json();
+  };
+  
+  export const restoreAssetToLocationAPI = async (transferId: number, assetId: number, locationId: number = 1) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${transferId}/assets/${assetId}/restore-to-location`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ location_id: locationId }),
+      }
+    );
+    if (!response.ok) throw new Error('Nie udało się przywrócić zasobu do lokalizacji');
+    return response.json();
+  };
+  
+  export const restoreStockToLocationAPI = async (transferId: number, categoryId: number, locationId: number = 1, quantity?: number) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${transferId}/categories/${categoryId}/restore-to-location`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          location_id: locationId,
+          ...(quantity !== undefined && { quantity })
+        }),
+      }
+    );
+    if (!response.ok) throw new Error('Nie udało się przywrócić pozycji magazynowej do lokalizacji');
+    return response.json();
   };  
   

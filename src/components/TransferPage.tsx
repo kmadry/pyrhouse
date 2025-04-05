@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -87,9 +87,15 @@ const TransferPage: React.FC = () => {
   const items = watch('items');
 
   const { locations, error: locationError } = useLocations();
-  const { stocks, error: stockError } = useStocks();
+  const { stocks, error: stockError, fetchStocks } = useStocks();
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (fromLocation) {
+      fetchStocks(fromLocation.toString());
+    }
+  }, [fromLocation, fetchStocks]);
 
   const handleValidatePyrCode = async (index: number, pyrcode: string) => {
     if (isValidationInProgress || isValidationCompleted) {

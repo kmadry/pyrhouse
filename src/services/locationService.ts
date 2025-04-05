@@ -2,6 +2,27 @@ import { Location } from '../models/Location';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+interface LocationDetailsResponse {
+  assets: any[];
+  stock_items: any[];
+}
+
+export const getLocationDetails = async (locationId: number): Promise<LocationDetailsResponse> => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(
+    `${API_URL}/locations/${locationId}/assets`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Nie udało się pobrać danych lokalizacji');
+  }
+
+  return response.json();
+};
+
 export const deleteLocation = async (id: number): Promise<void> => {
   const response = await fetch(`${API_URL}/locations/${id}`, {
     method: 'DELETE',

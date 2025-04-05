@@ -14,6 +14,7 @@ import {
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
+import pyrkonLogo from '../assets/images/pyrkon-logo.jpg';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
@@ -80,11 +81,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           >
             <Icons.Menu />
           </IconButton>
-          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
-            Pyrhouse App
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <img 
+              src={pyrkonLogo} 
+              alt="Pyrkon Logo" 
+              style={{ height: '40px', marginRight: '10px' }} 
+            />
+            <Typography variant="h6" noWrap>
+              Pyrhouse App
+            </Typography>
+          </Box>
           <IconButton color="inherit" onClick={handleLogout}>
-            Logout
+            <Icons.Logout />
           </IconButton>
         </Toolbar>
       </AppBar>

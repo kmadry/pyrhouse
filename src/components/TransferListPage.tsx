@@ -30,11 +30,16 @@ const TransfersListPage: React.FC = () => {
     fetchTransfers();
   }, [fetchTransfers]);
 
-  // Sort transfers with "in_transit" on top
+  // Sort transfers by date (newest first) and then by status
   const sortedTransfers: Transfer[] = [...transfers].sort((a, b) => {
+    // First sort by date (newest first)
+    const dateComparison = new Date(b.transfer_date).getTime() - new Date(a.transfer_date).getTime();
+    if (dateComparison !== 0) return dateComparison;
+    
+    // If dates are equal, sort by status
     if (a.status === 'in_transit' && b.status !== 'in_transit') return -1;
     if (a.status !== 'in_transit' && b.status === 'in_transit') return 1;
-    return new Date(b.transfer_date).getTime() - new Date(a.transfer_date).getTime();
+    return 0;
   });
 
   const getStatusChip = (status: string) => {

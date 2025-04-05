@@ -11,13 +11,15 @@ import {
   TableRow,
   Paper,
   CircularProgress,
-  Alert,
   Chip,
   Checkbox,
+  Button,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocations } from '../hooks/useLocations';
+import { TransferModal } from './TransferPage/components/TransferModal';
+import { getLocationDetails } from '../services/locationService';
 
 interface Asset {
   id: number;
@@ -66,24 +68,24 @@ const LocationDetailsPage: React.FC = () => {
     assetIds: [],
     stockIds: [],
   });
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+
+  const fetchLocationDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await getLocationDetails(Number(locationId));
+      setLocationDetails({
+        assets: data.assets,
+        stock_items: data.stock_items,
+      });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchLocationDetails = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/locations/${locationId}/assets`);
-        if (!response.ok) {
-          throw new Error('Nie udało się pobrać danych lokalizacji');
-        }
-        const data = await response.json();
-        setLocationDetails(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (locationId) {
       fetchLocationDetails();
     }
@@ -129,6 +131,14 @@ const LocationDetailsPage: React.FC = () => {
     }));
   };
 
+  const handleTransferSuccess = () => {
+    setSelectedItems({ assetIds: [], stockIds: [] });
+    // Odśwież dane lokalizacji
+    if (locationId) {
+      fetchLocationDetails();
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -149,9 +159,11 @@ const LocationDetailsPage: React.FC = () => {
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom>
-        {location?.name || 'Szczegóły lokalizacji'}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          {location?.name || 'Szczegóły lokalizacji'}
+        </Typography>
+      </Box>
 
       {(selectedItems.assetIds.length > 0 || selectedItems.stockIds.length > 0) && (
         <Box sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
@@ -182,16 +194,16 @@ const LocationDetailsPage: React.FC = () => {
                 <TableRow>
                   <TableCell padding="checkbox">
                     <Checkbox
-                      checked={locationDetails.assets.length > 0 && selectedItems.assetIds.length === locationDetails.assets.length}
+                      checked={selectedItems.assetIds.length === locationDetails.assets.length}
                       indeterminate={selectedItems.assetIds.length > 0 && selectedItems.assetIds.length < locationDetails.assets.length}
                       onChange={handleSelectAllAssets}
                     />
                   </TableCell>
                   <TableCell>ID</TableCell>
-                  <TableCell>Numer seryjny</TableCell>
+                  <TableCell>PYR Code</TableCell>
                   <TableCell>Kategoria</TableCell>
+                  <TableCell>Serial</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Kod PYR</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -204,15 +216,15 @@ const LocationDetailsPage: React.FC = () => {
                       />
                     </TableCell>
                     <TableCell>{asset.id}</TableCell>
-                    <TableCell>{asset.serial}</TableCell>
+                    <TableCell>{asset.pyrcode}</TableCell>
                     <TableCell>{asset.category.label}</TableCell>
+                    <TableCell>{asset.serial}</TableCell>
                     <TableCell>
                       <Chip
-                        label={asset.status === 'in_stock' ? 'Dostępny' : 'W transporcie'}
+                        label={asset.status === 'in_stock' ? 'W magazynie' : 'W transporcie'}
                         color={asset.status === 'in_stock' ? 'success' : 'warning'}
                       />
                     </TableCell>
-                    <TableCell>{asset.pyrcode || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -232,7 +244,7 @@ const LocationDetailsPage: React.FC = () => {
                 <TableRow>
                   <TableCell padding="checkbox">
                     <Checkbox
-                      checked={locationDetails.stock_items.length > 0 && selectedItems.stockIds.length === locationDetails.stock_items.length}
+                      checked={selectedItems.stockIds.length === locationDetails.stock_items.length}
                       indeterminate={selectedItems.stockIds.length > 0 && selectedItems.stockIds.length < locationDetails.stock_items.length}
                       onChange={handleSelectAllStocks}
                     />
@@ -262,12 +274,28 @@ const LocationDetailsPage: React.FC = () => {
         </Box>
       )}
 
-      {(!locationDetails?.assets || locationDetails.assets.length === 0) &&
-        (!locationDetails?.stock_items || locationDetails.stock_items.length === 0) && (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            Brak przedmiotów w tej lokalizacji
-          </Alert>
-        )}
+      {(selectedItems.assetIds.length > 0 || selectedItems.stockIds.length > 0) && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 4 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={() => setTransferModalOpen(true)}
+          >
+            Utwórz transfer ({selectedItems.assetIds.length + selectedItems.stockIds.length} elementów)
+          </Button>
+        </Box>
+      )}
+
+      <TransferModal
+        open={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        fromLocationId={Number(locationId)}
+        selectedAssets={selectedItems.assetIds}
+        selectedStocks={selectedItems.stockIds}
+        locations={locations}
+        onSuccess={handleTransferSuccess}
+      />
     </Container>
   );
 };

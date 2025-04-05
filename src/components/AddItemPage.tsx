@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Container, Typography, Tabs, Tab } from '@mui/material';
+import { Container, Typography, Tabs, Tab, Box, Button } from '@mui/material';
 import { AddAssetForm } from './AddAssetForm';
 import { AddStockForm } from './AddStockForm';
+import { BulkAddAssetForm } from './BulkAddAssetForm';
 import { ErrorMessage } from './ErrorMessage';
 import { useCategories } from '../hooks/useCategories';
 
 const AddItemPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0); // 0 = "Wartościowe", 1 = "Zasoby"
+  const [isBulkMode, setIsBulkMode] = useState(false);
   const { categories, error, loading } = useCategories();
 
   return (
@@ -22,7 +24,23 @@ const AddItemPage: React.FC = () => {
 
       {error && <ErrorMessage message={error} />}
 
-      {currentTab === 0 && <AddAssetForm categories={categories} loading={loading} />}
+      {currentTab === 0 && (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Button
+              variant={isBulkMode ? "contained" : "outlined"}
+              onClick={() => setIsBulkMode(!isBulkMode)}
+            >
+              {isBulkMode ? "Tryb pojedynczy" : "Tryb masowy"}
+            </Button>
+          </Box>
+          {isBulkMode ? (
+            <BulkAddAssetForm categories={categories} />
+          ) : (
+            <AddAssetForm categories={categories} loading={loading} />
+          )}
+        </Box>
+      )}
       {currentTab === 1 && <AddStockForm categories={categories} loading={loading} />}
     </Container>
   );
