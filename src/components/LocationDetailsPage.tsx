@@ -295,6 +295,7 @@ const LocationDetailsPage: React.FC = () => {
         selectedStocks={selectedItems.stockIds}
         locations={locations}
         onSuccess={handleTransferSuccess}
+        stockItems={locationDetails?.stock_items || []}
       />
     </Container>
   );
