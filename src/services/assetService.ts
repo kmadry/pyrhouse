@@ -22,18 +22,27 @@ interface BulkAddAssetRequest {
 
 export const bulkAddAssetsAPI = async (assets: BulkAddAssetRequest[]): Promise<any> => {
   try {
-    const response = await fetch(`${API_BASE}/assets/bulk`, {
+    const token = localStorage.getItem('token');
+    
+    // Przygotowanie danych w prawidłowym formacie
+    const payload = {
+      serials: assets.map(asset => asset.serial),
+      category_id: assets[0].category_id,
+      origin: assets[0].origin
+    };
+    
+    const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/bulk', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ assets }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Wystąpił błąd podczas dodawania zasobów');
+      const error = await response.json();
+      throw new Error(error.message || 'Wystąpił błąd podczas dodawania zasobów');
     }
 
     return await response.json();

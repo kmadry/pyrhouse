@@ -74,6 +74,13 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
     inputRefs.current = inputRefs.current.slice(0, assets.length);
   }, [assets]);
 
+  // Efekt czyszczący stan przy odmontowaniu komponentu
+  useEffect(() => {
+    return () => {
+      resetForm();
+    };
+  }, []);
+
   const handleSerialChange = (index: number, value: string) => {
     const newAssets = [...assets];
     newAssets[index].serial = value;
@@ -87,6 +94,18 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
 
   const handleAddRow = () => {
     setAssets([...assets, { id: Date.now().toString(), serial: '' }]);
+  };
+
+  const resetForm = () => {
+    setAssets([{ id: Date.now().toString(), serial: '' }]);
+    setCategoryId(0);
+    setOrigin('');
+    setCustomOrigin('');
+    setError('');
+    setSuccessMessage('');
+    setCreatedAssets([]);
+    setShowBarcodes(false);
+    setIsSubmitting(false);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -137,8 +156,15 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
       const response = await bulkAddAssetsAPI(assetsToSubmit);
 
       if (response && Array.isArray(response.created)) {
-        setCreatedAssets(response.created);
+        // Resetuj formularz od razu po sukcesie
+        setAssets([{ id: Date.now().toString(), serial: '' }]);
+        setCategoryId(0);
+        setOrigin('');
+        setCustomOrigin('');
+        
+        // Zachowaj tylko komunikat sukcesu i otwórz modal z kodami
         setSuccessMessage('Zasoby zostały dodane pomyślnie');
+        setCreatedAssets(response.created);
         setShowBarcodes(true);
       } else {
         setError('Niepoprawna odpowiedź z API');
@@ -284,7 +310,11 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
 
       <Dialog
         open={showBarcodes}
-        onClose={() => setShowBarcodes(false)}
+        onClose={() => {
+          setShowBarcodes(false);
+          // Wyczyść tylko dane związane z kodami kreskowymi przy zamykaniu modalu
+          setCreatedAssets([]);
+        }}
         maxWidth="md"
         fullWidth
       >
@@ -293,7 +323,11 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
           {createdAssets.length > 0 ? (
             <BarcodeGenerator
               assets={createdAssets}
-              onClose={() => setShowBarcodes(false)}
+              onClose={() => {
+                setShowBarcodes(false);
+                // Wyczyść tylko dane związane z kodami kreskowymi przy zamykaniu modalu
+                setCreatedAssets([]);
+              }}
             />
           ) : (
             <Typography color="error">
