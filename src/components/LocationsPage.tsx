@@ -104,35 +104,46 @@ const LocationsPage: React.FC = () => {
             <TableRow>
               <TableCell>ID</TableCell>
               <TableCell>Nazwa</TableCell>
-              <TableCell>Akcje</TableCell>
+              <TableCell align="right">Akcje</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {locations.map((location) => (
-              <TableRow key={location.id}>
+              <TableRow 
+                key={location.id}
+                onClick={() => navigate(`/locations/${location.id}`)}
+                sx={{ 
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
+                }}
+              >
                 <TableCell>{location.id}</TableCell>
                 <TableCell>{location.name}</TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                <TableCell align="right">
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      gap: 1,
+                      justifyContent: 'flex-end'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <IconButton
                       color="primary"
                       onClick={() => handleOpenDialog(location)}
+                      size="small"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       color="error"
                       onClick={() => handleDelete(location.id)}
+                      size="small"
                     >
                       <DeleteIcon />
                     </IconButton>
-                    <Button
-                      variant="text"
-                      color="primary"
-                      onClick={() => navigate(`/locations/${location.id}`)}
-                    >
-                      Details
-                    </Button>
                   </Box>
                 </TableCell>
               </TableRow>
