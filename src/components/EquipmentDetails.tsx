@@ -10,6 +10,11 @@ import {
   Card,
   CardContent,
   List,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   CheckCircle,
@@ -17,10 +22,12 @@ import {
   Schedule,
   History,
   Info,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import Barcode from 'react-barcode';
 import { ErrorMessage } from './ErrorMessage';
+import { deleteAsset } from '../services/assetService';
 
 interface AssetLog {
   id: number;
@@ -40,11 +47,14 @@ const EquipmentDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type') || 'asset';
+  const navigate = useNavigate();
 
   const [details, setDetails] = useState<any | null>(null);
   const [logs, setLogs] = useState<AssetLog[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -71,6 +81,44 @@ const EquipmentDetails: React.FC = () => {
     fetchDetails();
   }, [id, type]);
 
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    try {
+      setIsDeleting(true);
+      const success = await deleteAsset(Number(id));
+      if (success) {
+        navigate('/list'); // Przekieruj do listy sprzętu tylko po pomyślnym usunięciu
+      } else {
+        setError('Nie udało się usunąć zasobu. Spróbuj ponownie później.');
+        // Automatycznie ukryj błąd po 5 sekundach
+        setTimeout(() => {
+          setError('');
+        }, 5000);
+      }
+    } catch (err: any) {
+      // Wyświetl błąd z API, jeśli jest dostępny
+      if (err.message && typeof err.message === 'object') {
+        if (err.message.details) {
+          setError(err.message.details);
+        } else if (err.message.message) {
+          setError(err.message.message);
+        } else {
+          setError(JSON.stringify(err.message));
+        }
+      } else {
+        setError(err.message || 'Wystąpił błąd podczas usuwania zasobu');
+      }
+      // Automatycznie ukryj błąd po 5 sekundach
+      setTimeout(() => {
+        setError('');
+      }, 5000);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirmation(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', mt: 4 }}>
@@ -80,23 +128,20 @@ const EquipmentDetails: React.FC = () => {
     );
   }
 
-  if (error) {
-    return <ErrorMessage message={error} />;
-  }
-
   if (!details) {
     return (
       <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
-        No details available for this item.
+        Nie znaleziono szczegółów sprzętu.
       </Typography>
     );
   }
 
   return (
     <Box sx={{ margin: '0 auto', padding: 4, maxWidth: '960px' }}>
-      {/* Header */}
+      {error && <ErrorMessage message={error} />}
+      
       <Typography variant="h4" gutterBottom>
-        {type === 'asset' ? 'Asset Details' : 'Stock Details'}
+        Szczegóły sprzętu
       </Typography>
 
       {/* Quick Stats Section */}
@@ -210,6 +255,51 @@ const EquipmentDetails: React.FC = () => {
           <Typography>No logs available for this item.</Typography>
         )}
       </Box>
+
+      {/* Delete Button Section - tylko dla zasobów typu 'asset' */}
+      {type === 'asset' && (
+        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setShowDeleteConfirmation(true)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Usuwanie...' : 'Usuń zasób'}
+          </Button>
+        </Box>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
+      >
+        <DialogTitle>Potwierdź usunięcie</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Czy na pewno chcesz usunąć ten zasób? Tej operacji nie można cofnąć.
+          </Typography>
+          {error && <ErrorMessage message={error} />}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setShowDeleteConfirmation(false)}
+            disabled={isDeleting}
+          >
+            Anuluj
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Usuwanie...' : 'Usuń'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

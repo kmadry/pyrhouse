@@ -50,3 +50,24 @@ export const bulkAddAssetsAPI = async (assets: BulkAddAssetRequest[]): Promise<a
     throw error;
   }
 };
+
+export const deleteAsset = async (assetId: number): Promise<boolean> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE}/assets/${assetId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Wystąpił błąd podczas usuwania zasobu');
+    }
+
+    return response.status === 200;
+  } catch (error) {
+    throw error;
+  }
+};
