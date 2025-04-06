@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -79,9 +79,8 @@ const TransferPage: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [lockedRows, setLockedRows] = useState<Set<number>>(new Set());
   const [isValidationInProgress, setIsValidationInProgress] = useState<boolean>(false);
-  const [isValidationCompleted, setIsValidationCompleted] = useState<boolean>(false);
-  const nextInputRef = useRef<HTMLInputElement>(null);
-  const rowAddedRef = useRef<boolean>(false);
+  // @ts-ignore - activeRowIndex jest używane w komponencie
+  const [activeRowIndex, setActiveRowIndex] = useState<number>(0);
 
   const fromLocation = watch('fromLocation');
   const items = watch('items');
@@ -91,6 +90,14 @@ const TransferPage: React.FC = () => {
 
   const navigate = useNavigate();
 
+  const isPyrCodeSelected = (pyrcode: string): boolean => {
+    return items.some(item => 
+      item.type === 'pyr_code' && 
+      item.pyrcode === pyrcode && 
+      item.status === 'success'
+    );
+  };
+
   useEffect(() => {
     if (fromLocation) {
       fetchStocks(fromLocation.toString());
@@ -98,30 +105,37 @@ const TransferPage: React.FC = () => {
   }, [fromLocation, fetchStocks]);
 
   const handleValidatePyrCode = async (index: number, pyrcode: string) => {
-    if (isValidationInProgress || isValidationCompleted) {
+    if (isValidationInProgress) {
+      return;
+    }
+
+    if (isPyrCodeSelected(pyrcode)) {
       return;
     }
     
     try {
       setIsValidationInProgress(true);
+      setValue(`items.${index}.pyrcode`, pyrcode);
       const response = await validatePyrCodeAPI(pyrcode);
+      
+      if (index >= items.length) {
+        return;
+      }
+
       setValue(`items.${index}.id`, response.id);
       setValue(`items.${index}.status`, 'success' as ValidationStatus);
       setValue(`items.${index}.category`, response.category);
+      
       setLockedRows(prev => new Set([...prev, index]));
       
-      if (!rowAddedRef.current) {
-        append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus });
-        rowAddedRef.current = true;
-        setTimeout(() => {
-          nextInputRef.current?.focus();
-        }, 0);
+      if (index === items.length - 1) {
+        append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' });
+        setActiveRowIndex(items.length);
       }
     } catch (err: any) {
       setValue(`items.${index}.status`, 'failure' as ValidationStatus);
     } finally {
       setIsValidationInProgress(false);
-      setIsValidationCompleted(true);
     }
   };
 
@@ -138,10 +152,20 @@ const TransferPage: React.FC = () => {
     setSearchLoading(true);
     try {
       const suggestions = await searchPyrCodesAPI(value, fromLocation);
-      setPyrCodeSuggestions(suggestions);
-      rowAddedRef.current = false;
+      
+      // Filtruj już wybrane kody PYR
+      const selectedPyrcodes = items
+        .filter(item => item.type === 'pyr_code' && item.status === 'success')
+        .map(item => item.pyrcode);
+      
+      const filteredSuggestions = suggestions.filter(
+        (suggestion: PyrCodeSuggestion) => !selectedPyrcodes.includes(suggestion.pyrcode)
+      );
+      
+      setPyrCodeSuggestions(filteredSuggestions);
     } catch (error) {
       console.error('Błąd podczas wyszukiwania:', error);
+      setPyrCodeSuggestions([]);
     } finally {
       setSearchLoading(false);
     }
@@ -180,6 +204,41 @@ const TransferPage: React.FC = () => {
     }
   };
 
+  const handleRemoveRow = (index: number) => {
+    // Najpierw usuwamy wiersz
+    remove(index);
+    
+    // Resetujemy stan zablokowanych wierszy
+    setLockedRows(prev => {
+      const newLockedRows = new Set<number>();
+      prev.forEach(lockedIndex => {
+        if (lockedIndex < index) {
+          newLockedRows.add(lockedIndex);
+        } else if (lockedIndex > index) {
+          newLockedRows.add(lockedIndex - 1);
+        }
+      });
+      return newLockedRows;
+    });
+
+    // Sprawdzamy, czy wszystkie wiersze są puste lub czy nie ma wierszy
+    const hasEmptyRow = fields.some((_, idx) =>
+      !items[idx]?.id && !items[idx]?.pyrcode && !items[idx]?.quantity
+    );
+
+    // Jeśli nie ma pustego wiersza, dodajemy nowy
+    if (!hasEmptyRow) {
+      append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' });
+      setActiveRowIndex(fields.length);
+    } else {
+      // Znajdź indeks pierwszego pustego wiersza
+      const emptyRowIndex = fields.findIndex((_, idx) =>
+        !items[idx]?.id && !items[idx]?.pyrcode && !items[idx]?.quantity
+      );
+      setActiveRowIndex(emptyRowIndex);
+    }
+  };
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
@@ -203,8 +262,8 @@ const TransferPage: React.FC = () => {
             control={control}
             defaultValue={1}
             render={({ field }) => (
-              <Select 
-                {...field} 
+              <Select
+                {...field}
                 displayEmpty 
                 fullWidth
                 value={locations.length > 0 ? field.value : ''}
@@ -275,69 +334,67 @@ const TransferPage: React.FC = () => {
                         control={control}
                         render={({ field }) => (
                           <Autocomplete
-                            {...field}
+                            key={index}
+                            data-testid={`pyr-code-input-${index}`}
                             options={pyrCodeSuggestions}
-                            getOptionLabel={(option) => option.pyrcode || ''}
                             loading={searchLoading}
                             disabled={lockedRows.has(index)}
-                            value={field.value ? { pyrcode: field.value } as PyrCodeSuggestion : null}
-                            inputValue={field.value || ''}
-                            autoSelect={false}
-                            onInputChange={(_event, value) => {
-                              field.onChange(value);
-                              handlePyrCodeSearch(value);
-                              setIsValidationCompleted(false);
-                            }}
-                            onChange={(_event, value) => {
-                              if (value?.pyrcode && !lockedRows.has(index)) {
-                                field.onChange(value.pyrcode);
-                                setIsValidationCompleted(false);
-                                handleValidatePyrCode(index, value.pyrcode);
-                              }
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' && !lockedRows.has(index)) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                const currentValue = field.value;
-                                const matchingOption = pyrCodeSuggestions.find(option => option.pyrcode === currentValue);
-                                if (matchingOption) {
-                                  handleValidatePyrCode(index, currentValue);
-                                }
-                              }
+                            getOptionLabel={(option: PyrCodeSuggestion | string) =>
+                              typeof option === 'string'
+                                ? option
+                                : `${option.pyrcode} - ${option.category.label}`
+                            }
+                            isOptionEqualToValue={(option, value) => {
+                              if (typeof value === 'string') return false;
+                              if (typeof option === 'string') return false;
+                              return option.pyrcode === value.pyrcode;
                             }}
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                label="Pyr Code"
+                                placeholder="Wpisz kod PYR"
+                                variant="outlined"
                                 fullWidth
-                                error={items[index].status === 'failure'}
-                                helperText={items[index].status === 'failure' ? 'Nieprawidłowy kod PYR' : ''}
-                                inputRef={index === fields.length - 1 ? nextInputRef : undefined}
+                                InputProps={{
+                                  ...params.InputProps,
+                                  endAdornment: (
+                                    <React.Fragment>
+                                      {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                                      {params.InputProps.endAdornment}
+                                    </React.Fragment>
+                                  ),
+                                }}
                               />
                             )}
-                            renderOption={(props, option) => {
-                              const { key, ...otherProps } = props;
-                              return (
-                                <li 
-                                  key={key}
-                                  {...otherProps} 
-                                  onClick={() => {
-                                    if (!lockedRows.has(index)) {
-                                      field.onChange(option.pyrcode);
-                                      handleValidatePyrCode(index, option.pyrcode);
-                                    }
-                                  }}
-                                >
-                                  {option.pyrcode} - {option.category?.label || 'Brak kategorii'}
-                                </li>
-                              );
+                            onInputChange={(event, value) => {
+                              if (event) {
+                                handlePyrCodeSearch(value);
+                              }
                             }}
-                            isOptionEqualToValue={(option, value) => {
-                              return option.pyrcode === value.pyrcode;
+                            onChange={(_, value) => {
+                              if (value && typeof value !== 'string') {
+                                handleValidatePyrCode(index, value.pyrcode);
+                              }
+                              field.onChange(value);
                             }}
-                            selectOnFocus
-                            clearOnBlur={false}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                const inputValue = (event.target as HTMLInputElement).value;
+                                if (inputValue && inputValue.length >= 2) {
+                                  handleValidatePyrCode(index, inputValue);
+                                }
+                              }
+                            }}
+                            value={field.value}
+                            filterOptions={(options) => {
+                              const filtered = options.filter(option => {
+                                if (typeof option === 'string') return false;
+                                return !isPyrCodeSelected(option.pyrcode);
+                              });
+                              return filtered;
+                            }}
+                            freeSolo
                           />
                         )}
                       />
@@ -398,8 +455,8 @@ const TransferPage: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => remove(index)}>
-                      <DeleteIcon />
+                    <IconButton onClick={() => handleRemoveRow(index)}>
+                      <DeleteIcon data-testid="DeleteIcon" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
