@@ -172,6 +172,9 @@ const TransferPage: React.FC = () => {
   };
 
   const onSubmit = async (formData: any) => {
+    if (!formData.toLocation) {
+      return;
+    }
     try {
       setLoading(true);
 
@@ -282,17 +285,30 @@ const TransferPage: React.FC = () => {
           <Controller
             name="toLocation"
             control={control}
-            render={({ field }) => (
-              <Select {...field} displayEmpty fullWidth>
-                <MenuItem value="" disabled>
-                  Wybierz lokalizację docelową
-                </MenuItem>
-                {locations.map((location: any) => (
-                  <MenuItem key={location.id} value={location.id}>
-                    {location.name}
+            rules={{ required: 'Wybierz lokalizację docelową' }}
+            render={({ field, fieldState: { error } }) => (
+              <Box>
+                <Select
+                  {...field}
+                  displayEmpty
+                  fullWidth
+                  error={!!error}
+                >
+                  <MenuItem value="" disabled>
+                    Wybierz lokalizację docelową
                   </MenuItem>
-                ))}
-              </Select>
+                  {locations.map((location: any) => (
+                    <MenuItem key={location.id} value={location.id}>
+                      {location.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {error && (
+                  <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                    {error.message}
+                  </Typography>
+                )}
+              </Box>
             )}
           />
         </Box>
