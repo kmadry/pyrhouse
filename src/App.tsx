@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginForm from './components/LoginForm';
 import Home from './components/Home';
@@ -16,40 +15,11 @@ import QuestBoard from './components/QuestBoardPage';
 import EquipmentDetails from './components/EquipmentDetails';
 import LocationsPage from './components/LocationsPage';
 import LocationDetailsPage from './components/LocationDetailsPage';
-
-const theme = createTheme({
-  colorSchemes: {
-    light: true,
-    dark: {
-      palette: {
-        primary: {
-          main: '#ff9800',
-        }
-      },
-    }
-   },
-   palette: {
-    primary: {
-      main: '#ff9800',
-    }
-   },
-   components: { // probably bad solution, to refactor
-    MuiListItem: {
-      styleOverrides: {
-        root: {
-          color: 'inherit',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.1)', // Hardcoded hover color
-          },
-        },
-      },
-    },
-  },
-});
+import { ThemeProvider } from './theme/ThemeContext';
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider>
       <CssBaseline />
       <Router>
         <Routes>

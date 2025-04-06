@@ -10,15 +10,20 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/pyrkon-logo.jpg';
+import { useThemeMode } from '../theme/ThemeContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(true); // Set drawer to be visible initially
+  const { themeMode, setThemeMode } = useThemeMode();
+  const [themeMenuAnchor, setThemeMenuAnchor] = React.useState<null | HTMLElement>(null);
 
   const toggleDrawer = () => {
     setOpen((prevOpen) => !prevOpen); // Toggle the open state
@@ -27,6 +32,30 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
+  };
+
+  const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setThemeMenuAnchor(event.currentTarget);
+  };
+
+  const handleThemeMenuClose = () => {
+    setThemeMenuAnchor(null);
+  };
+
+  const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
+    setThemeMode(mode);
+    handleThemeMenuClose();
+  };
+
+  const getThemeIcon = () => {
+    switch (themeMode) {
+      case 'light':
+        return <Icons.LightMode />;
+      case 'dark':
+        return <Icons.DarkMode />;
+      default:
+        return <Icons.BrightnessAuto />;
+    }
   };
 
   const drawer = (
@@ -91,6 +120,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               Pyrhouse App
             </Typography>
           </Box>
+          <IconButton color="inherit" onClick={handleThemeMenuOpen}>
+            {getThemeIcon()}
+          </IconButton>
+          <Menu
+            anchorEl={themeMenuAnchor}
+            open={Boolean(themeMenuAnchor)}
+            onClose={handleThemeMenuClose}
+          >
+            <MenuItem onClick={() => handleThemeChange('light')}>
+              <Icons.LightMode sx={{ mr: 1 }} /> Jasny
+            </MenuItem>
+            <MenuItem onClick={() => handleThemeChange('dark')}>
+              <Icons.DarkMode sx={{ mr: 1 }} /> Ciemny
+            </MenuItem>
+            <MenuItem onClick={() => handleThemeChange('system')}>
+              <Icons.BrightnessAuto sx={{ mr: 1 }} /> Systemowy
+            </MenuItem>
+          </Menu>
           <IconButton color="inherit" onClick={handleLogout}>
             <Icons.Logout />
           </IconButton>

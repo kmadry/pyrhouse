@@ -23,11 +23,16 @@ import {
   History,
   Info,
   Delete as DeleteIcon,
+  LocalShipping,
+  RemoveCircle,
+  CheckCircleOutline,
+  Warehouse,
 } from '@mui/icons-material';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import Barcode from 'react-barcode';
 import { ErrorMessage } from './ErrorMessage';
 import { deleteAsset } from '../services/assetService';
+import { BarcodeGenerator } from './BarcodeGenerator';
+import { useLocations } from '../hooks/useLocations';
 
 interface AssetLog {
   id: number;
@@ -39,6 +44,8 @@ interface AssetLog {
     pyrcode?: string;
     msg: string;
     quantity?: number;
+    from_location_id?: number;
+    to_location_id?: number;
   };
   created_at: string;
 }
@@ -48,6 +55,7 @@ const EquipmentDetails: React.FC = () => {
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type') || 'asset';
   const navigate = useNavigate();
+  const { locations } = useLocations();
 
   const [details, setDetails] = useState<any | null>(null);
   const [logs, setLogs] = useState<AssetLog[]>([]);
@@ -55,6 +63,7 @@ const EquipmentDetails: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showBarcode, setShowBarcode] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -80,6 +89,11 @@ const EquipmentDetails: React.FC = () => {
   useEffect(() => {
     fetchDetails();
   }, [id, type]);
+
+  // Sortowanie logów według daty utworzenia (od najnowszych do najstarszych)
+  const sortedLogs = [...logs].sort((a, b) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
 
   const handleDelete = async () => {
     if (!id) return;
@@ -116,6 +130,72 @@ const EquipmentDetails: React.FC = () => {
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirmation(false);
+    }
+  };
+
+  const getLocationName = (locationId: number) => {
+    const location = locations.find(loc => loc.id === locationId);
+    return location ? location.name : `Lokalizacja ${locationId}`;
+  };
+
+  const formatLogMessage = (log: AssetLog) => {
+    return log.data.msg;
+  };
+
+  const getLocationInfo = (log: AssetLog) => {
+    if (log.action === 'in_transfer' || log.action === 'delivered') {
+      const fromLocation = log.data.from_location_id ? getLocationName(log.data.from_location_id) : 'Nieznana';
+      const toLocation = log.data.to_location_id ? getLocationName(log.data.to_location_id) : 'Nieznana';
+      
+      // Sprawdź, czy to_location_id to 1 (magazyn)
+      const isReturnedToWarehouse = log.data.to_location_id === 1;
+      
+      return { 
+        fromLocation, 
+        toLocation,
+        isReturnedToWarehouse
+      };
+    }
+    return null;
+  };
+
+  const getActionLabel = (action: string, log: AssetLog) => {
+    // Sprawdź, czy to zwrot do magazynu (to_location_id = 1)
+    const isReturnedToWarehouse = log.action.toUpperCase() === 'DELIVERED' && log.data.to_location_id === 1;
+    
+    if (isReturnedToWarehouse) {
+      return 'Zwrócono do magazynu';
+    }
+    
+    switch (action.toUpperCase()) {
+      case 'DELIVERED':
+        return 'Dostarczone';
+      case 'IN_TRANSFER':
+        return 'W dostawie';
+      case 'REMOVE':
+        return 'Usunięte';
+      default:
+        return action.toUpperCase();
+    }
+  };
+
+  const getActionIcon = (action: string, log: AssetLog) => {
+    // Sprawdź, czy to zwrot do magazynu (to_location_id = 1)
+    const isReturnedToWarehouse = log.action.toUpperCase() === 'DELIVERED' && log.data.to_location_id === 1;
+    
+    if (isReturnedToWarehouse) {
+      return <Warehouse sx={{ mr: 1, color: 'success.main' }} />;
+    }
+    
+    switch (action.toUpperCase()) {
+      case 'DELIVERED':
+        return <CheckCircleOutline sx={{ mr: 1, color: 'success.main' }} />;
+      case 'IN_TRANSFER':
+        return <LocalShipping sx={{ mr: 1, color: 'info.main' }} />;
+      case 'REMOVE':
+        return <RemoveCircle sx={{ mr: 1, color: 'error.main' }} />;
+      default:
+        return <Info sx={{ mr: 1 }} />;
     }
   };
 
@@ -212,8 +292,14 @@ const EquipmentDetails: React.FC = () => {
                 Barcode
               </Typography>
               <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <Barcode value={details.pyrcode} />
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setShowBarcode(true)}
+                >
+                  Wyświetl kod kreskowy
+                </Button>
               </Box>
             </Paper>
           </Grid>
@@ -224,35 +310,121 @@ const EquipmentDetails: React.FC = () => {
       <Box sx={{ mt: 4 }}>
         <Typography variant="h6" gutterBottom>
           <History sx={{ verticalAlign: 'bottom', marginRight: 1 }} />
-          History Logs
+          Historia
         </Typography>
         <Divider sx={{ my: 2 }} />
         {logs.length > 0 ? (
           <List>
-            {logs.map((log) => (
-              <Card key={log.id} elevation={2} sx={{ marginBottom: 2 }}>
-                <CardContent>
-                  <Typography variant="body1" fontWeight="bold">
-                    {log.action.toUpperCase()}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {new Date(log.created_at).toLocaleString()}
-                  </Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography variant="body2">
-                    <strong>Message:</strong> {log.data.msg}
-                  </Typography>
-                  {log.data.quantity && (
-                    <Typography variant="body2">
-                      <strong>Quantity:</strong> {log.data.quantity}
+            {sortedLogs.map((log) => {
+              const locationInfo = getLocationInfo(log);
+              return (
+                <Card 
+                  key={log.id} 
+                  elevation={2} 
+                  sx={{ 
+                    marginBottom: 2,
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 3
+                    }
+                  }}
+                >
+                  <Box 
+                    sx={{ 
+                      p: 1, 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      bgcolor: log.action === 'DELIVERED' ? 'success.dark' : 
+                               log.action === 'IN_TRANSFER' ? 'info.dark' : 
+                               log.action === 'REMOVE' ? 'error.dark' : 'grey.800',
+                      color: log.action === 'DELIVERED' ? 'success.light' : 
+                             log.action === 'IN_TRANSFER' ? 'info.light' : 
+                             log.action === 'REMOVE' ? 'error.light' : 'common.white'
+                    }}
+                  >
+                    {getActionIcon(log.action, log)}
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      {getActionLabel(log.action, log)}
                     </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    <Typography 
+                      variant="caption" 
+                      sx={{ ml: 'auto', color: 'inherit', opacity: 0.9 }}
+                    >
+                      {new Date(log.created_at).toLocaleString()}
+                    </Typography>
+                  </Box>
+                  <CardContent sx={{ p: 2 }}>
+                    {locationInfo && (
+                      <Box 
+                        sx={{ 
+                          mb: 2, 
+                          p: 1.5, 
+                          borderRadius: 1, 
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <LocationOn sx={{ color: 'primary.main', mr: 1 }} />
+                          <Typography variant="subtitle2" color="primary">
+                            Informacje o lokalizacji
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', pl: 3 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                            <Typography variant="body2" sx={{ minWidth: '40px', fontWeight: 'bold' }}>
+                              Z:
+                            </Typography>
+                            <Typography variant="body2">
+                              {locationInfo.fromLocation}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="body2" sx={{ minWidth: '40px', fontWeight: 'bold' }}>
+                              Do:
+                            </Typography>
+                            <Typography variant="body2">
+                              {locationInfo.toLocation}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    )}
+                    
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="textSecondary">
+                        {formatLogMessage(log)}
+                      </Typography>
+                    </Box>
+                    
+                    {log.data.quantity && (
+                      <Box 
+                        sx={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center',
+                          mt: 1,
+                          p: 0.5,
+                          borderRadius: 1,
+                          bgcolor: 'primary.dark',
+                          color: 'primary.light'
+                        }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                          Ilość: {log.data.quantity}
+                        </Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </List>
         ) : (
-          <Typography>No logs available for this item.</Typography>
+          <Typography>Brak historii dla tego elementu.</Typography>
         )}
       </Box>
 
@@ -299,6 +471,30 @@ const EquipmentDetails: React.FC = () => {
             {isDeleting ? 'Usuwanie...' : 'Usuń'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Barcode Dialog */}
+      <Dialog
+        open={showBarcode}
+        onClose={() => setShowBarcode(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Kod kreskowy</DialogTitle>
+        <DialogContent>
+          <BarcodeGenerator
+            assets={[{
+              id: details.id,
+              serial: details.serial || '',
+              location: details.location,
+              category: details.category,
+              status: details.status,
+              pyrcode: details.pyrcode,
+              origin: details.origin
+            }]}
+            onClose={() => setShowBarcode(false)}
+          />
+        </DialogContent>
       </Dialog>
     </Box>
   );
