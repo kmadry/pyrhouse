@@ -197,7 +197,7 @@ const TransferPage: React.FC = () => {
       setSuccessMessage('Transfer created successfully!');
       setTimeout(() => {
         navigate(`/transfers/${response.id}`);
-      }, 1500);
+      }, 500);
 
       reset();
     } catch (err: any) {
