@@ -68,17 +68,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <ListItemText primary="Wydania" />
         <Icons.PublishedWithChanges />
       </ListItem>
-      <ListItem component={Link} to="/list">
-        <ListItemText primary="Stan Magazynowy" />
-        <Icons.List />
-      </ListItem>
       <ListItem component={Link} to="/add-item">
         <ListItemText primary="Dodaj sprzęt" />
         <Icons.Add />
       </ListItem>
-      <ListItem component={Link} to="/categories">
-        <ListItemText primary="Kategorie" />
-        <Icons.Category />
+      <ListItem component={Link} to="/list">
+        <ListItemText primary="Stan Magazynowy" />
+        <Icons.List />
       </ListItem>
       <ListItem component={Link} to="/locations">
         <ListItemText primary="Lokalizacje" />
@@ -88,8 +84,25 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <ListItemText primary="Quest Board" />
         <Icons.Security />
       </ListItem>
-      <ListItem component={Link} to="/users">
-        <ListItemText primary="Użyszkodnicy" />
+      
+      {/* Sekcja Admin */}
+      <ListItem sx={{ mt: 2, borderTop: '1px solid rgba(0, 0, 0, 0.12)' }}>
+        <ListItemText 
+          primary="Admin" 
+          primaryTypographyProps={{ 
+            variant: 'subtitle2', 
+            color: 'text.secondary',
+            sx: { fontWeight: 'bold' }
+          }} 
+        />
+        <Icons.AdminPanelSettings />
+      </ListItem>
+      <ListItem component={Link} to="/categories" sx={{ pl: 4 }}>
+        <ListItemText primary="Kategorie" />
+        <Icons.Category />
+      </ListItem>
+      <ListItem component={Link} to="/users" sx={{ pl: 4 }}>
+        <ListItemText primary="Użytkownicy" />
         <Icons.People />
       </ListItem>
     </List>
