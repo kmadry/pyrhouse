@@ -21,7 +21,7 @@ import { ErrorMessage } from './ErrorMessage';
 import { styled } from '@mui/material/styles';
 
 // Stylizowany komponent dla pilnych zadań
-const UrgentQuestCard = styled(Card)(({ theme }) => ({
+const UrgentQuestCard = styled(Card)(() => ({
   background: `linear-gradient(145deg, #E6A446, #A4462D)`,
   border: '2px solid #A4462D',
   boxShadow: '0 4px 12px rgba(164, 70, 45, 0.5)',
