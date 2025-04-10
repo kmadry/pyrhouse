@@ -17,6 +17,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage';
+import { useNavigate } from 'react-router-dom';
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -29,6 +30,7 @@ const UserManagementPage: React.FC = () => {
     fullname: '',
     role: 'user', // Default role
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -123,7 +125,11 @@ const UserManagementPage: React.FC = () => {
           </TableHead>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow 
+                key={user.id}
+                onClick={() => navigate(`/users/${user.id}`, { state: { from: '/users' } })}
+                sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+              >
                 <TableCell>{user.id}</TableCell>
                 <TableCell>{user.username}</TableCell>
                 <TableCell>{user.fullname}</TableCell>

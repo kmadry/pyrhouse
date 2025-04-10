@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Box,
@@ -12,18 +12,40 @@ import {
   Typography,
   Menu,
   MenuItem,
+  Tooltip,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/pyrkon-logo.jpg';
 import { useThemeMode } from '../theme/ThemeContext';
+import { jwtDecode } from 'jwt-decode';
+
+interface JwtPayload {
+  role: string;
+  exp: number;
+  userID: number;
+}
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(true); // Set drawer to be visible initially
   const { themeMode, setThemeMode } = useThemeMode();
   const [themeMenuAnchor, setThemeMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Pobierz ID użytkownika z JWT
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<JwtPayload>(token);
+        setUserId(decodedToken.userID);
+      } catch (error) {
+        console.error('Błąd dekodowania tokenu:', error);
+      }
+    }
+  }, []);
 
   const toggleDrawer = () => {
     setOpen((prevOpen) => !prevOpen); // Toggle the open state
@@ -55,6 +77,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         return <Icons.DarkMode />;
       default:
         return <Icons.BrightnessAuto />;
+    }
+  };
+
+  const handleProfileClick = () => {
+    if (userId) {
+      navigate(`/users/${userId}`);
     }
   };
 
@@ -151,6 +179,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <Icons.BrightnessAuto sx={{ mr: 1 }} /> Systemowy
             </MenuItem>
           </Menu>
+          <Tooltip title="Profil użytkownika">
+            <IconButton color="inherit" onClick={handleProfileClick}>
+              <Icons.Person />
+            </IconButton>
+          </Tooltip>
           <IconButton color="inherit" onClick={handleLogout}>
             <Icons.Logout />
           </IconButton>

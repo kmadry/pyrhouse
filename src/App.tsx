@@ -8,6 +8,7 @@ import Layout from './components/Layout';
 import TransferPage from './components/TransferPage';
 import AddItemPage from './components/AddItemPage';
 import UserManagementPage from './components/UserManagementPage';
+import UserDetailsPage from './components/UserDetailsPage';
 import CategoryManagementPage from './components/CategoryManagementPage';
 import TransfersListPage from './components/TransferListPage';
 import TransferDetailsPage from './components/TransferDetailsPage';
@@ -41,6 +42,7 @@ function App() {
                     <Route path="/transfers" element={<TransfersListPage />} />
                     <Route path="/transfers/:id" element={<TransferDetailsPage />} />
                     <Route path="/users" element={<PrivateRoute><UserManagementPage /></PrivateRoute>}/>
+                    <Route path="/users/:userId" element={<PrivateRoute><UserDetailsPage /></PrivateRoute>}/>
                     <Route path="/quests" element={<QuestBoard />} />
                     <Route path="*" element={<Navigate to="/home" replace />} />
                   </Routes>
