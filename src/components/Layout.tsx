@@ -17,7 +17,7 @@ import {
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
-import pyrkonLogo from '../assets/images/pyrkon-logo.jpg';
+import pyrkonLogo from '../assets/images/p-logo.png';
 import { useThemeMode } from '../theme/ThemeContext';
 import { jwtDecode } from 'jwt-decode';
 
