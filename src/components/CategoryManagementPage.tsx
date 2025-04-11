@@ -17,6 +17,11 @@ import {
   Select,
   MenuItem,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -33,6 +38,10 @@ const CategoryManagementPage: React.FC = () => {
   const [newCategory, setNewCategory] = useState({ name: '', label: '', type: '', pyr_id: '' });
   const [formError, setFormError] = useState('');
   const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
+
+  // State for delete confirmation modal
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
@@ -73,6 +82,28 @@ const CategoryManagementPage: React.FC = () => {
     }
   };
 
+  // Funkcje do obsługi modalu potwierdzenia usunięcia
+  const handleOpenDeleteModal = (categoryId: number) => {
+    setCategoryToDelete(categoryId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setCategoryToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (categoryToDelete) {
+      try {
+        await deleteCategory(categoryToDelete);
+        handleCloseDeleteModal();
+      } catch (err) {
+        console.error('Błąd podczas usuwania kategorii:', err);
+      }
+    }
+  };
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
@@ -109,7 +140,7 @@ const CategoryManagementPage: React.FC = () => {
                 <TableCell>{category.pyr_id || '-'}</TableCell>
                 <TableCell>{category.type}</TableCell>
                 <TableCell>
-                  <Button color="error" onClick={() => deleteCategory(category.id)}>
+                  <Button color="error" onClick={() => handleOpenDeleteModal(category.id)}>
                     <DeleteIcon />
                     Usuń
                   </Button>
@@ -210,6 +241,31 @@ const CategoryManagementPage: React.FC = () => {
           </Box>
         </Box>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog
+        open={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Potwierdź usunięcie kategorii
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Czy na pewno chcesz usunąć tę kategorię? Tej operacji nie można cofnąć.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteModal} color="primary">
+            Anuluj
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" autoFocus>
+            Usuń
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

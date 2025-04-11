@@ -33,14 +33,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { themeMode, setThemeMode } = useThemeMode();
   const [themeMenuAnchor, setThemeMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [userId, setUserId] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // Pobierz ID użytkownika z JWT
+    // Pobierz ID użytkownika i rolę z JWT
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decodedToken = jwtDecode<JwtPayload>(token);
         setUserId(decodedToken.userID);
+        setUserRole(decodedToken.role);
       } catch (error) {
         console.error('Błąd dekodowania tokenu:', error);
       }
@@ -86,6 +88,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
+  // Funkcja sprawdzająca, czy użytkownik ma uprawnienia administratora
+  const hasAdminAccess = () => {
+    return userRole === 'admin' || userRole === 'moderator';
+  };
+
   const drawer = (
     <List>
       <ListItem component={Link} to="/home">
@@ -113,26 +120,30 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Icons.Security />
       </ListItem>
       
-      {/* Sekcja Admin */}
-      <ListItem sx={{ mt: 2, borderTop: '1px solid rgba(0, 0, 0, 0.12)' }}>
-        <ListItemText 
-          primary="Admin" 
-          primaryTypographyProps={{ 
-            variant: 'subtitle2', 
-            color: 'text.secondary',
-            sx: { fontWeight: 'bold' }
-          }} 
-        />
-        <Icons.AdminPanelSettings />
-      </ListItem>
-      <ListItem component={Link} to="/categories" sx={{ pl: 4 }}>
-        <ListItemText primary="Kategorie" />
-        <Icons.Category />
-      </ListItem>
-      <ListItem component={Link} to="/users" sx={{ pl: 4 }}>
-        <ListItemText primary="Użytkownicy" />
-        <Icons.People />
-      </ListItem>
+      {/* Sekcja Admin - widoczna tylko dla adminów i moderatorów */}
+      {hasAdminAccess() && (
+        <>
+          <ListItem sx={{ mt: 2, borderTop: '1px solid rgba(0, 0, 0, 0.12)' }}>
+            <ListItemText 
+              primary="Admin" 
+              primaryTypographyProps={{ 
+                variant: 'subtitle2', 
+                color: 'text.secondary',
+                sx: { fontWeight: 'bold' }
+              }} 
+            />
+            <Icons.AdminPanelSettings />
+          </ListItem>
+          <ListItem component={Link} to="/categories" sx={{ pl: 4 }}>
+            <ListItemText primary="Kategorie" />
+            <Icons.Category />
+          </ListItem>
+          <ListItem component={Link} to="/users" sx={{ pl: 4 }}>
+            <ListItemText primary="Użytkownicy" />
+            <Icons.People />
+          </ListItem>
+        </>
+      )}
     </List>
   );
 
@@ -152,14 +163,25 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <Icons.Menu />
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-            <img 
-              src={pyrkonLogo} 
-              alt="Pyrkon Logo" 
-              style={{ height: '40px', marginRight: '10px' }} 
-            />
-            <Typography variant="h6" noWrap>
-              Pyrhouse App
-            </Typography>
+            <Link 
+              to="/home" 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                textDecoration: 'none', 
+                color: 'inherit',
+                cursor: 'pointer'
+              }}
+            >
+              <img 
+                src={pyrkonLogo} 
+                alt="Pyrkon Logo" 
+                style={{ height: '40px', marginRight: '1px' }} 
+              />
+              <Typography variant="h6" noWrap>
+                yrhouse
+              </Typography>
+            </Link>
           </Box>
           <IconButton color="inherit" onClick={handleThemeMenuOpen}>
             {getThemeIcon()}
