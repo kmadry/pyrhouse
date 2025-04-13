@@ -17,15 +17,27 @@ import {
 } from '@mui/material';
 import { createTransferAPI } from '../../../services/transferService';
 
+interface StockItem {
+  id: number;
+  category: {
+    id: number;
+    name: string;
+    type: string;
+  };
+  quantity: number;
+}
+
 interface TransferModalProps {
   open: boolean;
   onClose: () => void;
   fromLocationId: number;
   selectedAssets: number[];
   selectedStocks: number[];
+  stockItems: StockItem[];
   locations: any[];
+  locationsLoading?: boolean;
+  locationsError?: string | null;
   onSuccess: () => void;
-  stockItems: any[];
 }
 
 export const TransferModal: React.FC<TransferModalProps> = ({
@@ -34,13 +46,15 @@ export const TransferModal: React.FC<TransferModalProps> = ({
   fromLocationId,
   selectedAssets,
   selectedStocks,
-  locations,
-  onSuccess,
   stockItems,
+  locations,
+  locationsLoading,
+  locationsError,
+  onSuccess
 }) => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [toLocationId, setToLocationId] = React.useState<string>('');
+  const [toLocationId, setToLocationId] = React.useState<number | ''>('');
   const [stockQuantities, setStockQuantities] = React.useState<Record<number, number>>({});
 
   React.useEffect(() => {
@@ -87,8 +101,15 @@ export const TransferModal: React.FC<TransferModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Utwórz Transfer</DialogTitle>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      maxWidth="sm" 
+      fullWidth
+      role="dialog"
+      aria-modal="true"
+    >
+      <DialogTitle>Utwórz transfer</DialogTitle>
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -96,7 +117,39 @@ export const TransferModal: React.FC<TransferModalProps> = ({
           </Alert>
         )}
         
-        <Box sx={{ mb: 2 }}>
+        <FormControl fullWidth sx={{ mt: 2 }}>
+          <InputLabel>Wybierz lokalizację docelową</InputLabel>
+          <Select
+            value={toLocationId}
+            onChange={(e) => setToLocationId(Number(e.target.value))}
+            label="Wybierz lokalizację docelową"
+            disabled={loading || locationsLoading}
+          >
+            {locationsLoading ? (
+              <MenuItem disabled>
+                <CircularProgress size={20} />
+              </MenuItem>
+            ) : locationsError ? (
+              <MenuItem disabled>
+                <Typography color="error">{locationsError}</Typography>
+              </MenuItem>
+            ) : locations.length === 0 ? (
+              <MenuItem disabled>
+                <Typography>Brak dostępnych lokalizacji</Typography>
+              </MenuItem>
+            ) : (
+              locations
+                .filter(loc => loc.id !== fromLocationId)
+                .map(location => (
+                  <MenuItem key={location.id} value={location.id}>
+                    {location.name}
+                  </MenuItem>
+                ))
+            )}
+          </Select>
+        </FormControl>
+
+        <Box sx={{ mt: 3 }}>
           <Typography variant="subtitle1" gutterBottom>
             Zaznaczone elementy:
           </Typography>
@@ -115,53 +168,31 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                 return (
                   <Box key={stockId} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                     <Typography variant="body2">
-                      {stockItem?.category.label}:
+                      {stockItem?.category.name || 'Nieznany zasób'}
                     </Typography>
                     <TextField
                       type="number"
                       size="small"
-                      value={stockQuantities[stockId] || 0}
-                      onChange={(e) => handleQuantityChange(stockId, Math.max(0, Math.min(Number(e.target.value), stockItem?.quantity || 0)))}
-                      inputProps={{ 
-                        min: 0,
-                        max: stockItem?.quantity || 0
-                      }}
-                      sx={{ width: '100px' }}
+                      value={stockQuantities[stockId] || 1}
+                      onChange={(e) => handleQuantityChange(stockId, Number(e.target.value))}
+                      inputProps={{ min: 1, max: stockItem?.quantity || 1 }}
+                      sx={{ width: 100 }}
                     />
-                    <Typography variant="body2" color="text.secondary">
-                      / {stockItem?.quantity || 0}
-                    </Typography>
                   </Box>
                 );
               })}
             </Box>
           )}
         </Box>
-
-        <FormControl fullWidth>
-          <InputLabel>Do lokalizacji</InputLabel>
-          <Select
-            value={toLocationId}
-            onChange={(e) => setToLocationId(e.target.value)}
-            label="Do lokalizacji"
-          >
-            {locations
-              .filter(loc => loc.id !== fromLocationId)
-              .map((location) => (
-                <MenuItem key={location.id} value={location.id}>
-                  {location.name}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Anuluj</Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          color="primary"
-          disabled={loading || !toLocationId}
+        <Button onClick={onClose} disabled={loading}>
+          Anuluj
+        </Button>
+        <Button 
+          onClick={handleSubmit} 
+          variant="contained" 
+          disabled={loading || !toLocationId || (selectedAssets.length === 0 && selectedStocks.length === 0)}
         >
           {loading ? <CircularProgress size={24} /> : 'Utwórz transfer'}
         </Button>

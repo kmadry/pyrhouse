@@ -193,13 +193,6 @@ const EquipmentList: React.FC = () => {
     }
   };
 
-  const getStatusForStock = (item: Equipment) => {
-    if (item.type === 'stock' && item.location.id === 1) {
-      return 'available';
-    }
-    return 'located';
-  };
-
   const quickFilters: QuickFilter[] = [{ id: 1, name: 'Magazyn Techniczny' }];
 
   const applyQuickFilter = (filter: QuickFilter) => {

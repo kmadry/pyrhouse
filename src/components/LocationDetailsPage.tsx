@@ -16,6 +16,8 @@ import {
   Button,
   Card,
   CardContent,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { ErrorMessage } from './ErrorMessage';
@@ -24,6 +26,9 @@ import { TransferModal } from './TransferPage/components/TransferModal';
 import { getLocationDetails } from '../services/locationService';
 import { useTheme, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import InfoIcon from '@mui/icons-material/Info';
+import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 interface Asset {
   id: number;
@@ -69,7 +74,7 @@ const LocationDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locationDetails, setLocationDetails] = useState<LocationDetails | null>(null);
-  const { locations } = useLocations();
+  const { locations, loading: locationsLoading, error: locationsError, refetch: fetchLocations } = useLocations();
   const [selectedItems, setSelectedItems] = useState<SelectedItems>({
     assetIds: [],
     stockIds: [],
@@ -79,6 +84,7 @@ const LocationDetailsPage: React.FC = () => {
   const [locationDetailsText, setLocationDetailsText] = useState<string>('Brak szczegółów');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchLocationDetails = async () => {
     try {
@@ -102,9 +108,9 @@ const LocationDetailsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (locationId) {
-      fetchLocationDetails();
-    }
+    fetchLocationDetails();
+    fetchLocations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationId]);
 
   const handleSelectAllAssets = () => {
@@ -192,7 +198,7 @@ const LocationDetailsPage: React.FC = () => {
           {isAsset ? (
             <>
               <Typography variant="body1">
-                <strong>Typ:</strong> {(item as Asset).category.type}
+                <strong>Typ:</strong> {(item as Asset).category.name}
               </Typography>
               <Typography variant="body1">
                 <strong>Status:</strong> {(item as Asset).status}
@@ -204,7 +210,7 @@ const LocationDetailsPage: React.FC = () => {
           ) : (
             <>
               <Typography variant="body1">
-                <strong>Kategoria:</strong> {(item as StockItem).category.type}
+                <strong>Kategoria:</strong> {(item as StockItem).category.name}
               </Typography>
               <Typography variant="body1">
                 <strong>Ilość:</strong> {(item as StockItem).quantity}
@@ -364,28 +370,131 @@ const LocationDetailsPage: React.FC = () => {
 
   return (
     <Container>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">
-          {locationName}
-        </Typography>
+      {/* Nagłówek strony */}
+      <Box 
+        sx={{ 
+          mb: 4,
+          pt: 3,
+          pb: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', md: 'center' },
+          gap: 2
+        }}
+      >
+        <Box>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 600,
+              color: 'primary.main',
+              mb: 1
+            }}
+          >
+            {locationName}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            ID: {locationId}
+          </Typography>
+        </Box>
+        
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            gap: 2,
+            width: { xs: '100%', md: 'auto' }
+          }}
+        >
+          <TextField
+            placeholder="Szukaj..."
+            variant="outlined"
+            size="small"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ 
+              flexGrow: { xs: 1, md: 0 },
+              minWidth: { md: 250 }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => fetchLocationDetails()}
+            startIcon={<RefreshIcon />}
+            sx={{ 
+              whiteSpace: 'nowrap',
+              display: { xs: 'none', sm: 'flex' }
+            }}
+          >
+            Odśwież
+          </Button>
+        </Box>
       </Box>
 
       {/* Informacje o lokalizacji */}
-      <Box sx={{ mb: 4, p: 2, bgcolor: 'background.paper', borderRadius: 1, boxShadow: 1 }}>
-        <Typography variant="h6" gutterBottom>
+      <Box 
+        sx={{ 
+          mb: 4, 
+          p: 3, 
+          bgcolor: 'background.paper', 
+          borderRadius: 2, 
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          border: '1px solid',
+          borderColor: 'divider'
+        }}
+      >
+        <Typography 
+          variant="h6" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 600,
+            color: 'text.primary',
+            mb: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <InfoIcon color="primary" />
           Informacje o lokalizacji
         </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Typography variant="body1">
-            <strong>ID:</strong> {locationId}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Nazwa:</strong> {locationName}
-          </Typography>
-          {locationDetailsText && (
-            <Typography variant="body1">
-              <strong>Szczegóły:</strong> {locationDetailsText}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ minWidth: 100 }}>
+              ID:
             </Typography>
+            <Typography variant="body1" fontWeight={500}>
+              {locationId}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ minWidth: 100 }}>
+              Nazwa:
+            </Typography>
+            <Typography variant="body1" fontWeight={500}>
+              {locationName}
+            </Typography>
+          </Box>
+          {locationDetailsText && (
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+              <Typography variant="body1" color="text.secondary" sx={{ minWidth: 100 }}>
+                Szczegóły:
+              </Typography>
+              <Typography variant="body1">
+                {locationDetailsText}
+              </Typography>
+            </Box>
           )}
         </Box>
       </Box>
@@ -486,6 +595,8 @@ const LocationDetailsPage: React.FC = () => {
         fromLocationId={Number(locationId)}
         locations={locations}
         stockItems={locationDetails?.stock_items || []}
+        locationsLoading={locationsLoading}
+        locationsError={locationsError}
       />
     </Container>
   );
