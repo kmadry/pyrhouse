@@ -2,24 +2,63 @@ import { Location } from '../models/Location';
 import { getApiUrl } from '../config/api';
 
 interface LocationDetailsResponse {
+  id: number;
+  name: string;
+  details: string | null;
   assets: any[];
   stock_items: any[];
 }
 
 export const getLocationDetails = async (locationId: number): Promise<LocationDetailsResponse> => {
   const token = localStorage.getItem('token');
-  const response = await fetch(
-    getApiUrl(`/locations/${locationId}/assets`),
+  
+  console.log('Pobieranie szczegółów lokalizacji:', getApiUrl(`/locations/${locationId}`));
+  
+  // Pobieranie szczegółów lokalizacji
+  const locationResponse = await fetch(
+    getApiUrl(`/locations/${locationId}`),
     {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
     }
   );
 
-  if (!response.ok) {
+  if (!locationResponse.ok) {
+    console.error('Błąd podczas pobierania szczegółów lokalizacji:', locationResponse.status);
     throw new Error('Nie udało się pobrać danych lokalizacji');
   }
 
-  return response.json();
+  const locationData = await locationResponse.json();
+  console.log('Otrzymano dane lokalizacji:', locationData);
+  
+  // Pobieranie assetów lokalizacji
+  console.log('Pobieranie assetów lokalizacji:', getApiUrl(`/locations/${locationId}/assets`));
+  
+  const assetsResponse = await fetch(
+    getApiUrl(`/locations/${locationId}/assets`),
+    {
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    }
+  );
+
+  if (!assetsResponse.ok) {
+    console.error('Błąd podczas pobierania assetów lokalizacji:', assetsResponse.status);
+    throw new Error('Nie udało się pobrać assetów lokalizacji');
+  }
+
+  const assetsData = await assetsResponse.json();
+  console.log('Otrzymano dane assetów:', assetsData);
+  
+  return {
+    ...locationData,
+    assets: assetsData.assets || [],
+    stock_items: assetsData.stock_items || []
+  };
 };
 
 export const deleteLocation = async (id: number): Promise<void> => {
