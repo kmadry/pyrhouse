@@ -172,6 +172,9 @@ const LoginForm: React.FC = () => {
                   width: 'auto', 
                   mb: 2,
                   transition: 'transform 0.3s ease',
+                  filter: theme.palette.mode === 'light' 
+                    ? 'drop-shadow(0 0 2px rgba(0,0,0,0.3)) drop-shadow(0 0 4px rgba(0,0,0,0.2))'
+                    : 'none',
                   '&:hover': {
                     transform: 'scale(1.05)',
                   }

@@ -22,7 +22,7 @@ import {
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
-import pyrkonLogo from '../assets/images/p-logo.png';
+import pyrkonLogo from '../assets/images/p-logo.svg';
 import { useThemeMode } from '../theme/ThemeContext';
 import { jwtDecode } from 'jwt-decode';
 import { useTokenValidation } from '../hooks/useTokenValidation';
@@ -317,13 +317,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             alignItems: 'center',
             mr: 2
           }}>
-            <img 
+            <Box 
+              component="img" 
               src={pyrkonLogo} 
               alt="Pyrkon Logo" 
-              style={{ 
-                height: '40px',
-                width: 'auto',
-                marginRight: '1px'
+              sx={{ 
+                height: '40px', 
+                width: 'auto', 
+                mr: 0,
+                filter: theme.palette.mode === 'light' 
+                  ? 'brightness(0) blur(0.3px)' 
+                  : 'brightness(0) invert(1)',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  filter: theme.palette.mode === 'light' 
+                    ? 'brightness(0) blur(0.3px)' 
+                    : 'brightness(0) invert(1) brightness(1.1)',
+                }
               }} 
             />
             <Typography 
@@ -331,7 +342,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               component="div" 
               sx={{ 
                 fontWeight: 600,
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
               }}
             >
               yrHouse
