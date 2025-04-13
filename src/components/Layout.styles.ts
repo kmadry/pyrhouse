@@ -47,7 +47,16 @@ const mainContent = {
     }
 } as SxProps;
 
+const appBar = {
+    zIndex: (theme: any) => theme.zIndex.drawer + 1,
+    transition: 'box-shadow 0.3s ease',
+    '@media (max-width: 600px)': {
+        top: 0,
+    }
+} as SxProps;
+
 export default {
     navigation,
-    mainContent
+    mainContent,
+    appBar
 }

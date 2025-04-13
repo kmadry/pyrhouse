@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { useStorage } from './useStorage';
 
 interface JwtPayload {
   role: string;
@@ -7,12 +8,16 @@ interface JwtPayload {
   userID: number;
 }
 
+// Stała określająca margines bezpieczeństwa w sekundach (5 minut)
+const SAFETY_MARGIN = 5 * 60;
+
 export const useTokenValidation = () => {
   const [isTokenValid, setIsTokenValid] = useState<boolean>(true);
   const [tokenExpiryTime, setTokenExpiryTime] = useState<number | null>(null);
+  const { getToken } = useStorage();
 
   const validateToken = useCallback(() => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) {
       setIsTokenValid(false);
       setTokenExpiryTime(null);
@@ -22,7 +27,8 @@ export const useTokenValidation = () => {
     try {
       const decodedToken = jwtDecode<JwtPayload>(token);
       const currentTime = Date.now() / 1000;
-      const isValid = decodedToken.exp > currentTime;
+      // Dodajemy margines bezpieczeństwa - token jest uznawany za nieważny 5 minut przed faktycznym wygaśnięciem
+      const isValid = decodedToken.exp > currentTime + SAFETY_MARGIN;
       
       setIsTokenValid(isValid);
       setTokenExpiryTime(decodedToken.exp);
@@ -34,11 +40,12 @@ export const useTokenValidation = () => {
       setTokenExpiryTime(null);
       return false;
     }
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     validateToken();
-    const interval = setInterval(validateToken, 30000); // Sprawdzaj co 30 sekund
+    // Ujednolicamy interwał sprawdzania na 60 sekund (tak jak w useAuth)
+    const interval = setInterval(validateToken, 60000);
     return () => clearInterval(interval);
   }, [validateToken]);
 

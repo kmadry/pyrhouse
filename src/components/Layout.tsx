@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   AppBar,
   Box,
@@ -20,30 +20,70 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/p-logo.png';
 import { useThemeMode } from '../theme/ThemeContext';
 import { jwtDecode } from 'jwt-decode';
 import { useTokenValidation } from '../hooks/useTokenValidation';
+import { useStorage } from '../hooks/useStorage';
 
 interface JwtPayload {
   role: string;
   userID: number;
+  exp: number;
 }
+
+// Stała określająca margines bezpieczeństwa w sekundach (5 minut)
+const SAFETY_MARGIN = 5 * 60;
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { isTokenValid } = useTokenValidation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [open, setOpen] = React.useState(!isMobile);
+  const [open, setOpen] = useState(!isMobile);
   const { themeMode, setThemeMode } = useThemeMode();
   const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
   const [activeItem, setActiveItem] = useState<string>('');
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [userRole, setUserRole] = useState<string>('');
+  const [userId, setUserId] = useState<number | null>(null);
+  const { getToken, removeToken } = useStorage();
 
+  const handleLogout = useCallback(() => {
+    removeToken();
+    navigate('/login');
+  }, [navigate, removeToken]);
+
+  // Walidacja tokenu
+  useEffect(() => {
+    const token = getToken();
+    if (!token || !isTokenValid) {
+      handleLogout();
+      return;
+    }
+
+    try {
+      const decodedToken = jwtDecode<JwtPayload>(token);
+      const currentTime = Date.now() / 1000;
+      
+      // Dodajemy margines bezpieczeństwa - token jest uznawany za nieważny 5 minut przed faktycznym wygaśnięciem
+      if (decodedToken.exp < currentTime + SAFETY_MARGIN) {
+        handleLogout();
+        return;
+      }
+      
+      setUserRole(decodedToken.role);
+      setUserId(decodedToken.userID);
+    } catch (error) {
+      console.error('Błąd dekodowania tokenu:', error);
+      handleLogout();
+    }
+  }, [isTokenValid, handleLogout, getToken]);
+
+  // Obsługa resize i scroll
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 600;
@@ -54,10 +94,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       const currentScrollY = window.scrollY;
       
       if (currentScrollY > lastScrollY) {
-        // Scrolling down
         setScrollDirection('down');
       } else {
-        // Scrolling up
         setScrollDirection('up');
       }
       
@@ -79,24 +117,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setActiveItem(path);
   }, []);
 
-  const token = localStorage.getItem('token');
-  if (!token || !isTokenValid) {
-    navigate('/login');
-    return null;
-  }
-
-  const decodedToken = jwtDecode<JwtPayload>(token);
-  const userRole = decodedToken.role;
-  const userId = decodedToken.userID;
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
   const toggleDrawer = () => {
     setOpen((prevOpen) => !prevOpen);
   };
+
+  // Jeśli token jest nieważny, nie renderuj komponentu
+  if (!isTokenValid) {
+    return null;
+  }
 
   const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setThemeMenuAnchor(event.currentTarget);
@@ -162,6 +190,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       height: '100%',
       pt: 1
     }}>
+      <Divider sx={{ mb: 2 }} />
+      
       <List sx={{ flexGrow: 1 }}>
         {menuItems.map((item) => (
           <ListItem key={item.path} disablePadding>
@@ -178,6 +208,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 },
                 transition: 'all 0.2s ease',
                 py: 1.5,
+                pl: 4,
               }}
             >
               <ListItemIcon sx={{ 
@@ -263,61 +294,85 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <AppBar 
         position="fixed" 
         sx={{ 
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          transform: scrollDirection === 'down' ? 'translateY(-100%)' : 'translateY(0)',
-          transition: 'transform 0.3s ease-in-out'
+          ...styles.appBar,
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          boxShadow: scrollDirection === 'down' ? '0 2px 10px rgba(0,0,0,0.1)' : 'none',
+          transition: 'box-shadow 0.3s ease'
         }}
       >
         <Toolbar>
           <IconButton
-            size="large"
-            edge="start"
             color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
+            aria-label="open drawer"
+            edge="start"
             onClick={toggleDrawer}
+            sx={{ mr: 2 }}
           >
             <Icons.Menu />
           </IconButton>
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-            <Link 
-              to="/home" 
+          
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            mr: 2
+          }}>
+            <img 
+              src={pyrkonLogo} 
+              alt="Pyrkon Logo" 
               style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                textDecoration: 'none', 
-                color: 'inherit',
-                cursor: 'pointer'
+                height: '40px',
+                width: 'auto',
+                marginRight: '1px'
+              }} 
+            />
+            <Typography 
+              variant="h6" 
+              component="div" 
+              sx={{ 
+                fontWeight: 600,
+                letterSpacing: '0.5px'
               }}
             >
-              <img 
-                src={pyrkonLogo} 
-                alt="Pyrkon Logo" 
-                style={{ height: '40px', marginRight: '1px' }} 
-              />
-              <Typography variant="h6" noWrap>
-                yrhouse
-              </Typography>
-            </Link>
+              yrHouse
+            </Typography>
           </Box>
-          <IconButton color="inherit" onClick={handleThemeMenuOpen}>
-            {getThemeIcon()}
-          </IconButton>
+          
+          <Box sx={{ flexGrow: 1 }} />
+          
+          <Tooltip title="Zmień motyw">
+            <IconButton color="inherit" onClick={handleThemeMenuOpen}>
+              {getThemeIcon()}
+            </IconButton>
+          </Tooltip>
+          
           <Menu
             anchorEl={themeMenuAnchor}
             open={Boolean(themeMenuAnchor)}
             onClose={handleThemeMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
           >
             <MenuItem onClick={() => handleThemeChange('light')}>
-              <Icons.LightMode sx={{ mr: 1 }} /> Jasny
+              <Icons.LightMode sx={{ mr: 2 }} />
+              Jasny
             </MenuItem>
             <MenuItem onClick={() => handleThemeChange('dark')}>
-              <Icons.DarkMode sx={{ mr: 1 }} /> Ciemny
+              <Icons.DarkMode sx={{ mr: 2 }} />
+              Ciemny
             </MenuItem>
             <MenuItem onClick={() => handleThemeChange('system')}>
-              <Icons.BrightnessAuto sx={{ mr: 1 }} /> Systemowy
+              <Icons.BrightnessAuto sx={{ mr: 2 }} />
+              Systemowy
             </MenuItem>
           </Menu>
+
           <Tooltip title="Profil użytkownika">
             <IconButton color="inherit" onClick={handleProfileClick}>
               <Icons.Person />
