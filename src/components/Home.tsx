@@ -14,7 +14,15 @@ import {
   TextField,
   Chip,
 } from '@mui/material';
-import { ArrowForwardIos, LocalShipping, Search, AccessTime, LocationOn } from '@mui/icons-material';
+import { 
+  LocalShipping, 
+  Search, 
+  ArrowForwardIos,
+  LocationOn,
+  AccessTime,
+  Inventory,
+  ListAlt
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
@@ -131,12 +139,9 @@ const HomePage: React.FC = () => {
     refreshTransfers();
   }, []);
 
-  // Pobierz pilne zadania
   useEffect(() => {
-    // Pobierz aktualną datę
     const now = new Date();
     
-    // Przykładowe dane (później będą pobierane z API)
     const mockQuests: Quest[] = [
       {
         id: 1,
@@ -234,14 +239,15 @@ const HomePage: React.FC = () => {
     (transfer) => transfer.status === 'in_transit'
   );
 
+  // Przywracam oryginalną funkcję handleSearch
   const handleSearch = async () => {
     if (!pyrcode.trim()) {
-      setSearchError('Please enter a valid Pyrcode.');
+      setSearchError('Proszę podać kod Pyrcode.');
       return;
     }
 
     try {
-      setSearchError(null); // Clear any previous errors
+      setSearchError(null);
       const token = localStorage.getItem('token');
       const response = await fetch(
         getApiUrl(`/assets/pyrcode/${pyrcode.trim()}`),
@@ -251,56 +257,364 @@ const HomePage: React.FC = () => {
       );
 
       if (response.status === 404) {
-        setSearchError('No asset found with the given Pyrcode.');
+        setSearchError('Nie znaleziono sprzętu o podanym kodzie Pyrcode.');
         return;
       }
 
       if (!response.ok) {
-        throw new Error('Failed to fetch asset details.');
+        throw new Error('Nie udało się pobrać szczegółów sprzętu.');
       }
 
       const data = await response.json();
       navigate(`/details/${data.id}?type=${data.category.type || 'asset'}`);
     } catch (err: any) {
-      setSearchError(err.message || 'An unexpected error occurred.');
+      setSearchError(err.message || 'Wystąpił nieoczekiwany błąd.');
     }
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Witaj w Pyrhouse-app
-      </Typography>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          p: 3, 
+          mb: 6,
+          borderRadius: 2,
+          background: (theme) => theme.palette.mode === 'dark' 
+            ? 'linear-gradient(to right, #1a1a1a, #2d2d2d)'
+            : 'linear-gradient(to right, #ffffff, #f8f9fa)'
+        }}
+      >
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: 'center', 
+          gap: 2 
+        }}>
+          <TextField
+            fullWidth
+            label="Wyszukaj po Pyrcode"
+            variant="outlined"
+            placeholder="Wprowadź kod Pyrcode..."
+            value={pyrcode}
+            onChange={(e) => setPyrcode(e.target.value)}
+            sx={{ 
+              flex: 1,
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#fff',
+                '& fieldset': {
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                },
+                '&:hover fieldset': {
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                },
+                '& input': {
+                  color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                },
+                '& .MuiInputLabel-root': {
+                  color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit',
+                },
+              }
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Search />}
+            onClick={handleSearch}
+            disabled={loading}
+            sx={{ 
+              minWidth: { xs: '100%', sm: 'auto' },
+              height: { xs: '48px', sm: '56px' }
+            }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Szukaj'}
+          </Button>
+        </Box>
+        {searchError && <ErrorMessage message={searchError} />}
+      </Paper>
 
-      {/* Pyrcode Search */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 2 }}>
-        <TextField
-          label="Search by Pyrcode"
-          variant="outlined"
-          value={pyrcode}
-          onChange={(e) => setPyrcode(e.target.value)}
-          sx={{ flex: 1 }}
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Search />}
-          onClick={handleSearch}
-          disabled={loading}
+      {/* Szybkie akcje */}
+      <Box sx={{ mb: 6 }}>
+        <Typography 
+          variant="h5" 
+          gutterBottom 
+          sx={{ 
+            mb: 3,
+            fontWeight: 600,
+            color: 'text.primary'
+          }}
         >
-          {loading ? <CircularProgress size={20} /> : 'Search'}
-        </Button>
-      </Box>
-      {searchError && <ErrorMessage message={searchError} />}
+          Szybkie akcje
+        </Typography>
 
-      {/* Transfers Section */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Transfers In Transit
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': { 
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4
+                },
+                borderRadius: 2
+              }}
+              onClick={() => navigate('/transfers/create')}
+            >
+              <LocalShipping sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                Utwórz dostawę
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': { 
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4
+                },
+                borderRadius: 2
+              }}
+              onClick={() => navigate('/list')}
+            >
+              <Inventory sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                Zarządzaj magazynem
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': { 
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4
+                },
+                borderRadius: 2
+              }}
+              onClick={() => navigate('/transfers')}
+            >
+              <ListAlt sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                Przeglądaj dostawy
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* Pilne zadania */}
+      <Box sx={{ mb: 6 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 3 
+        }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontWeight: 600,
+              color: 'text.primary'
+            }}
+          >
+            Palące Questy
+          </Typography>
+          <Button 
+            variant="outlined" 
+            color="primary" 
+            onClick={() => navigate('/quests')}
+            startIcon={<AccessTime />}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none'
+            }}
+          >
+            Zobacz wszystkie zadania
+          </Button>
+        </Box>
+
+        {urgentQuests.length === 0 ? (
+          <Paper 
+            elevation={1} 
+            sx={{ 
+              p: 3, 
+              textAlign: 'center',
+              borderRadius: 2,
+              backgroundColor: 'background.default'
+            }}
+          >
+            <Typography color="text.secondary">
+              Brak pilnych zadań do wykonania.
+            </Typography>
+          </Paper>
+        ) : (
+          <Grid container spacing={3}>
+            {urgentQuests.map((quest) => (
+              <Grid item xs={12} sm={6} md={4} key={quest.id}>
+                <UrgentQuestCard>
+                  <CardContent>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      mb: 2 
+                    }}>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          color: '#fff',
+                          fontWeight: 600
+                        }}
+                      >
+                        Zadanie #{quest.id}
+                      </Typography>
+                      <Chip 
+                        label={quest.difficulty?.toUpperCase() || 'MEDIUM'} 
+                        color={
+                          quest.difficulty === 'easy' ? 'success' : 
+                          quest.difficulty === 'medium' ? 'warning' : 'error'
+                        }
+                        size="small"
+                        sx={{ 
+                          fontWeight: 600,
+                          minWidth: 80
+                        }}
+                      />
+                    </Box>
+                    
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        mb: 2, 
+                        color: '#fff',
+                        minHeight: '3em'
+                      }}
+                    >
+                      {quest.description}
+                    </Typography>
+                    
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mb: 1,
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      p: 1,
+                      borderRadius: 1
+                    }}>
+                      <LocationOn sx={{ mr: 1, color: '#fff' }} />
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#fff',
+                          fontWeight: 500
+                        }}
+                      >
+                        {quest.location}
+                      </Typography>
+                    </Box>
+                    
+                    <CountdownTimer deadline={quest.deadline} />
+                    
+                    <Divider sx={{ 
+                      my: 2, 
+                      borderColor: 'rgba(255,255,255,0.3)',
+                      opacity: 0.5
+                    }} />
+                    
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center' 
+                    }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#fff',
+                          fontWeight: 500
+                        }}
+                      >
+                        Nagroda: {quest.reward}
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={() => navigate('/quests')}
+                        sx={{ 
+                          textTransform: 'none',
+                          fontWeight: 600
+                        }}
+                      >
+                        Szczegóły
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </UrgentQuestCard>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
+
+      {/* Dostawy w trakcie */}
+      <Box>
+        <Typography 
+          variant="h5" 
+          gutterBottom 
+          sx={{ 
+            mb: 3,
+            fontWeight: 600,
+            color: 'text.primary'
+          }}
+        >
+          Dostawy w trakcie
         </Typography>
 
         {inTransitTransfers.length === 0 && !loading && (
-          <Typography>No transfers are currently in transit.</Typography>
+          <Paper 
+            elevation={1} 
+            sx={{ 
+              p: 3, 
+              textAlign: 'center',
+              borderRadius: 2,
+              backgroundColor: 'background.default'
+            }}
+          >
+            <Typography color="text.secondary">
+              Brak dostaw w trakcie realizacji.
+            </Typography>
+          </Paper>
         )}
 
         {inTransitTransfers.length > 0 && (
@@ -311,12 +625,20 @@ const HomePage: React.FC = () => {
                   sx={{
                     borderLeft: '5px solid orange',
                     boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)',
+                    borderRadius: 2,
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 4
+                    }
                   }}
                 >
                   <CardContent>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <LocalShipping />
-                      <Typography variant="h6">Transfer #{transfer.id}</Typography>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                      <LocalShipping sx={{ color: 'primary.main' }} />
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Dostawa #{transfer.id}
+                      </Typography>
                     </Stack>
 
                     <Box
@@ -324,151 +646,48 @@ const HomePage: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        mt: 2,
+                        mb: 2,
+                        p: 2,
+                        backgroundColor: 'background.default',
+                        borderRadius: 1
                       }}
                     >
-                      <Typography variant="body1" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          fontWeight: 500,
+                          textAlign: 'center',
+                          color: 'text.primary'
+                        }}
+                      >
                         {transfer.from_location.name}
                       </Typography>
                       <ArrowForwardIos sx={{ mx: 2, color: 'orange' }} />
-                      <Typography variant="body1" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          fontWeight: 500,
+                          textAlign: 'center',
+                          color: 'text.primary'
+                        }}
+                      >
                         {transfer.to_location.name}
                       </Typography>
                     </Box>
 
-                    <Divider sx={{ my: 2 }} />
                     <Button
                       size="small"
                       color="primary"
                       onClick={() => navigate(`/transfers/${transfer.id}`)}
+                      sx={{ 
+                        textTransform: 'none',
+                        fontWeight: 600
+                      }}
                     >
-                      View Details
+                      Zobacz szczegóły
                     </Button>
                   </CardContent>
                 </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
-
-      {/* Quick Actions */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Quick Actions
-        </Typography>
-
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
-            <Paper
-              sx={{
-                p: 3,
-                textAlign: 'center',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-              onClick={() => navigate('/transfers/create')}
-            >
-              <Typography variant="h6">Utwórz dostawę</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper
-              sx={{
-                p: 3,
-                textAlign: 'center',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-              onClick={() => navigate('/list')}
-            >
-              <Typography variant="h6">Zarządzaj magazynem</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper
-              sx={{
-                p: 3,
-                textAlign: 'center',
-                cursor: 'pointer',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-              onClick={() => navigate('/transfers')}
-            >
-              <Typography variant="h6">Przeglądaj dostawy</Typography>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Pilne zadania */}
-      <Box sx={{ mt: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Pilne zadania
-          </Typography>
-          <Button 
-            variant="outlined" 
-            color="primary" 
-            onClick={() => navigate('/quests')}
-            startIcon={<AccessTime />}
-          >
-            Zobacz wszystkie zadania
-          </Button>
-        </Box>
-
-        {urgentQuests.length === 0 ? (
-          <Typography>Brak pilnych zadań do wykonania.</Typography>
-        ) : (
-          <Grid container spacing={3}>
-            {urgentQuests.map((quest) => (
-              <Grid item xs={12} sm={6} md={4} key={quest.id}>
-                <UrgentQuestCard>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                      <Typography variant="h6" sx={{ color: '#fff' }}>
-                        Zadanie #{quest.id}
-                      </Typography>
-                      <Chip 
-                        label={quest.difficulty?.toUpperCase() || 'MEDIUM'} 
-                        color={
-                          quest.difficulty === 'easy' ? 'success' : 
-                          quest.difficulty === 'medium' ? 'warning' : 'error'
-                        }
-                        size="small"
-                      />
-                    </Box>
-                    
-                    <Typography variant="body1" sx={{ mb: 2, color: '#fff' }}>
-                      {quest.description}
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <LocationOn sx={{ mr: 1, color: '#fff' }} />
-                      <Typography variant="body2" sx={{ color: '#fff' }}>
-                        {quest.location}
-                      </Typography>
-                    </Box>
-                    
-                    <CountdownTimer deadline={quest.deadline} />
-                    
-                    <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.3)' }} />
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="body2" sx={{ color: '#fff' }}>
-                        Nagroda: {quest.reward}
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="primary"
-                        onClick={() => navigate('/quests')}
-                      >
-                        Szczegóły
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </UrgentQuestCard>
               </Grid>
             ))}
           </Grid>
