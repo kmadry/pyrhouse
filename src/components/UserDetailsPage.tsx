@@ -40,9 +40,203 @@ import { jwtDecode } from 'jwt-decode';
 import { getApiUrl } from '../config/api';
 
 const UserDetailsPage: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const canGoBack = location.state?.from === '/users';
+  
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedUser, setEditedUser] = useState<any>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // ... (rest of the component code remains unchanged)
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(getApiUrl(`/users/${userId}`), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error('Nie udało się pobrać danych użytkownika');
+        }
+
+        const data = await response.json();
+        setUser(data);
+        setEditedUser(data);
+      } catch (err: any) {
+        setError(err.message || 'Wystąpił nieoczekiwany błąd');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'error';
+      case 'moderator':
+        return 'warning';
+      default:
+        return 'info';
+    }
+  };
+
+  const isAdmin = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    try {
+      const decoded = jwtDecode(token) as any;
+      return decoded.role === 'admin';
+    } catch {
+      return false;
+    }
+  };
+
+  const canChangePassword = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    try {
+      const decoded = jwtDecode(token) as any;
+      return decoded.userID === Number(userId) || decoded.role === 'admin';
+    } catch {
+      return false;
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedUser(user);
+    setUpdateError(null);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditedUser((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent) => {
+    const { name, value } = e.target;
+    setEditedUser((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUpdateUser = async () => {
+    setIsUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/users/${userId}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editedUser),
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się zaktualizować danych użytkownika');
+      }
+
+      const updatedUser = await response.json();
+      setUser(updatedUser);
+      setIsEditing(false);
+      setUpdateSuccess(true);
+    } catch (err: any) {
+      setUpdateError(err.message || 'Wystąpił nieoczekiwany błąd');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handlePasswordDialogOpen = () => {
+    setIsPasswordDialogOpen(true);
+  };
+
+  const handlePasswordDialogClose = () => {
+    setIsPasswordDialogOpen(false);
+    setPasswordData({ newPassword: '', confirmPassword: '' });
+    setPasswordError(null);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('Hasła nie są identyczne');
+      return;
+    }
+
+    setIsPasswordUpdating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/users/${userId}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: passwordData.newPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się zmienić hasła');
+      }
+
+      handlePasswordDialogClose();
+      setPasswordSuccess(true);
+    } catch (err: any) {
+      setPasswordError(err.message || 'Wystąpił nieoczekiwany błąd');
+    } finally {
+      setIsPasswordUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <ErrorMessage message="Błąd podczas ładowania danych użytkownika" details={error} />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" color="error">
+          Użytkownik nie został znaleziony
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
