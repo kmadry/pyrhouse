@@ -23,6 +23,7 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import AddIcon from '@mui/icons-material/Add';
 import { useLocations } from '../hooks/useLocations';
 import { useStocks } from '../hooks/useStocks';
 import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../services/transferService';
@@ -478,8 +479,9 @@ const TransferPage: React.FC = () => {
         </TableContainer>
 
         <Button
-          variant="contained"
+          variant="outlined"
           color="secondary"
+          startIcon={<AddIcon />}
           onClick={() =>
             append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus })
           }

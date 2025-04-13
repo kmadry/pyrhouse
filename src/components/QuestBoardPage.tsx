@@ -380,7 +380,7 @@ const QuestBoardPage: React.FC = () => {
             mb: 6
           }}
         >
-          📜 Tablica Zadań 📜
+          📜 Quest Board 📜
         </Typography>
 
         <Grid container spacing={4}>
