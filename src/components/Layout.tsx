@@ -34,6 +34,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themeMenuAnchor, setThemeMenuAnchor] = React.useState<null | HTMLElement>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
 
   useEffect(() => {
     // Pobierz ID użytkownika i rolę z JWT
@@ -47,6 +48,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         console.error('Błąd dekodowania tokenu:', error);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 600;
+      setIsMobile(mobile);
+      if (mobile) {
+        setOpen(false); // Automatycznie zamykaj pasek boczny na urządzeniach mobilnych
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const toggleDrawer = () => {
@@ -93,29 +107,36 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return userRole === 'admin' || userRole === 'moderator';
   };
 
+  const handleMenuItemClick = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      setOpen(false);
+    }
+  };
+
   const drawer = (
     <List>
-      <ListItem component={Link} to="/home">
+      <ListItem component="div" onClick={() => handleMenuItemClick('/home')}>
         <ListItemText primary="Home" />
         <Icons.Home />
       </ListItem>
-      <ListItem component={Link} to="/transfers">
+      <ListItem component="div" onClick={() => handleMenuItemClick('/transfers')}>
         <ListItemText primary="Wydania" />
         <Icons.PublishedWithChanges />
       </ListItem>
-      <ListItem component={Link} to="/add-item">
+      <ListItem component="div" onClick={() => handleMenuItemClick('/add-item')}>
         <ListItemText primary="Dodaj sprzęt" />
         <Icons.Add />
       </ListItem>
-      <ListItem component={Link} to="/list">
+      <ListItem component="div" onClick={() => handleMenuItemClick('/list')}>
         <ListItemText primary="Stan Magazynowy" />
         <Icons.List />
       </ListItem>
-      <ListItem component={Link} to="/locations">
+      <ListItem component="div" onClick={() => handleMenuItemClick('/locations')}>
         <ListItemText primary="Lokalizacje" />
         <Icons.EditLocationAlt />
       </ListItem>
-      <ListItem component={Link} to="/quests">
+      <ListItem component="div" onClick={() => handleMenuItemClick('/quests')}>
         <ListItemText primary="Quest Board" />
         <Icons.Security />
       </ListItem>
@@ -134,11 +155,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             />
             <Icons.AdminPanelSettings />
           </ListItem>
-          <ListItem component={Link} to="/categories" sx={{ pl: 4 }}>
+          <ListItem component="div" onClick={() => handleMenuItemClick('/categories')} sx={{ pl: 4 }}>
             <ListItemText primary="Kategorie" />
             <Icons.Category />
           </ListItem>
-          <ListItem component={Link} to="/users" sx={{ pl: 4 }}>
+          <ListItem component="div" onClick={() => handleMenuItemClick('/users')} sx={{ pl: 4 }}>
             <ListItemText primary="Użytkownicy" />
             <Icons.People />
           </ListItem>
@@ -158,7 +179,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             color="inherit"
             aria-label="menu"
             sx={{ mr: 2 }}
-            onClick={toggleDrawer} // Toggle drawer visibility
+            onClick={toggleDrawer}
           >
             <Icons.Menu />
           </IconButton>
@@ -213,9 +234,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </AppBar>
 
       <Drawer
-        variant="persistent" // Persistent drawer that stays open initially
+        variant={isMobile ? "temporary" : "persistent"}
         anchor="left"
-        open={open} // Controlled by the `open` state
+        open={open}
+        onClose={() => isMobile && setOpen(false)}
         sx={styles.navigation}
       >
         {drawer}
@@ -225,8 +247,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         component="main"
         sx={{
           ...styles.mainContent,
-          marginLeft: open ? '240px' : '0px', // Adjust content margin based on drawer state
-          transition: 'margin 0.3s', // Smooth transition
+          marginLeft: open && !isMobile ? '240px' : '0px',
+          width: open && !isMobile ? 'calc(100% - 240px)' : '100%',
         }}
       >
         {children}
