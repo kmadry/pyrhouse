@@ -1,32 +1,59 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { getApiUrl } from '../config/api';
 
-export const useTransferDetails = () => {
-  const [transfer, setTransfer] = useState<any | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+interface TransferDetails {
+  id: number;
+  status: string;
+  from_location: {
+    id: number;
+    name: string;
+  };
+  to_location: {
+    id: number;
+    name: string;
+  };
+  assets: Array<{
+    id: number;
+    pyrcode: string;
+    category: {
+      id: number;
+      label: string;
+    };
+  }>;
+  stocks: Array<{
+    id: number;
+    quantity: number;
+    category: {
+      id: number;
+      label: string;
+    };
+  }>;
+}
 
-  const fetchTransferDetails = useCallback(async (id: string) => {
-    setLoading(true);
-    setError('');
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${id}`,
-        {
+export const useTransferDetails = (id: number) => {
+  const [transfer, setTransfer] = useState<TransferDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTransferDetails = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(getApiUrl(`/transfers/${id}`), {
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+        });
+        if (!response.ok) throw new Error('Failed to fetch transfer details');
+        const data = await response.json();
+        setTransfer(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      if (!response.ok) throw new Error('Nie udało się załadować szczegółów transferu');
+    fetchTransferDetails();
+  }, [id]);
 
-      const data = await response.json();
-      setTransfer(data);
-    } catch (err: any) {
-      setError(err.message || 'Wystąpił nieoczekiwany błąd.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return { transfer, loading, error, fetchTransferDetails };
+  return { transfer, loading, error };
 };

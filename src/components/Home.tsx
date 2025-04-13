@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
 import { styled } from '@mui/material/styles';
+import { getApiUrl } from '../config/api';
 
 // Stylizowany komponent dla pilnych zadań
 const UrgentQuestCard = styled(Card)(() => ({
@@ -118,7 +119,7 @@ const CountdownTimer: React.FC<{ deadline: string }> = ({ deadline }) => {
 };
 
 const HomePage: React.FC = () => {
-  const { transfers, loading, fetchTransfers } = useTransfers();
+  const { transfers, loading, refreshTransfers } = useTransfers();
   const navigate = useNavigate();
 
   const [pyrcode, setPyrcode] = useState<string>('');
@@ -127,8 +128,8 @@ const HomePage: React.FC = () => {
 
   // Fetch transfers on mount
   useEffect(() => {
-    fetchTransfers();
-  }, [fetchTransfers]);
+    refreshTransfers();
+  }, []);
 
   // Pobierz pilne zadania
   useEffect(() => {
@@ -243,7 +244,7 @@ const HomePage: React.FC = () => {
       setSearchError(null); // Clear any previous errors
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/pyrcode/${pyrcode.trim()}`,
+        getApiUrl(`/assets/pyrcode/${pyrcode.trim()}`),
         {
           headers: { Authorization: `Bearer ${token}` },
         }

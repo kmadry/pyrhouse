@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage';
 import { BarcodeGenerator } from './BarcodeGenerator';
+import { getApiUrl } from '../config/api';
 
 // Origin options array
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
@@ -70,7 +71,7 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets', {
+      const response = await fetch(getApiUrl('/assets'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

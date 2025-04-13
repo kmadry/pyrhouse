@@ -21,14 +21,16 @@ import { Transfer } from '../models/transfer';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const TransfersListPage: React.FC = () => {
-  const { transfers, loading, error, fetchTransfers } = useTransfers();
+  const { transfers, loading, error, refreshTransfers } = useTransfers();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchTransfers();
-  }, [fetchTransfers]);
+    refreshTransfers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Sort transfers by date (newest first) and then by status
   const sortedTransfers: Transfer[] = [...transfers].sort((a, b) => {
@@ -45,11 +47,13 @@ const TransfersListPage: React.FC = () => {
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return <Chip icon={<LocalShippingIcon />} label="In Transit" color="warning" />;
+        return <Chip icon={<LocalShippingIcon />} label="W trasie" color="warning" />;
       case 'completed':
-        return <Chip icon={<CheckCircleIcon />} label="Completed" color="success" />;
+        return <Chip icon={<CheckCircleIcon />} label="Zakończony" color="success" />;
       case 'created':
-        return <Chip icon={<HourglassEmptyIcon />} label="Created" color="default" />;
+        return <Chip icon={<HourglassEmptyIcon />} label="Utworzony" color="default" />;
+      case 'cancelled':
+        return <Chip icon={<CancelIcon />} label="Anulowany" color="error" />;
       default:
         return <Chip label="Unknown" />;
     }

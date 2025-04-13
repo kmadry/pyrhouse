@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Location } from '../models/Location';
+import { getApiUrl } from '../config/api';
 
 export const useLocations = () => {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -9,7 +10,10 @@ export const useLocations = () => {
   const fetchLocations = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/locations`);
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl('/locations'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!response.ok) {
         throw new Error('Nie udało się pobrać lokalizacji');
       }
@@ -21,10 +25,6 @@ export const useLocations = () => {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
 
   return { locations, error, loading, refetch: fetchLocations };
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, Select, MenuItem, TextField, CircularProgress, InputLabel, FormControl } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage'; // Import ErrorMessage component
+import { getApiUrl } from '../config/api';
 
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
 
@@ -34,7 +35,7 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/stocks', {
+      const response = await fetch(getApiUrl('/stocks'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

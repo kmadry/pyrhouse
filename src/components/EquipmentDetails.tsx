@@ -33,6 +33,7 @@ import { ErrorMessage } from './ErrorMessage';
 import { deleteAsset } from '../services/assetService';
 import { BarcodeGenerator } from './BarcodeGenerator';
 import { useLocations } from '../hooks/useLocations';
+import { getApiUrl } from '../config/api';
 
 interface AssetLog {
   id: number;
@@ -69,7 +70,7 @@ const EquipmentDetails: React.FC = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/items/${type}/${id}`
+        getApiUrl(`/items/${type}/${id}`)
       );
 
       if (!response.ok) {

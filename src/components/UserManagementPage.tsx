@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -40,7 +41,7 @@ const UserManagementPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/users', {
+      const response = await fetch(getApiUrl('/users'), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -74,7 +75,7 @@ const UserManagementPage: React.FC = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/users', {
+      const response = await fetch(getApiUrl('/users'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

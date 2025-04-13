@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, TextField, Typography, Container, useTheme, Alert } from '@mui/material';
+import { getApiUrl } from '../config/api';
 
 // Mapowanie komunikatów błędów na polskie tłumaczenia
 const errorMessages: Record<string, string> = {
@@ -32,7 +33,7 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/auth', {
+      const response = await fetch(getApiUrl('/auth'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

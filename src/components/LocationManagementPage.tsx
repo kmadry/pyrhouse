@@ -22,6 +22,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import { ErrorMessage } from './ErrorMessage';
+import { getApiUrl } from '../config/api';
 
 const LocationManagementPage: React.FC = () => {
   const [locations, setLocations] = useState<any[]>([]);
@@ -44,7 +45,7 @@ const LocationManagementPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations', {
+      const response = await fetch(getApiUrl('/locations'), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -65,7 +66,7 @@ const LocationManagementPage: React.FC = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations', {
+      const response = await fetch(getApiUrl('/locations'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ const LocationManagementPage: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations/${editingLocationId}`,
+        getApiUrl(`/locations/${editingLocationId}`),
         {
           method: 'PATCH',
           headers: {
@@ -153,7 +154,7 @@ const LocationManagementPage: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations/${deleteLocationId}`,
+        getApiUrl(`/locations/${deleteLocationId}`),
         {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },

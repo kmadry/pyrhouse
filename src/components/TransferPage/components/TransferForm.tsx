@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import {
   Box,
@@ -78,11 +78,17 @@ export const TransferForm: React.FC<TransferFormProps> = ({
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      fromLocation: 1,
+      fromLocation: locations.length > 0 ? locations[0].id : '',
       toLocation: '',
       items: [{ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' }],
     },
   });
+
+  useEffect(() => {
+    if (locations.length > 0 && !watch('fromLocation')) {
+      setValue('fromLocation', locations[0].id);
+    }
+  }, [locations, setValue, watch]);
 
   const { fields, append, remove } = useFieldArray({
     control,

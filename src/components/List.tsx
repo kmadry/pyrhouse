@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../hooks/useLocations';
 import { useCategories } from '../hooks/useCategories';
 import { ErrorMessage } from './ErrorMessage';
+import { getApiUrl } from '../config/api';
 
 interface Location {
   id: number;
@@ -86,7 +87,7 @@ const EquipmentList: React.FC = () => {
       }
 
       const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/items?${params.toString()}`
+        getApiUrl(`/items?${params.toString()}`)
       );
 
       if (response.status === 400 || response.status === 404) {

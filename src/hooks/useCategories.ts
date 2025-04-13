@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '../config/api';
 
 // Define types for category and add category payload
 interface Category {
@@ -18,36 +19,70 @@ interface AddCategoryPayload {
 
 export const useCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   const fetchCategories = async () => {
-    setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(
-        'https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/categories',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-
-      const data: Category[] = await response.json();
+      const response = await fetch(getApiUrl('/assets/categories'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
       setCategories(data);
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
+
+  const createCategory = async (category: Omit<Category, 'id'>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl('/assets/categories'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(category),
+      });
+      if (!response.ok) throw new Error('Failed to create category');
+      const data = await response.json();
+      setCategories(prev => [...prev, data]);
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      throw err;
+    }
+  };
+
+  const updateCategory = async (id: number, category: Partial<Category>) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/assets/categories/${id}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(category),
+      });
+      if (!response.ok) throw new Error('Failed to update category');
+      const data = await response.json();
+      setCategories(prev => prev.map(cat => cat.id === id ? data : cat));
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const addCategory = async (payload: AddCategoryPayload) => {
     setLoading(true);
@@ -55,7 +90,7 @@ export const useCategories = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        'https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/categories',
+        getApiUrl('/assets/categories'),
         {
           method: 'POST',
           headers: {
@@ -86,7 +121,7 @@ export const useCategories = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/categories/${id}`,
+        getApiUrl(`/assets/categories/${id}`),
         {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
@@ -105,5 +140,5 @@ export const useCategories = () => {
     }
   };
 
-  return { categories, loading, error, addCategory, deleteCategory };
+  return { categories, loading, error, addCategory, deleteCategory, createCategory, updateCategory, refreshCategories: fetchCategories };
 };

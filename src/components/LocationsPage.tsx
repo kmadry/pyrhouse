@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -28,12 +28,16 @@ import { deleteLocation, updateLocation, createLocation } from '../services/loca
 import { Location } from '../models/Location';
 
 const LocationsPage: React.FC = () => {
-  const { locations, error, refetch } = useLocations();
+  const { locations, error, loading, refetch } = useLocations();
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [formData, setFormData] = useState({ name: '' });
   const [dialogError, setDialogError] = useState<string | null>(null);
+
+  useEffect(() => {
+    refetch();
+  }, []);
 
   const handleOpenDialog = (location?: Location) => {
     if (location) {

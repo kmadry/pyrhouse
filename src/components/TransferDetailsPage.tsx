@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  DialogContentText,
   Select,
   MenuItem,
   FormControl,
@@ -32,7 +33,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
 import ErrorIcon from '@mui/icons-material/Error';
 import RestoreIcon from '@mui/icons-material/Restore';
-import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI } from '../services/transferService';
+import CancelIcon from '@mui/icons-material/Cancel';
+import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocations } from '../hooks/useLocations';
 
@@ -124,6 +126,7 @@ const TransferDetailsPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ id: number; type: 'asset' | 'stock'; originalId?: number } | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const { locations } = useLocations();
 
   const numericId = Number(id);
@@ -142,11 +145,14 @@ const TransferDetailsPage: React.FC = () => {
         case 'completed':
           setCurrentStep(2);
           break;
+        case 'cancelled':
+          setCurrentStep(2);
+          break;
         default:
           setCurrentStep(0);
       }
     } catch (err: any) {
-      setError(err.message || 'Unexpected error occurred.');
+      setError(err.message || 'Wystąpił błąd podczas pobierania danych transferu');
     } finally {
       setLoading(false);
     }
@@ -154,7 +160,7 @@ const TransferDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (isNaN(numericId)) {
-      setError('Invalid transfer ID');
+      setError('Nieprawidłowe ID transferu');
       setLoading(false);
       return;
     }
@@ -166,10 +172,17 @@ const TransferDetailsPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await confirmTransferAPI(numericId, { status: 'completed' });
-      if (response.status === 'completed') {
+      await confirmTransferAPI(numericId, { status: 'completed' });
+      
+      // Pobierz zaktualizowane dane transferu
+      const updatedTransfer = await getTransferDetailsAPI(numericId);
+      
+      // Zaktualizuj stan komponentu
+      setTransfer(updatedTransfer);
+      
+      // Zaktualizuj krok na podstawie nowego statusu
+      if (updatedTransfer.status === 'completed') {
         setCurrentStep(2);
-        setTransfer((prev: any) => ({ ...prev, status: 'completed' }));
       }
     } catch (err: any) {
       setError(err.message || 'Failed to confirm transfer.');
@@ -208,12 +221,27 @@ const TransferDetailsPage: React.FC = () => {
     }
   };
 
+  const handleCancelTransfer = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await cancelTransferAPI(numericId);
+      setTransfer((prev: any) => ({ ...prev, status: 'cancelled' }));
+      setCancelDialogOpen(false);
+    } catch (err: any) {
+      setError(err.message || 'Nie udało się anulować transferu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'in_transit':
         return <LocalShippingIcon sx={{ color: 'orange', ml: 2 }} />;
       case 'delivered':
       case 'available':
+      case 'located':
         return <CheckCircleIcon sx={{ color: 'green', ml: 2 }} />;
       case 'returned':
         return <UTurnLeftIcon sx={{ color: 'orange', ml: 2 }} />;
@@ -222,11 +250,27 @@ const TransferDetailsPage: React.FC = () => {
     }
   };
 
-  if (loading) return <CircularProgress />;
+  if (loading) {
+    return (
+      <Container>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
 
-  if (error) return <ErrorMessage message={error} />;
+  if (error) {
+    return (
+      <Container>
+        <ErrorMessage message={error} />
+      </Container>
+    );
+  }
 
-  if (!transfer) return <Typography>No transfer details available.</Typography>;
+  if (!transfer) {
+    return null;
+  }
 
   return (
     <Container>
@@ -234,64 +278,107 @@ const TransferDetailsPage: React.FC = () => {
         Transfer Details
       </Typography>
 
-      <Box sx={{ mt: 2 }}>
-        <Stepper activeStep={currentStep}>
-          {steps.map((label) => (
-            <Step key={label} color="info">
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Box>
+      <Typography variant="h6" gutterBottom>
+        Status: {transfer.status}
+      </Typography>
 
-      <Paper sx={{ mt: 4, p: 3 }}>
-        <Typography variant="h6">Transfer Information</Typography>
-        <Typography>From: {transfer.from_location?.name}</Typography>
-        <Typography>To: {transfer.to_location?.name}</Typography>
-        <Typography>Status: {transfer.status}</Typography>
-        <Typography>Date: {new Date(transfer.transfer_date).toLocaleString()}</Typography>
-      </Paper>
+      {transfer.status === 'in_transit' && (
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setCancelDialogOpen(true)}
+            disabled={loading}
+            startIcon={<CancelIcon />}
+          >
+            Anuluj transfer
+          </Button>
+        </Box>
+      )}
 
-      <Paper sx={{ mt: 4, p: 3 }}>
-        <Typography variant="h6">Assets</Typography>
-        {transfer.assets && transfer.assets.length > 0 ? (
-          <List>
-            {transfer.assets.map((asset: any) => (
-              <ListItem
-                key={asset.id}
-                sx={{ display: 'flex', alignItems: 'center' }}
-                secondaryAction={
-                  transfer.status === 'in_transit' && (
-                    <Tooltip title="Przywróć do magazynu">
-                      <IconButton
-                        edge="end"
-                        aria-label="restore"
-                        onClick={() => handleRestoreClick(asset.id, 'asset')}
-                      >
-                        <RestoreIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )
-                }
-              >
-                <ListItemAvatar>
-                  <Chip
-                    icon={getStatusIcon(asset.status)}
-                    color="success"
-                    sx={{ mr: 2 }}
-                  />
-                </ListItemAvatar>
-                <ListItemText
-                  primary={`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}
-                  secondary={`Pochodzenie: ${asset.origin || 'N/A'}`}
-                />
-              </ListItem>
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+      >
+        <DialogTitle>Potwierdź anulowanie transferu</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Czy na pewno chcesz anulować ten transfer?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelDialogOpen(false)}>Anuluj</Button>
+          <Button onClick={handleCancelTransfer} color="error" variant="contained">
+            Potwierdź anulowanie
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="h5" component="h1">
+            Szczegóły transferu #{transfer.id}
+          </Typography>
+        </Box>
+        <Box sx={{ mt: 2 }}>
+          <Stepper activeStep={currentStep}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
             ))}
-          </List>
-        ) : (
-          <Typography>No assets in this transfer.</Typography>
-        )}
+          </Stepper>
+        </Box>
       </Paper>
+
+          <Paper sx={{ mt: 4, p: 3 }}>
+            <Typography variant="h6">Transfer Information</Typography>
+            <Typography>From: {transfer.from_location?.name}</Typography>
+            <Typography>To: {transfer.to_location?.name}</Typography>
+            <Typography>Status: {transfer.status}</Typography>
+            <Typography>Date: {new Date(transfer.transfer_date).toLocaleString()}</Typography>
+          </Paper>
+
+          <Paper sx={{ mt: 4, p: 3 }}>
+            <Typography variant="h6">Assets</Typography>
+            {transfer.assets && transfer.assets.length > 0 ? (
+              <List>
+                {transfer.assets.map((asset: any) => (
+                  <ListItem
+                    key={asset.id}
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                    secondaryAction={
+                      transfer.status === 'in_transit' && (
+                        <Tooltip title="Przywróć do magazynu">
+                          <IconButton
+                            edge="end"
+                            aria-label="restore"
+                            onClick={() => handleRestoreClick(asset.id, 'asset')}
+                          >
+                            <RestoreIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )
+                    }
+                  >
+                    <ListItemAvatar>
+                      <Chip
+                        icon={getStatusIcon(asset.status)}
+                        color="success"
+                        sx={{ mr: 2 }}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}
+                      secondary={`Pochodzenie: ${asset.origin || 'N/A'}`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <Typography>No assets in this transfer.</Typography>
+            )}
+          </Paper>
 
       <Paper sx={{ mt: 4, p: 3 }}>
         <Typography variant="h6">Stock Items</Typography>
@@ -344,6 +431,7 @@ const TransferDetailsPage: React.FC = () => {
             color="primary"
             onClick={handleConfirmTransfer}
             disabled={loading}
+            type="button"
           >
             Confirm Delivery
           </Button>

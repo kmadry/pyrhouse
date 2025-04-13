@@ -1,6 +1,11 @@
+import { getApiUrl } from '../config/api';
+import { API_BASE_URL } from '../config/api';
+
+const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 30000;
+
 export const validatePyrCodeAPI = async (pyrCode: string) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/pyrcode/${pyrCode}`, {
+    const response = await fetch(getApiUrl(`/assets/pyrcode/${pyrCode}`), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -16,7 +21,7 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const createTransferAPI = async (payload: any): Promise<any> => {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      'https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers',
+      getApiUrl('/transfers'),
       {
         method: 'POST',
         headers: {
@@ -38,7 +43,7 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const getTransferDetailsAPI = async (transferId: number) => {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${transferId}`,
+      getApiUrl(`/transfers/${transferId}`),
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -50,7 +55,7 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const confirmTransferAPI = async (id: number, payload: { status: string }) => {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${id}/confirm`,
+      getApiUrl(`/transfers/${id}/confirm`),
       {
         method: 'PATCH',
         headers: {
@@ -72,7 +77,7 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const searchPyrCodesAPI = async (query: string, locationId: number) => {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/locations/${locationId}/search?q=${encodeURIComponent(query)}`,
+      getApiUrl(`/locations/${locationId}/search?q=${encodeURIComponent(query)}`),
       {
         headers: { Authorization: `Bearer ${token}` },
       }
@@ -88,7 +93,7 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const restoreAssetToLocationAPI = async (transferId: number, assetId: number, locationId: number = 1) => {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${transferId}/assets/${assetId}/restore-to-location`,
+      getApiUrl(`/transfers/${transferId}/assets/${assetId}/restore-to-location`),
       {
         method: 'PATCH',
         headers: {
@@ -105,7 +110,7 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const restoreStockToLocationAPI = async (transferId: number, categoryId: number, locationId: number = 1, quantity?: number) => {
     const token = localStorage.getItem('token');
     const response = await fetch(
-      `https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers/${transferId}/categories/${categoryId}/restore-to-location`,
+      getApiUrl(`/transfers/${transferId}/categories/${categoryId}/restore-to-location`),
       {
         method: 'PATCH',
         headers: {
@@ -120,5 +125,31 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
     );
     if (!response.ok) throw new Error('Nie udało się przywrócić pozycji magazynowej do lokalizacji');
     return response.json();
+  };
+  
+  export const cancelTransferAPI = async (transferId: string): Promise<void> => {
+    try {
+      const token = localStorage.getItem('token');
+      const fetchOptions: RequestInit = {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      if (API_TIMEOUT > 0) {
+        fetchOptions.signal = AbortSignal.timeout(API_TIMEOUT);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/transfers/${transferId}/cancel`, fetchOptions);
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel transfer');
+      }
+    } catch (error) {
+      console.error('Error canceling transfer:', error);
+      throw error;
+    }
   };  
   

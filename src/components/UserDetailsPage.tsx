@@ -39,6 +39,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import StarIcon from '@mui/icons-material/Star';
 import LockIcon from '@mui/icons-material/Lock';
 import { jwtDecode } from 'jwt-decode';
+import { getApiUrl } from '../config/api';
 
 interface JwtPayload {
   role: string;
@@ -96,7 +97,7 @@ const UserDetailsPage: React.FC = () => {
     const fetchUserDetails = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`https://pyrhouse-backend-f26ml.ondigitalocean.app/api/users/${userId}`, {
+        const response = await fetch(getApiUrl(`/users/${userId}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -147,7 +148,7 @@ const UserDetailsPage: React.FC = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://pyrhouse-backend-f26ml.ondigitalocean.app/api/users/${userId}`, {
+      const response = await fetch(getApiUrl(`/users/${userId}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -226,7 +227,7 @@ const UserDetailsPage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://pyrhouse-backend-f26ml.ondigitalocean.app/api/users/${userId}`, {
+      const response = await fetch(getApiUrl(`/users/${userId}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -85,16 +85,19 @@ const TransferPage: React.FC = () => {
   const fromLocation = watch('fromLocation');
   const items = watch('items');
 
-  const { locations, error: locationError } = useLocations();
+  const { locations, error: locationError, refetch: refetchLocations } = useLocations();
   const { stocks, error: stockError, fetchStocks } = useStocks();
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    refetchLocations();
+  }, [refetchLocations]);
+
   const isPyrCodeSelected = (pyrcode: string): boolean => {
     return items.some(item => 
       item.type === 'pyr_code' && 
-      item.pyrcode === pyrcode && 
-      item.status === 'success'
+      item.pyrcode === pyrcode
     );
   };
 
@@ -102,14 +105,17 @@ const TransferPage: React.FC = () => {
     if (fromLocation) {
       fetchStocks(fromLocation.toString());
     }
-  }, [fromLocation, fetchStocks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromLocation]);
 
   const handleValidatePyrCode = async (index: number, pyrcode: string) => {
     if (isValidationInProgress) {
       return;
     }
 
+    // Sprawdź czy kod PYR jest już wybrany
     if (isPyrCodeSelected(pyrcode)) {
+      setValue(`items.${index}.status`, 'failure' as ValidationStatus);
       return;
     }
     
@@ -154,12 +160,8 @@ const TransferPage: React.FC = () => {
       const suggestions = await searchPyrCodesAPI(value, fromLocation);
       
       // Filtruj już wybrane kody PYR
-      const selectedPyrcodes = items
-        .filter(item => item.type === 'pyr_code' && item.status === 'success')
-        .map(item => item.pyrcode);
-      
       const filteredSuggestions = suggestions.filter(
-        (suggestion: PyrCodeSuggestion) => !selectedPyrcodes.includes(suggestion.pyrcode)
+        (suggestion: PyrCodeSuggestion) => !isPyrCodeSelected(suggestion.pyrcode)
       );
       
       setPyrCodeSuggestions(filteredSuggestions);
@@ -360,10 +362,27 @@ const TransferPage: React.FC = () => {
                                 ? option
                                 : `${option.pyrcode} - ${option.category.label}`
                             }
-                            isOptionEqualToValue={(option, value) => {
-                              if (typeof value === 'string') return false;
-                              if (typeof option === 'string') return false;
-                              return option.pyrcode === value.pyrcode;
+                            onChange={(_, newValue) => {
+                              if (newValue && typeof newValue !== 'string') {
+                                handleValidatePyrCode(index, newValue.pyrcode);
+                                field.onChange(newValue.pyrcode);
+                              } else if (typeof newValue === 'string') {
+                                field.onChange(newValue);
+                              } else {
+                                field.onChange('');
+                              }
+                            }}
+                            onInputChange={(_, value) => {
+                              handlePyrCodeSearch(value);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                const inputValue = (event.target as HTMLInputElement).value;
+                                if (inputValue && inputValue.length >= 2) {
+                                  handleValidatePyrCode(index, inputValue);
+                                }
+                              }
                             }}
                             renderInput={(params) => (
                               <TextField
@@ -382,34 +401,11 @@ const TransferPage: React.FC = () => {
                                 }}
                               />
                             )}
-                            onInputChange={(event, value) => {
-                              if (event) {
-                                handlePyrCodeSearch(value);
-                              }
-                            }}
-                            onChange={(_, value) => {
-                              if (value && typeof value !== 'string') {
-                                handleValidatePyrCode(index, value.pyrcode);
-                              }
-                              field.onChange(value);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                const inputValue = (event.target as HTMLInputElement).value;
-                                if (inputValue && inputValue.length >= 2) {
-                                  handleValidatePyrCode(index, inputValue);
-                                }
-                              }
-                            }}
                             value={field.value}
-                            filterOptions={(options) => {
-                              const filtered = options.filter(option => {
-                                if (typeof option === 'string') return false;
-                                return !isPyrCodeSelected(option.pyrcode);
-                              });
-                              return filtered;
-                            }}
+                            filterOptions={(options) => options.filter(option => {
+                              if (typeof option === 'string') return false;
+                              return !isPyrCodeSelected(option.pyrcode);
+                            })}
                             freeSolo
                           />
                         )}

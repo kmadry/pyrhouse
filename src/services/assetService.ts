@@ -1,8 +1,8 @@
-const API_BASE = 'https://pyrhouse-backend-f26ml.ondigitalocean.app/api';
+import { getApiUrl } from '../config/api';
 
 export const fetchAssetByPyrCode = async (pyrCode: string) => {
   const token = localStorage.getItem('token');
-  const response = await fetch(`${API_BASE}/assets/pyrcode/${pyrCode}`, {
+  const response = await fetch(getApiUrl(`/assets/pyrcode/${pyrCode}`), {
     headers: { Authorization: `Bearer ${token}` },
   });
 
@@ -31,7 +31,7 @@ export const bulkAddAssetsAPI = async (assets: BulkAddAssetRequest[]): Promise<a
       origin: assets[0].origin
     };
     
-    const response = await fetch('https://pyrhouse-backend-f26ml.ondigitalocean.app/api/assets/bulk', {
+    const response = await fetch(getApiUrl('/assets/bulk'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ export const bulkAddAssetsAPI = async (assets: BulkAddAssetRequest[]): Promise<a
 export const deleteAsset = async (assetId: number): Promise<boolean> => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE}/assets/${assetId}`, {
+    const response = await fetch(getApiUrl(`/assets/${assetId}`), {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -70,4 +70,41 @@ export const deleteAsset = async (assetId: number): Promise<boolean> => {
   } catch (error) {
     throw error;
   }
+};
+
+export const getAssetsAPI = async () => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl('/assets'), {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch assets');
+  return response.json();
+};
+
+export const createAssetAPI = async (payload: any) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl('/assets'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error('Failed to create asset');
+  return response.json();
+};
+
+export const createBulkAssetsAPI = async (payload: any) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl('/assets/bulk'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error('Failed to create bulk assets');
+  return response.json();
 };

@@ -1,33 +1,28 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { getApiUrl } from '../config/api';
 import { Transfer } from '../models/transfer';
 
 export const useTransfers = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchTransfers = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const fetchTransfers = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(
-        'https://pyrhouse-backend-f26ml.ondigitalocean.app/api/transfers',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) throw new Error('Nie udało się załadować transferów');
-
-      const data: Transfer[] = await response.json();
+      const response = await fetch(getApiUrl('/transfers'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to fetch transfers');
+      const data = await response.json();
       setTransfers(data);
-    } catch (err: any) {
-      setError(err.message || 'Wystąpił nieoczekiwany błąd.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  return { transfers, loading, error, fetchTransfers };
+  return { transfers, loading, error, refreshTransfers: fetchTransfers };
 };

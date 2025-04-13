@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Typography } from '@mui/material';
 import { useLocations } from '../../hooks/useLocations';
 import { useStocks } from '../../hooks/useStocks';
@@ -9,9 +9,13 @@ import { TransferForm } from './components/TransferForm';
 const TransferPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { locations, error: locationError } = useLocations();
+  const { locations, error: locationError, refetch: refetchLocations } = useLocations();
   const { stocks, error: stockError } = useStocks();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    refetchLocations();
+  }, [refetchLocations]);
 
   const handleSubmit = async (formData: any) => {
     try {
@@ -52,7 +56,7 @@ const TransferPage: React.FC = () => {
         locations={locations}
         stocks={stocks}
         loading={loading}
-        error={error || locationError || stockError}
+        error={error || locationError || stockError || undefined}
       />
     </Container>
   );
