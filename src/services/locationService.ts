@@ -1,6 +1,5 @@
 import { Location } from '../models/Location';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { getApiUrl } from '../config/api';
 
 interface LocationDetailsResponse {
   assets: any[];
@@ -10,7 +9,7 @@ interface LocationDetailsResponse {
 export const getLocationDetails = async (locationId: number): Promise<LocationDetailsResponse> => {
   const token = localStorage.getItem('token');
   const response = await fetch(
-    `${API_URL}/locations/${locationId}/assets`,
+    getApiUrl(`/locations/${locationId}/assets`),
     {
       headers: { Authorization: `Bearer ${token}` },
     }
@@ -24,8 +23,10 @@ export const getLocationDetails = async (locationId: number): Promise<LocationDe
 };
 
 export const deleteLocation = async (id: number): Promise<void> => {
-  const response = await fetch(`${API_URL}/locations/${id}`, {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl(`/locations/${id}`), {
     method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
   });
   
   if (!response.ok) {
@@ -34,10 +35,12 @@ export const deleteLocation = async (id: number): Promise<void> => {
 };
 
 export const updateLocation = async (id: number, data: Partial<Location>): Promise<Location> => {
-  const response = await fetch(`${API_URL}/locations/${id}`, {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl(`/locations/${id}`), {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
@@ -50,10 +53,12 @@ export const updateLocation = async (id: number, data: Partial<Location>): Promi
 };
 
 export const createLocation = async (data: Omit<Location, 'id'>): Promise<Location> => {
-  const response = await fetch(`${API_URL}/locations`, {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl('/locations'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });

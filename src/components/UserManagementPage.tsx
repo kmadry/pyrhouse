@@ -12,13 +12,28 @@ import {
   TextField,
   Typography,
   CircularProgress,
-  Modal,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Select,
   MenuItem,
+  Card,
+  CardContent,
+  Grid,
+  useMediaQuery,
+  useTheme,
+  Divider,
+  Chip,
+  IconButton,
 } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../config/api';
+import AddIcon from '@mui/icons-material/Add';
+import PersonIcon from '@mui/icons-material/Person';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SecurityIcon from '@mui/icons-material/Security';
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -31,7 +46,10 @@ const UserManagementPage: React.FC = () => {
     fullname: '',
     role: 'user', // Default role
   });
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchUsers();
@@ -67,7 +85,7 @@ const UserManagementPage: React.FC = () => {
 
   const handleAddUser = async () => {
     if (!newUser.username || !newUser.password || !newUser.fullname) {
-      setError('All fields are required to create a user.');
+      setError('Wszystkie pola są wymagane do utworzenia użytkownika.');
       return;
     }
 
@@ -100,70 +118,296 @@ const UserManagementPage: React.FC = () => {
     }
   };
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return <AdminPanelSettingsIcon fontSize="small" />;
+      case 'moderator':
+        return <SecurityIcon fontSize="small" />;
+      default:
+        return <PersonIcon fontSize="small" />;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'error';
+      case 'moderator':
+        return 'warning';
+      default:
+        return 'info';
+    }
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.fullname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const renderTable = () => (
+    <TableContainer 
+      component={Paper} 
+      sx={{ 
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        overflow: 'hidden'
+      }}
+    >
+      <Table>
+        <TableHead>
+          <TableRow sx={{ backgroundColor: 'primary.light' }}>
+            {['ID', 'Username', 'Full Name', 'Role'].map((field) => (
+              <TableCell 
+                key={field} 
+                sx={{ 
+                  fontWeight: 600,
+                  color: 'primary.contrastText',
+                  py: 2
+                }}
+              >
+                {field}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredUsers.map((user) => (
+            <TableRow 
+              key={user.id}
+              onClick={() => navigate(`/users/${user.id}`, { state: { from: '/users' } })}
+              sx={{ 
+                cursor: 'pointer', 
+                '&:hover': { 
+                  bgcolor: 'action.hover',
+                },
+                transition: 'background-color 0.2s ease'
+              }}
+            >
+              <TableCell>
+                <Typography component="div" sx={{ fontWeight: 500 }}>
+                  {user.id}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography component="div">
+                  {user.username}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography component="div">
+                  {user.fullname}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Chip 
+                  icon={getRoleIcon(user.role)}
+                  label={user.role} 
+                  color={getRoleColor(user.role)}
+                  size="small"
+                />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  const renderMobileCards = () => (
+    <Grid container spacing={2}>
+      {filteredUsers.map((user) => (
+        <Grid item xs={12} key={user.id}>
+          <Card 
+            onClick={() => navigate(`/users/${user.id}`, { state: { from: '/users' } })}
+            sx={{ 
+              borderRadius: 2,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+              transition: 'background-color 0.2s ease'
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 500 }}>
+                  ID: {user.id}
+                </Typography>
+                <Chip 
+                  icon={getRoleIcon(user.role)}
+                  label={user.role} 
+                  color={getRoleColor(user.role)}
+                  size="small"
+                />
+              </Box>
+              
+              <Divider sx={{ my: 1 }} />
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Username:</Typography>
+                  <Typography variant="body2">{user.username}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Full Name:</Typography>
+                  <Typography variant="body2">{user.fullname}</Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+
+  if (error) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <ErrorMessage message="Błąd podczas ładowania użytkowników" details={error} />
+      </Box>
+    );
+  }
+
   return (
-    <Box className="full-width-container">
-      <Typography variant="h4" gutterBottom sx={{ marginBottom: '40px' }}>
-        Zarządzanie Użytkownikami
-      </Typography>
-
-      {error && <ErrorMessage message={error} />}
-
-      <Box className="button-container" sx={{ display: 'flex', marginBottom: '32px' }}>
-        <Button variant="contained" color="primary" onClick={handleOpenAddUserModal}>
+    <Box sx={{ 
+      margin: '0 auto', 
+      padding: { xs: 2, sm: 3, md: 4 },
+      maxWidth: '1400px',
+      backgroundColor: 'background.paper',
+      borderRadius: 2,
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+    }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', sm: 'center' }, 
+        marginBottom: 3,
+        gap: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        pb: 2
+      }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 600,
+            color: 'primary.main',
+            mb: { xs: 1, sm: 0 }
+          }}
+        >
+          Zarządzanie Użytkownikami
+        </Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          startIcon={<AddIcon />}
+          onClick={handleOpenAddUserModal}
+          sx={{
+            borderRadius: 1,
+            px: 3
+          }}
+        >
           Dodaj Użytkownika
         </Button>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Username</TableCell>
-              <TableCell>Full Name</TableCell>
-              <TableCell>Role</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow 
-                key={user.id}
-                onClick={() => navigate(`/users/${user.id}`, { state: { from: '/users' } })}
-                sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
-              >
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.fullname}</TableCell>
-                <TableCell>{user.role}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Modal open={addUserModalOpen} onClose={handleCloseAddUserModal}>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-            minWidth: 400,
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' }, 
+        gap: 2, 
+        marginBottom: 3,
+        backgroundColor: 'background.default',
+        p: 2,
+        borderRadius: 1
+      }}>
+        <TextField
+          label="Szukaj użytkowników"
+          variant="outlined"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ flex: 1 }}
+          InputProps={{
+            sx: { borderRadius: 1 }
           }}
-        >
-          <Typography variant="h6" gutterBottom>
-            Dodaj Nowego Użytkownika
+        />
+      </Box>
+
+      {loading ? (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          p: 5,
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <CircularProgress size={40} />
+          <Typography variant="body1" color="text.secondary">
+            Ładowanie użytkowników...
           </Typography>
+        </Box>
+      ) : filteredUsers.length === 0 ? (
+        <Box sx={{ 
+          textAlign: 'center', 
+          p: 5,
+          backgroundColor: 'background.default',
+          borderRadius: 2,
+          border: '1px dashed',
+          borderColor: 'divider'
+        }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Brak użytkowników
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            {searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj nowego użytkownika'}
+          </Typography>
+          {searchQuery && (
+            <Button 
+              variant="outlined" 
+              onClick={() => setSearchQuery('')}
+              sx={{ 
+                borderRadius: 1,
+                px: 3
+              }}
+            >
+              Wyczyść wyszukiwanie
+            </Button>
+          )}
+        </Box>
+      ) : (
+        isMobile ? renderMobileCards() : renderTable()
+      )}
+
+      <Dialog 
+        open={addUserModalOpen} 
+        onClose={handleCloseAddUserModal}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            minWidth: { xs: '90%', sm: 400 }
+          }
+        }}
+      >
+        <DialogTitle>
+          Dodaj Nowego Użytkownika
+        </DialogTitle>
+        <DialogContent>
+          {error && (
+            <ErrorMessage message={error} />
+          )}
+
           <TextField
             label="Username"
             value={newUser.username}
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
             fullWidth
-            sx={{ mb: 2 }}
+            sx={{ mt: 2, mb: 2 }}
           />
           <TextField
             label="Password"
@@ -190,21 +434,25 @@ const UserManagementPage: React.FC = () => {
             <MenuItem value="moderator">Moderator</MenuItem>
             <MenuItem value="admin">Admin</MenuItem>
           </Select>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleAddUser}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Dodaj'}
-            </Button>
-            <Button variant="outlined" onClick={handleCloseAddUserModal}>
-              Anuluj
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleCloseAddUserModal}
+            sx={{ borderRadius: 1 }}
+          >
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleAddUser} 
+            variant="contained" 
+            color="primary"
+            disabled={loading}
+            sx={{ borderRadius: 1 }}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Dodaj'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
