@@ -23,7 +23,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
-import { Transfer } from '../models/transfer';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
