@@ -28,7 +28,7 @@ import { deleteLocation, updateLocation, createLocation } from '../services/loca
 import { Location } from '../models/Location';
 
 const LocationsPage: React.FC = () => {
-  const { locations, error, loading, refetch } = useLocations();
+  const { locations, error, refetch } = useLocations();
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);

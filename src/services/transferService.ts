@@ -130,16 +130,18 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   export const cancelTransferAPI = async (transferId: string): Promise<void> => {
     try {
       const token = localStorage.getItem('token');
+      const controller = new AbortController();
       const fetchOptions: RequestInit = {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        signal: controller.signal,
       };
 
       if (API_TIMEOUT > 0) {
-        fetchOptions.signal = AbortSignal.timeout(API_TIMEOUT);
+        setTimeout(() => controller.abort(), API_TIMEOUT);
       }
 
       const response = await fetch(`${API_BASE_URL}/transfers/${transferId}/cancel`, fetchOptions);
@@ -151,5 +153,5 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
       console.error('Error canceling transfer:', error);
       throw error;
     }
-  };  
+  };
   

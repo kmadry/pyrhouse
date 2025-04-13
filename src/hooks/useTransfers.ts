@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getApiUrl } from '../config/api';
 import { Transfer } from '../models/transfer';
 

@@ -225,7 +225,7 @@ const TransferDetailsPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await cancelTransferAPI(numericId);
+      await cancelTransferAPI(String(numericId));
       setTransfer((prev: any) => ({ ...prev, status: 'cancelled' }));
       setCancelDialogOpen(false);
     } catch (err: any) {
