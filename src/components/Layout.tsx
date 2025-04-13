@@ -8,11 +8,16 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
+  ListItemButton,
   Toolbar,
   Typography,
   Menu,
   MenuItem,
   Tooltip,
+  Divider,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,56 +25,77 @@ import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/p-logo.png';
 import { useThemeMode } from '../theme/ThemeContext';
 import { jwtDecode } from 'jwt-decode';
+import { useTokenValidation } from '../hooks/useTokenValidation';
 
 interface JwtPayload {
   role: string;
-  exp: number;
   userID: number;
 }
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
-  const [open, setOpen] = React.useState(true); // Set drawer to be visible initially
+  const { isTokenValid } = useTokenValidation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [open, setOpen] = React.useState(!isMobile);
   const { themeMode, setThemeMode } = useThemeMode();
-  const [themeMenuAnchor, setThemeMenuAnchor] = React.useState<null | HTMLElement>(null);
-  const [userId, setUserId] = useState<number | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
-
-  useEffect(() => {
-    // Pobierz ID użytkownika i rolę z JWT
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decodedToken = jwtDecode<JwtPayload>(token);
-        setUserId(decodedToken.userID);
-        setUserRole(decodedToken.role);
-      } catch (error) {
-        console.error('Błąd dekodowania tokenu:', error);
-      }
-    }
-  }, []);
+  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
+  const [activeItem, setActiveItem] = useState<string>('');
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 600;
-      setIsMobile(mobile);
-      if (mobile) {
-        setOpen(false); // Automatycznie zamykaj pasek boczny na urządzeniach mobilnych
+      setOpen(!mobile);
+    };
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY) {
+        // Scrolling down
+        setScrollDirection('down');
+      } else {
+        // Scrolling up
+        setScrollDirection('up');
       }
+      
+      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [lastScrollY]);
+
+  // Ustaw aktywny element na podstawie aktualnej ścieżki
+  useEffect(() => {
+    const path = window.location.pathname;
+    setActiveItem(path);
   }, []);
 
-  const toggleDrawer = () => {
-    setOpen((prevOpen) => !prevOpen); // Toggle the open state
-  };
+  const token = localStorage.getItem('token');
+  if (!token || !isTokenValid) {
+    navigate('/login');
+    return null;
+  }
+
+  const decodedToken = jwtDecode<JwtPayload>(token);
+  const userRole = decodedToken.role;
+  const userId = decodedToken.userID;
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
+  };
+
+  const toggleDrawer = () => {
+    setOpen((prevOpen) => !prevOpen);
   };
 
   const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -108,70 +134,140 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const handleMenuItemClick = (path: string) => {
+    setActiveItem(path);
     navigate(path);
     if (isMobile) {
       setOpen(false);
     }
   };
 
+  const menuItems = [
+    { path: '/home', label: 'Home', icon: <Icons.Home /> },
+    { path: '/transfers', label: 'Wydania', icon: <Icons.PublishedWithChanges /> },
+    { path: '/add-item', label: 'Dodaj sprzęt', icon: <Icons.Add /> },
+    { path: '/list', label: 'Stan Magazynowy', icon: <Icons.List /> },
+    { path: '/locations', label: 'Lokalizacje', icon: <Icons.EditLocationAlt /> },
+    { path: '/quests', label: 'Quest Board', icon: <Icons.Security /> },
+  ];
+
+  const adminMenuItems = [
+    { path: '/categories', label: 'Kategorie', icon: <Icons.Category /> },
+    { path: '/users', label: 'Użytkownicy', icon: <Icons.People /> },
+  ];
+
   const drawer = (
-    <List>
-      <ListItem component="div" onClick={() => handleMenuItemClick('/home')}>
-        <ListItemText primary="Home" />
-        <Icons.Home />
-      </ListItem>
-      <ListItem component="div" onClick={() => handleMenuItemClick('/transfers')}>
-        <ListItemText primary="Wydania" />
-        <Icons.PublishedWithChanges />
-      </ListItem>
-      <ListItem component="div" onClick={() => handleMenuItemClick('/add-item')}>
-        <ListItemText primary="Dodaj sprzęt" />
-        <Icons.Add />
-      </ListItem>
-      <ListItem component="div" onClick={() => handleMenuItemClick('/list')}>
-        <ListItemText primary="Stan Magazynowy" />
-        <Icons.List />
-      </ListItem>
-      <ListItem component="div" onClick={() => handleMenuItemClick('/locations')}>
-        <ListItemText primary="Lokalizacje" />
-        <Icons.EditLocationAlt />
-      </ListItem>
-      <ListItem component="div" onClick={() => handleMenuItemClick('/quests')}>
-        <ListItemText primary="Quest Board" />
-        <Icons.Security />
-      </ListItem>
-      
-      {/* Sekcja Admin - widoczna tylko dla adminów i moderatorów */}
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%',
+      pt: 1
+    }}>
+      <List sx={{ flexGrow: 1 }}>
+        {menuItems.map((item) => (
+          <ListItem key={item.path} disablePadding>
+            <ListItemButton
+              onClick={() => handleMenuItemClick(item.path)}
+              sx={{
+                borderRadius: '8px',
+                mx: 1,
+                my: 0.5,
+                backgroundColor: activeItem === item.path ? 'primary.light' : 'transparent',
+                color: activeItem === item.path ? 'primary.contrastText' : 'text.primary',
+                '&:hover': {
+                  backgroundColor: activeItem === item.path ? 'primary.main' : 'action.hover',
+                },
+                transition: 'all 0.2s ease',
+                py: 1.5,
+              }}
+            >
+              <ListItemIcon sx={{ 
+                color: activeItem === item.path ? 'primary.contrastText' : 'primary.main',
+                minWidth: '40px'
+              }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={item.label} 
+                primaryTypographyProps={{ 
+                  fontWeight: activeItem === item.path ? 600 : 400,
+                  fontSize: '0.95rem'
+                }} 
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+
       {hasAdminAccess() && (
         <>
-          <ListItem sx={{ mt: 2, borderTop: '1px solid rgba(0, 0, 0, 0.12)' }}>
-            <ListItemText 
-              primary="Admin" 
-              primaryTypographyProps={{ 
-                variant: 'subtitle2', 
-                color: 'text.secondary',
-                sx: { fontWeight: 'bold' }
-              }} 
-            />
-            <Icons.AdminPanelSettings />
-          </ListItem>
-          <ListItem component="div" onClick={() => handleMenuItemClick('/categories')} sx={{ pl: 4 }}>
-            <ListItemText primary="Kategorie" />
-            <Icons.Category />
-          </ListItem>
-          <ListItem component="div" onClick={() => handleMenuItemClick('/users')} sx={{ pl: 4 }}>
-            <ListItemText primary="Użytkownicy" />
-            <Icons.People />
-          </ListItem>
+          <Divider sx={{ my: 2, mx: 2 }} />
+          <Typography 
+            variant="subtitle2" 
+            color="text.secondary" 
+            sx={{ 
+              px: 3, 
+              py: 1, 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <Icons.AdminPanelSettings fontSize="small" />
+            Admin
+          </Typography>
+          <List>
+            {adminMenuItems.map((item) => (
+              <ListItem key={item.path} disablePadding>
+                <ListItemButton
+                  onClick={() => handleMenuItemClick(item.path)}
+                  sx={{
+                    borderRadius: '8px',
+                    mx: 1,
+                    my: 0.5,
+                    backgroundColor: activeItem === item.path ? 'primary.light' : 'transparent',
+                    color: activeItem === item.path ? 'primary.contrastText' : 'text.primary',
+                    '&:hover': {
+                      backgroundColor: activeItem === item.path ? 'primary.main' : 'action.hover',
+                    },
+                    transition: 'all 0.2s ease',
+                    py: 1.5,
+                    pl: 4,
+                  }}
+                >
+                  <ListItemIcon sx={{ 
+                    color: activeItem === item.path ? 'primary.contrastText' : 'primary.main',
+                    minWidth: '40px'
+                  }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={item.label} 
+                    primaryTypographyProps={{ 
+                      fontWeight: activeItem === item.path ? 600 : 400,
+                      fontSize: '0.95rem'
+                    }} 
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
         </>
       )}
-    </List>
+    </Box>
   );
 
   return (
     <>
       <CssBaseline />
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+      <AppBar 
+        position="fixed" 
+        sx={{ 
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          transform: scrollDirection === 'down' ? 'translateY(-100%)' : 'translateY(0)',
+          transition: 'transform 0.3s ease-in-out'
+        }}
+      >
         <Toolbar>
           <IconButton
             size="large"
@@ -238,7 +334,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         anchor="left"
         open={open}
         onClose={() => isMobile && setOpen(false)}
-        sx={styles.navigation}
+        sx={{
+          ...styles.navigation,
+          '& .MuiDrawer-paper': {
+            borderRadius: isMobile ? 0 : '0 16px 16px 0',
+            boxShadow: isMobile ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.1)',
+            borderRight: isMobile ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
+          }
+        }}
       >
         {drawer}
       </Drawer>
@@ -249,6 +352,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           ...styles.mainContent,
           marginLeft: open && !isMobile ? '240px' : '0px',
           width: open && !isMobile ? 'calc(100% - 240px)' : '100%',
+          maxWidth: '100vw',
+          overflowX: 'hidden',
+          '& > *': {
+            maxWidth: '100%',
+            overflowX: 'hidden'
+          }
         }}
       >
         {children}

@@ -1,10 +1,10 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { jwtDecode }  from 'jwt-decode';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTokenValidation } from '../hooks/useTokenValidation';
+import { jwtDecode } from 'jwt-decode';
 
 interface JwtPayload {
   role: string;
-  exp: number;
   userID: number;
 }
 
@@ -13,37 +13,34 @@ interface PrivateRouteProps {
   requiredRole?: string;
 }
 
-const rolesHierarchy: { [key: string]: number } = {
-  user: 1,
-  moderator: 2,
-  admin: 3,
-};
-
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) => {
-  let token = null;
-  if (typeof localStorage !== 'undefined') {
-    token = localStorage.getItem('token');
-  } else {
-    console.error('Token not found in localStorage.');
-  }
+  const navigate = useNavigate();
+  const { isTokenValid } = useTokenValidation();
+  const token = localStorage.getItem('token');
 
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  try {
-    const decodedToken = jwtDecode<JwtPayload>(token);
-
-    if (
-      requiredRole &&
-      rolesHierarchy[decodedToken.role] < rolesHierarchy[requiredRole]
-    ) {
-      console.warn(`Access denied. Role "${decodedToken.role}" lacks permission.`);
-      return <Navigate to="/login" replace />;
+  useEffect(() => {
+    if (!token || !isTokenValid) {
+      navigate('/login');
+      return;
     }
-  } catch (error) {
-    console.error('Invalid token:', error);
-    return <Navigate to="/login" replace />;
+
+    const decodedToken = jwtDecode<JwtPayload>(token);
+    const userRole = decodedToken.role;
+
+    // Sprawdź, czy użytkownik ma wymagane uprawnienia
+    const rolesHierarchy = {
+      'admin': 3,
+      'moderator': 2,
+      'user': 1
+    };
+
+    if (rolesHierarchy[userRole as keyof typeof rolesHierarchy] < rolesHierarchy[requiredRole as keyof typeof rolesHierarchy]) {
+      navigate('/home');
+    }
+  }, [token, isTokenValid, navigate, requiredRole]);
+
+  if (!token || !isTokenValid) {
+    return null;
   }
 
   return <>{children}</>;

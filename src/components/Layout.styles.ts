@@ -23,7 +23,7 @@ width: 240,
     top: '56px',
     height: 'calc(100% - 56px)',
     '& .MuiListItem-root': {
-        padding: '16px',
+        padding: '12px 16px',
         '& .MuiListItemText-root': {
             margin: 0,
         },
@@ -34,11 +34,16 @@ width: 240,
 const mainContent = {
     width: '100%',
     marginTop: '84px',
-    paddingX: '64px',
+    padding: '24px',
     transition: 'margin 0.3s, width 0.3s',
+    boxSizing: 'border-box',
     '@media (max-width: 600px)': {
         marginTop: '56px',
-        paddingX: '16px',
+        padding: '16px',
+        '& > *': {
+            maxWidth: '100%',
+            boxSizing: 'border-box'
+        }
     }
 } as SxProps;
 
