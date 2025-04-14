@@ -229,8 +229,8 @@ const LoginForm: React.FC = () => {
                   mb: 2,
                   transition: 'transform 0.3s ease',
                   filter: theme.palette.mode === 'light' 
-                    ? 'drop-shadow(0 0 2px rgba(0,0,0,0.3)) drop-shadow(0 0 4px rgba(0,0,0,0.2))'
-                    : 'invert(1) brightness(1.2) drop-shadow(0 0 2px rgba(255,255,255,0.3))',
+                    ? 'invert(1) brightness(1.2) drop-shadow(0 0 2px rgba(255,255,255,0.3))'
+                    : 'drop-shadow(0 0 2px rgba(0,0,0,0.3)) drop-shadow(0 0 4px rgba(0,0,0,0.2))',
                   '&:hover': {
                     transform: prefersAnimations ? 'scale(1.05)' : 'none',
                   }

@@ -318,15 +318,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             sx={{
               height: '40px',
               width: 'auto',
-              mr: 2,
+              mr: 0,
               mt: -1,
               filter: theme.palette.mode === 'light' 
-                ? 'invert(0.2) drop-shadow(0px 0px 2px rgba(0,0,0,0.3))'
-                : 'invert(1) brightness(1.2) drop-shadow(0px 0px 2px rgba(255,255,255,0.3))',
+                ? 'invert(1) brightness(1.2) drop-shadow(0px 0px 2px rgba(255,255,255,0.3))'
+                : 'drop-shadow(0px 0px 2px rgba(0,0,0,0.3)) drop-shadow(0px 0px 4px rgba(0,0,0,0.2))',
               '&:hover': {
                 filter: theme.palette.mode === 'light'
-                  ? 'invert(0.3) drop-shadow(0px 0px 3px rgba(0,0,0,0.4))'
-                  : 'invert(1) brightness(1.3) drop-shadow(0px 0px 3px rgba(255,255,255,0.4))',
+                  ? 'invert(1) brightness(1.3) drop-shadow(0px 0px 3px rgba(255,255,255,0.4))'
+                  : 'drop-shadow(0px 0px 3px rgba(0,0,0,0.4)) drop-shadow(0px 0px 5px rgba(0,0,0,0.3))',
                 transform: 'scale(1.05)',
               },
               transition: 'all 0.2s ease-in-out',
@@ -334,7 +334,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           />
 
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Pyrhouse
+            yrhouse
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center' }}>

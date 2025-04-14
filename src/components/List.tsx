@@ -29,6 +29,7 @@ import { useLocations } from '../hooks/useLocations';
 import { useCategories } from '../hooks/useCategories';
 import { ErrorMessage } from './ErrorMessage';
 import { getApiUrl } from '../config/api';
+import * as Icons from '@mui/icons-material';
 
 interface Location {
   id: number;
@@ -54,6 +55,7 @@ interface Equipment {
 interface QuickFilter {
   id: number;
   name: string;
+  icon: string;
 }
 
 const EquipmentList: React.FC = () => {
@@ -193,17 +195,36 @@ const EquipmentList: React.FC = () => {
     }
   };
 
-  const quickFilters: QuickFilter[] = [{ id: 1, name: 'Magazyn Techniczny' }];
+  const quickFilters: QuickFilter[] = [
+    { id: 1, name: 'Magazyn Techniczny', icon: 'warehouse' },
+    { id: 3, name: 'Brak lokalizacji', icon: 'location_off' }
+  ];
 
   const applyQuickFilter = (filter: QuickFilter) => {
-    const location = locations.find((loc) => loc.id === filter.id);
-    if (location && !selectedLocations.some((selectedLoc) => selectedLoc.id === location.id)) {
-      setSelectedLocations((prev) => [...prev, location]);
+    switch (filter.id) {
+      case 1: { // Magazyn Techniczny
+        const techLocation = locations.find((loc) => loc.id === filter.id);
+        if (techLocation && !selectedLocations.some((selectedLoc) => selectedLoc.id === techLocation.id)) {
+          setSelectedLocations((prev) => [...prev, techLocation]);
+        }
+        break;
+      }
+      case 3: // Brak lokalizacji
+        setSelectedLocations([]);
+        break;
     }
   };
 
   const removeQuickFilter = (filter: QuickFilter) => {
-    setSelectedLocations((prev) => prev.filter((loc) => loc.id !== filter.id));
+    switch (filter.id) {
+      case 1: { // Magazyn Techniczny
+        setSelectedLocations((prev) => prev.filter((loc) => loc.id !== filter.id));
+        break;
+      }
+      case 3: // Brak lokalizacji
+        setSelectedLocations(locations);
+        break;
+    }
   };
 
   // Renderowanie tabeli dla desktop
@@ -418,150 +439,223 @@ const EquipmentList: React.FC = () => {
         >
           Stan magazynowy
         </Typography>
+        
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Icons.ClearAll />}
+          onClick={() => {
+            setFilter('');
+            setSelectedLocations([]);
+            setSelectedCategory(null);
+            setCategoryType('');
+          }}
+          sx={{ 
+            borderRadius: 1,
+            px: 2
+          }}
+        >
+          Wyczyść filtry
+        </Button>
       </Box>
 
+      {/* Sekcja filtrów */}
       <Box sx={{ 
         display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 1.5, 
+        flexDirection: 'column',
+        gap: 2,
         marginBottom: 3,
-        '& > *': { flex: { xs: '1 1 100%', sm: '1 1 auto' } }
+        backgroundColor: 'background.default',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        overflow: 'hidden'
       }}>
-        {quickFilters.map((filter) => (
-          <Chip
-            key={filter.id}
-            label={filter.name}
-            color={selectedLocations.some((loc) => loc.id === filter.id) ? 'primary' : 'default'}
-            onClick={() =>
-              selectedLocations.some((loc) => loc.id === filter.id)
-                ? removeQuickFilter(filter)
-                : applyQuickFilter(filter)
-            }
-            sx={{ 
-              cursor: 'pointer',
-              fontWeight: selectedLocations.some((loc) => loc.id === filter.id) ? 600 : 400,
+        {/* Nagłówek sekcji filtrów */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          p: 1.5,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: 'background.paper'
+        }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+            Filtry
+          </Typography>
+        </Box>
+        
+        {/* Szybkie filtry */}
+        <Box sx={{ p: 1.5 }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            Szybkie filtry
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 1,
+            '& > *': { 
+              flex: { xs: '1 1 100%', sm: '1 1 auto' },
               transition: 'all 0.2s ease',
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
               }
+            }
+          }}>
+            {quickFilters.map((filter) => (
+              <Chip
+                key={filter.id}
+                label={filter.name}
+                icon={<Icons.Warehouse />}
+                color={selectedLocations.some((loc) => loc.id === filter.id) ? 'primary' : 'default'}
+                onClick={() =>
+                  selectedLocations.some((loc) => loc.id === filter.id)
+                    ? removeQuickFilter(filter)
+                    : applyQuickFilter(filter)
+                }
+                size="small"
+                sx={{ 
+                  cursor: 'pointer',
+                  fontWeight: selectedLocations.some((loc) => loc.id === filter.id) ? 600 : 400,
+                  '& .MuiChip-icon': {
+                    color: selectedLocations.some((loc) => loc.id === filter.id) ? 'inherit' : 'action.active'
+                  }
+                }}
+                aria-label={`Filtr: ${filter.name}`}
+              />
+            ))}
+          </Box>
+        </Box>
+        
+        {/* Zaawansowane filtry */}
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' }, 
+          gap: 2, 
+          p: 1.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: 'background.paper'
+        }}>
+          <TextField
+            label="Filtruj po PYR_CODE"
+            variant="outlined"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            size="small"
+            sx={{ flex: 1 }}
+            aria-label="Filtruj po kodzie PYR"
+            InputProps={{
+              sx: { borderRadius: 1 },
+              startAdornment: (
+                <Icons.Search sx={{ color: 'text.secondary', mr: 1 }} />
+              )
             }}
-            aria-label={`Filtr: ${filter.name}`}
           />
-        ))}
-      </Box>
-
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', md: 'row' }, 
-        gap: 2, 
-        marginBottom: 3,
-        backgroundColor: 'background.default',
-        p: 2,
-        borderRadius: 1
-      }}>
-        <TextField
-          label="Filtruj po PYR_CODE"
-          variant="outlined"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          sx={{ flex: 1 }}
-          aria-label="Filtruj po kodzie PYR"
-          InputProps={{
-            sx: { borderRadius: 1 }
-          }}
-        />
-        <Autocomplete<Location, true, false, false>
-          multiple
-          options={locations}
-          getOptionLabel={(option: Location) => option.name}
-          value={selectedLocations}
-          loading={locationsLoading}
-          onChange={(_, value) => setSelectedLocations(value)}
-          renderInput={(params) => (
-            <TextField 
-              {...params} 
-              label="Filtruj po lokalizacjach" 
-              variant="outlined"
-              InputProps={{
-                ...params.InputProps,
-                sx: { borderRadius: 1 },
-                endAdornment: (
-                  <>
-                    {locationsLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-          renderOption={(props, option: Location) => (
-            <li {...props} key={option.id}>
-              <Typography component="span">{option.name}</Typography>
-            </li>
-          )}
-          renderTags={(tagValue, getTagProps) =>
-            tagValue.map((option, index) => {
-              const { key, ...rest } = getTagProps({ index });
-              return (
-                <Chip
-                  label={option.name}
-                  {...rest}
-                  key={key}
-                />
-              );
-            })
-          }
-          isOptionEqualToValue={(option: Location, value: Location) => option.id === value.id}
-          sx={{ flex: 1 }}
-          aria-label="Wybierz lokalizacje"
-        />
-        <Autocomplete<Category, false, false, false>
-          options={categories}
-          getOptionLabel={(option: Category) => option.label}
-          value={selectedCategory}
-          loading={categoriesLoading}
-          onChange={(_, value) => setSelectedCategory(value)}
-          renderInput={(params) => (
-            <TextField 
-              {...params} 
-              label="Filtruj po kategorii" 
-              variant="outlined"
-              InputProps={{
-                ...params.InputProps,
-                sx: { borderRadius: 1 },
-                endAdornment: (
-                  <>
-                    {categoriesLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-          renderOption={(props, option: Category) => (
-            <li {...props}>
-              <Typography component="span">{option.label}</Typography>
-            </li>
-          )}
-          isOptionEqualToValue={(option: Category | null, value: Category | null) => option?.id === value?.id}
-          sx={{ flex: 1 }}
-          aria-label="Wybierz kategorię"
-        />
-        <Select
-          value={categoryType}
-          onChange={(e) => setCategoryType(e.target.value as 'asset' | 'stock')}
-          displayEmpty
-          sx={{ 
-            flex: { xs: 1, md: 0.5 },
-            borderRadius: 1
-          }}
-          aria-label="Wybierz typ kategorii"
-        >
-          <MenuItem value="">Wszystkie typy</MenuItem>
-          <MenuItem value="asset">Asset</MenuItem>
-          <MenuItem value="stock">Stock</MenuItem>
-        </Select>
+          <Autocomplete<Location, true, false, false>
+            multiple
+            options={locations}
+            getOptionLabel={(option: Location) => option.name}
+            value={selectedLocations}
+            loading={locationsLoading}
+            onChange={(_, value) => setSelectedLocations(value)}
+            size="small"
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="Filtruj po lokalizacjach" 
+                variant="outlined"
+                InputProps={{
+                  ...params.InputProps,
+                  sx: { borderRadius: 1 },
+                  startAdornment: (
+                    <Icons.LocationOn sx={{ color: 'text.secondary', mr: 1 }} />
+                  ),
+                  endAdornment: (
+                    <>
+                      {locationsLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            renderOption={(props, option: Location) => (
+              <li {...props} key={option.id}>
+                <Typography component="span">{option.name}</Typography>
+              </li>
+            )}
+            renderTags={(tagValue, getTagProps) =>
+              tagValue.map((option, index) => {
+                const { key, ...rest } = getTagProps({ index });
+                return (
+                  <Chip
+                    label={option.name}
+                    {...rest}
+                    key={key}
+                    size="small"
+                  />
+                );
+              })
+            }
+            isOptionEqualToValue={(option: Location, value: Location) => option.id === value.id}
+            sx={{ flex: 1 }}
+            aria-label="Wybierz lokalizacje"
+          />
+          <Autocomplete<Category, false, false, false>
+            options={categories}
+            getOptionLabel={(option: Category) => option.label}
+            value={selectedCategory}
+            loading={categoriesLoading}
+            onChange={(_, value) => setSelectedCategory(value)}
+            size="small"
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                label="Filtruj po kategorii" 
+                variant="outlined"
+                InputProps={{
+                  ...params.InputProps,
+                  sx: { borderRadius: 1 },
+                  startAdornment: (
+                    <Icons.Category sx={{ color: 'text.secondary', mr: 1 }} />
+                  ),
+                  endAdornment: (
+                    <>
+                      {categoriesLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+            renderOption={(props, option: Category) => (
+              <li {...props}>
+                <Typography component="span">{option.label}</Typography>
+              </li>
+            )}
+            isOptionEqualToValue={(option: Category | null, value: Category | null) => option?.id === value?.id}
+            sx={{ flex: 1 }}
+            aria-label="Wybierz kategorię"
+          />
+          <Select
+            value={categoryType}
+            onChange={(e) => setCategoryType(e.target.value as 'asset' | 'stock')}
+            displayEmpty
+            size="small"
+            sx={{ 
+              flex: { xs: 1, md: 0.5 },
+              borderRadius: 1
+            }}
+            aria-label="Wybierz typ kategorii"
+          >
+            <MenuItem value="">Wszystkie typy</MenuItem>
+            <MenuItem value="asset">Asset</MenuItem>
+            <MenuItem value="stock">Stock</MenuItem>
+          </Select>
+        </Box>
       </Box>
 
       {error && (
