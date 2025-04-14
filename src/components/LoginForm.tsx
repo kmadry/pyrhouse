@@ -13,7 +13,9 @@ import {
   IconButton, 
   CircularProgress,
   Fade,
-  Divider
+  Divider,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import { 
   Visibility, 
@@ -24,7 +26,9 @@ import {
 } from '@mui/icons-material';
 import { getApiUrl } from '../config/api';
 import { useStorage } from '../hooks/useStorage';
-import pyrkonLogo from '../assets/images/p-logo.png';
+import { useAnimationPreference } from '../hooks/useAnimationPreference';
+import pyrkonLogo from '../assets/images/p-logo.svg';
+import { hyperJumpAnimation, starStreakAnimation, fadeInAnimation } from '../animations/keyframes';
 
 // Mapowanie komunikatów błędów na polskie tłumaczenia
 const errorMessages: Record<string, string> = {
@@ -44,9 +48,11 @@ const LoginForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [capsLockOn, setCapsLockOn] = useState<boolean>(false);
+  const [isHyperJumping, setIsHyperJumping] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
   const { setToken } = useStorage();
+  const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
 
   // Automatyczne skupienie na polu username
   useEffect(() => {
@@ -101,7 +107,14 @@ const LoginForm: React.FC = () => {
       if (response.ok) {
         const data: { token: string } = await response.json();
         setToken(data.token);
-        navigate('/home');
+        if (prefersAnimations) {
+          setIsHyperJumping(true);
+          setTimeout(() => {
+            navigate('/home');
+          }, 2000);
+        } else {
+          navigate('/home');
+        }
       } else {
         if (response.status === 401) {
           const errorData = await response.json();
@@ -112,11 +125,11 @@ const LoginForm: React.FC = () => {
           const errorMessage = errorData.error || 'Unknown error';
           setError(translateError(errorMessage));
         }
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error:', error);
       setError(translateError('Network error'));
-    } finally {
       setIsLoading(false);
     }
   };
@@ -134,10 +147,53 @@ const LoginForm: React.FC = () => {
         minHeight: '100vh',
         backgroundColor: theme.palette.background.default,
         backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.background.default} 100%)`,
+        perspective: '1000px',
+        overflow: 'hidden',
+        position: 'relative',
       }}
     >
+      {isHyperJumping && prefersAnimations && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: '50%',
+              left: '-100px',
+              width: '10px',
+              height: '2px',
+              background: 'white',
+              boxShadow: '0 0 10px #fff, 0 0 20px #fff',
+              animation: `${starStreakAnimation} 0.5s linear infinite`,
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: '30%',
+              left: '-100px',
+              width: '8px',
+              height: '2px',
+              background: 'white',
+              boxShadow: '0 0 10px #fff, 0 0 20px #fff',
+              animation: `${starStreakAnimation} 0.7s linear infinite`,
+            }
+          }}
+        />
+      )}
       <Fade in={true} timeout={800}>
-        <Container maxWidth="sm">
+        <Container 
+          maxWidth="sm"
+          sx={{
+            animation: isHyperJumping && prefersAnimations ? `${hyperJumpAnimation} 2s ease-in forwards` : 'none',
+          }}
+        >
           <Paper
             elevation={6}
             sx={{
@@ -146,7 +202,7 @@ const LoginForm: React.FC = () => {
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
               transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
               '&:hover': {
-                transform: 'translateY(-5px)',
+                transform: prefersAnimations ? 'translateY(-5px)' : 'none',
                 boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
               },
               position: 'relative',
@@ -174,9 +230,9 @@ const LoginForm: React.FC = () => {
                   transition: 'transform 0.3s ease',
                   filter: theme.palette.mode === 'light' 
                     ? 'drop-shadow(0 0 2px rgba(0,0,0,0.3)) drop-shadow(0 0 4px rgba(0,0,0,0.2))'
-                    : 'none',
+                    : 'invert(1) brightness(1.2) drop-shadow(0 0 2px rgba(255,255,255,0.3))',
                   '&:hover': {
-                    transform: 'scale(1.05)',
+                    transform: prefersAnimations ? 'scale(1.05)' : 'none',
                   }
                 }} 
               />
@@ -324,8 +380,8 @@ const LoginForm: React.FC = () => {
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
-                    transform: 'translateY(-2px)',
+                    boxShadow: prefersAnimations ? '0 6px 16px rgba(0, 0, 0, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    transform: prefersAnimations ? 'translateY(-2px)' : 'none',
                   },
                   '&:active': {
                     transform: 'translateY(0)',
@@ -338,6 +394,29 @@ const LoginForm: React.FC = () => {
             </form>
 
             <Divider sx={{ my: 3 }} />
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={prefersAnimations}
+                    onChange={toggleAnimations}
+                    color="primary"
+                    disabled={isSystemReducedMotion}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2">Włącz animacje</Typography>
+                    {isSystemReducedMotion && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Wyłączone zgodnie z ustawieniami systemowymi
+                      </Typography>
+                    )}
+                  </Box>
+                }
+              />
+            </Box>
 
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">

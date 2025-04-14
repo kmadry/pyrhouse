@@ -18,6 +18,7 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
+  Switch,
 } from '@mui/material';
 import * as Icons from '@mui/icons-material'; // Import all icons as an alias
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,7 @@ import { useThemeMode } from '../theme/ThemeContext';
 import { jwtDecode } from 'jwt-decode';
 import { useTokenValidation } from '../hooks/useTokenValidation';
 import { useStorage } from '../hooks/useStorage';
+import { useAnimationPreference } from '../hooks/useAnimationPreference';
 
 interface JwtPayload {
   role: string;
@@ -51,6 +53,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<number | null>(null);
   const { getToken, removeToken } = useStorage();
+  const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
+  const [animationMenuAnchor, setAnimationMenuAnchor] = useState<null | HTMLElement>(null);
 
   const handleLogout = useCallback(() => {
     removeToken();
@@ -288,17 +292,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     </Box>
   );
 
+  const handleAnimationMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnimationMenuAnchor(event.currentTarget);
+  };
+
+  const handleAnimationMenuClose = () => {
+    setAnimationMenuAnchor(null);
+  };
+
   return (
-    <>
+    <Box sx={styles.root}>
       <CssBaseline />
-      <AppBar 
-        position="fixed" 
-        sx={{ 
+      <AppBar
+        position="fixed"
+        sx={{
           ...styles.appBar,
-          backgroundColor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-          boxShadow: scrollDirection === 'down' ? '0 2px 10px rgba(0,0,0,0.1)' : 'none',
-          transition: 'box-shadow 0.3s ease'
+          transform: scrollDirection === 'down' ? 'translateY(-100%)' : 'translateY(0)',
+          transition: 'transform 0.3s ease-in-out',
         }}
       >
         <Toolbar>
@@ -311,87 +321,111 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           >
             <Icons.Menu />
           </IconButton>
-          
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            mr: 2
-          }}>
-            <Box 
-              component="img" 
-              src={pyrkonLogo} 
-              alt="Pyrkon Logo" 
-              sx={{ 
-                height: '40px', 
-                width: 'auto', 
-                mr: 0,
-                filter: theme.palette.mode === 'light' 
-                  ? 'brightness(0) blur(0.3px)' 
-                  : 'brightness(0) invert(1)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                  filter: theme.palette.mode === 'light' 
-                    ? 'brightness(0) blur(0.3px)' 
-                    : 'brightness(0) invert(1) brightness(1.1)',
-                }
-              }} 
-            />
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                fontWeight: 600,
-                letterSpacing: '0.5px',
+
+          <Box
+            component="img"
+            src={pyrkonLogo}
+            alt="Pyrkon Logo"
+            sx={{
+              height: '40px',
+              width: 'auto',
+              mr: 2,
+              mt: -1,
+              filter: theme.palette.mode === 'light' 
+                ? 'invert(0.2) drop-shadow(0px 0px 2px rgba(0,0,0,0.3))'
+                : 'invert(1) brightness(1.2) drop-shadow(0px 0px 2px rgba(255,255,255,0.3))',
+              '&:hover': {
+                filter: theme.palette.mode === 'light'
+                  ? 'invert(0.3) drop-shadow(0px 0px 3px rgba(0,0,0,0.4))'
+                  : 'invert(1) brightness(1.3) drop-shadow(0px 0px 3px rgba(255,255,255,0.4))',
+                transform: 'scale(1.05)',
+              },
+              transition: 'all 0.2s ease-in-out',
+            }}
+          />
+
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            Pyrhouse
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* Przycisk animacji */}
+            <Tooltip title="Ustawienia animacji">
+              <IconButton
+                onClick={handleAnimationMenuOpen}
+                color="inherit"
+                sx={{
+                  opacity: isSystemReducedMotion ? 0.5 : 1,
+                }}
+              >
+                {prefersAnimations ? <Icons.Animation /> : <Icons.BlockTwoTone />}
+              </IconButton>
+            </Tooltip>
+
+            {/* Menu animacji */}
+            <Menu
+              anchorEl={animationMenuAnchor}
+              open={Boolean(animationMenuAnchor)}
+              onClose={handleAnimationMenuClose}
+              onClick={handleAnimationMenuClose}
+            >
+              <MenuItem>
+                <ListItemText 
+                  primary="Animacje"
+                  secondary={isSystemReducedMotion ? "Wyłączone przez system" : ""}
+                />
+                <Switch
+                  checked={prefersAnimations}
+                  onChange={toggleAnimations}
+                  disabled={isSystemReducedMotion}
+                />
+              </MenuItem>
+            </Menu>
+
+            {/* Przycisk motywu */}
+            <Tooltip title="Ustawienia motywu">
+              <IconButton onClick={handleThemeMenuOpen} color="inherit">
+                {getThemeIcon()}
+              </IconButton>
+            </Tooltip>
+
+            {/* Menu motywu */}
+            <Menu
+              anchorEl={themeMenuAnchor}
+              open={Boolean(themeMenuAnchor)}
+              onClose={handleThemeMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
               }}
             >
-              yrHouse
-            </Typography>
-          </Box>
-          
-          <Box sx={{ flexGrow: 1 }} />
-          
-          <Tooltip title="Zmień motyw">
-            <IconButton color="inherit" onClick={handleThemeMenuOpen}>
-              {getThemeIcon()}
-            </IconButton>
-          </Tooltip>
-          
-          <Menu
-            anchorEl={themeMenuAnchor}
-            open={Boolean(themeMenuAnchor)}
-            onClose={handleThemeMenuClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <MenuItem onClick={() => handleThemeChange('light')}>
-              <Icons.LightMode sx={{ mr: 2 }} />
-              Jasny
-            </MenuItem>
-            <MenuItem onClick={() => handleThemeChange('dark')}>
-              <Icons.DarkMode sx={{ mr: 2 }} />
-              Ciemny
-            </MenuItem>
-            <MenuItem onClick={() => handleThemeChange('system')}>
-              <Icons.BrightnessAuto sx={{ mr: 2 }} />
-              Systemowy
-            </MenuItem>
-          </Menu>
+              <MenuItem onClick={() => handleThemeChange('light')}>
+                <Icons.LightMode sx={{ mr: 2 }} />
+                Jasny
+              </MenuItem>
+              <MenuItem onClick={() => handleThemeChange('dark')}>
+                <Icons.DarkMode sx={{ mr: 2 }} />
+                Ciemny
+              </MenuItem>
+              <MenuItem onClick={() => handleThemeChange('system')}>
+                <Icons.BrightnessAuto sx={{ mr: 2 }} />
+                Systemowy
+              </MenuItem>
+            </Menu>
 
-          <Tooltip title="Profil użytkownika">
-            <IconButton color="inherit" onClick={handleProfileClick}>
-              <Icons.Person />
+            <Tooltip title="Profil użytkownika">
+              <IconButton color="inherit" onClick={handleProfileClick}>
+                <Icons.Person />
+              </IconButton>
+            </Tooltip>
+            <IconButton color="inherit" onClick={handleLogout}>
+              <Icons.Logout />
             </IconButton>
-          </Tooltip>
-          <IconButton color="inherit" onClick={handleLogout}>
-            <Icons.Logout />
-          </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -428,7 +462,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       >
         {children}
       </Box>
-    </>
+    </Box>
   );
 };
 
