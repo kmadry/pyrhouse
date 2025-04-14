@@ -159,75 +159,34 @@ const LocationDetailsPage: React.FC = () => {
     }
   };
 
-  // Renderowanie karty dla urządzeń mobilnych
-  const renderMobileCard = (item: Asset | StockItem, type: 'asset' | 'stock') => {
-    const isAsset = type === 'asset';
-    const isSelected = isAsset 
-      ? selectedItems.assetIds.includes((item as Asset).id)
-      : selectedItems.stockIds.includes((item as StockItem).id);
-
-    return (
-      <Card 
-        key={item.id} 
-        sx={{ 
-          mb: 2, 
-          position: 'relative',
-          '&:hover': {
-            boxShadow: 3,
-            transform: 'translateY(-2px)',
-            transition: 'all 0.2s'
-          }
-        }}
-      >
-        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-          <Checkbox
-            checked={isSelected}
-            onChange={() => {
-              if (isAsset) {
-                handleSelectAsset((item as Asset).id);
-              } else {
-                handleSelectStock((item as StockItem).id);
-              }
-            }}
-          />
-        </Box>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            ID: {item.id}
-          </Typography>
-          {isAsset ? (
-            <>
-              <Typography variant="body1">
-                <strong>Typ:</strong> {(item as Asset).category.name}
-              </Typography>
-              <Typography variant="body1">
-                <strong>Status:</strong> {(item as Asset).status}
-              </Typography>
-              <Typography variant="body1">
-                <strong>PYR Code:</strong> {(item as Asset).pyrcode}
-              </Typography>
-            </>
-          ) : (
-            <>
-              <Typography variant="body1">
-                <strong>Kategoria:</strong> {(item as StockItem).category.name}
-              </Typography>
-              <Typography variant="body1">
-                <strong>Ilość:</strong> {(item as StockItem).quantity}
-              </Typography>
-            </>
-          )}
-        </CardContent>
-      </Card>
-    );
+  // Dodajemy nową funkcję do filtrowania elementów
+  const filterItems = (items: any[], query: string) => {
+    if (!query) return items;
+    return items.filter((item) => {
+      const searchableFields = [
+        item.id.toString(),
+        item.category?.name,
+        item.category?.label,
+        'pyrcode' in item ? item.pyrcode : '',
+        'serial' in item ? item.serial : '',
+      ];
+      return searchableFields.some(field => 
+        field?.toLowerCase().includes(query.toLowerCase())
+      );
+    });
   };
 
-  // Renderowanie tabeli dla desktopów
+  const getSelectedBgColor = () => {
+    return theme.palette.mode === 'dark' ? 'action.selected' : 'primary.lighter';
+  };
+
+  // Modyfikujemy renderowanie tabeli desktop
   const renderDesktopTable = (items: Asset[] | StockItem[], type: 'asset' | 'stock') => {
     const isAsset = type === 'asset';
     const selectedIds = isAsset ? selectedItems.assetIds : selectedItems.stockIds;
     const handleSelectAll = isAsset ? handleSelectAllAssets : handleSelectAllStocks;
     const handleSelect = isAsset ? handleSelectAsset : handleSelectStock;
+    const filteredItems = filterItems(items, searchQuery);
 
     return (
       <TableContainer 
@@ -236,16 +195,21 @@ const LocationDetailsPage: React.FC = () => {
           borderRadius: 2,
           boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
           overflow: 'hidden',
-          mb: 4
+          mb: 4,
+          '& .MuiTableCell-root': {
+            borderColor: 'divider',
+          },
         }}
       >
         <Table>
           <TableHead>
-            <TableRow sx={{ backgroundColor: 'primary.light' }}>
+            <TableRow sx={{ 
+              backgroundColor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
+            }}>
               <TableCell padding="checkbox">
                 <Checkbox
-                  checked={items.length > 0 && selectedIds.length === items.length}
-                  indeterminate={selectedIds.length > 0 && selectedIds.length < items.length}
+                  checked={filteredItems.length > 0 && selectedIds.length === filteredItems.length}
+                  indeterminate={selectedIds.length > 0 && selectedIds.length < filteredItems.length}
                   onChange={handleSelectAll}
                 />
               </TableCell>
@@ -277,64 +241,153 @@ const LocationDetailsPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {items.map((item) => (
-              <TableRow
-                key={item.id}
-                sx={{
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                  transition: 'background-color 0.2s ease'
-                }}
-              >
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedIds.includes(item.id)}
-                    onChange={() => handleSelect(item.id)}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography component="div" sx={{ fontWeight: 500 }}>
-                    {item.id}
+            {filteredItems.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={isAsset ? 5 : 4} align="center" sx={{ py: 4 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    Nie znaleziono elementów
                   </Typography>
                 </TableCell>
-                {isAsset ? (
-                  <>
-                    <TableCell>
-                      <Typography component="div">
-                        {(item as Asset).category.name}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography component="div">
-                        {(item as Asset).status}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography component="div">
-                        {(item as Asset).pyrcode || '-'}
-                      </Typography>
-                    </TableCell>
-                  </>
-                ) : (
-                  <>
-                    <TableCell>
-                      <Typography component="div">
-                        {(item as StockItem).category.name}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography component="div">
-                        {(item as StockItem).quantity}
-                      </Typography>
-                    </TableCell>
-                  </>
-                )}
               </TableRow>
-            ))}
+            ) : (
+              filteredItems.map((item) => (
+                <TableRow
+                  key={item.id}
+                  sx={{
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                    bgcolor: selectedIds.includes(item.id) ? getSelectedBgColor() : 'transparent',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => handleSelect(item.id)}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedIds.includes(item.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={() => handleSelect(item.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography component="div" sx={{ fontWeight: 500 }}>
+                      {item.id}
+                    </Typography>
+                  </TableCell>
+                  {isAsset ? (
+                    <>
+                      <TableCell>
+                        <Typography component="div">
+                          {(item as Asset).category.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography component="div">
+                          {(item as Asset).status}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography component="div">
+                          {(item as Asset).pyrcode || '-'}
+                        </Typography>
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell>
+                        <Typography component="div">
+                          {(item as StockItem).category.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography component="div">
+                          {(item as StockItem).quantity}
+                        </Typography>
+                      </TableCell>
+                    </>
+                  )}
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
+    );
+  };
+
+  // Modyfikujemy renderowanie karty mobilnej
+  const renderMobileCard = (item: Asset | StockItem, type: 'asset' | 'stock') => {
+    const isAsset = type === 'asset';
+    const isSelected = isAsset 
+      ? selectedItems.assetIds.includes((item as Asset).id)
+      : selectedItems.stockIds.includes((item as StockItem).id);
+
+    return (
+      <Card 
+        key={item.id} 
+        sx={{ 
+          mb: 2, 
+          position: 'relative',
+          borderRadius: 2,
+          bgcolor: isSelected ? getSelectedBgColor() : 'transparent',
+          '&:hover': {
+            boxShadow: 3,
+            transform: 'translateY(-2px)',
+            transition: 'all 0.2s'
+          },
+          cursor: 'pointer',
+        }}
+        onClick={() => {
+          if (isAsset) {
+            handleSelectAsset((item as Asset).id);
+          } else {
+            handleSelectStock((item as StockItem).id);
+          }
+        }}
+      >
+        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+          <Checkbox
+            checked={isSelected}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => {
+              if (isAsset) {
+                handleSelectAsset((item as Asset).id);
+              } else {
+                handleSelectStock((item as StockItem).id);
+              }
+            }}
+          />
+        </Box>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="primary">
+            {isAsset ? (item as Asset).category.label : (item as StockItem).category.label}
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              ID: <Typography component="span" color="text.primary">{item.id}</Typography>
+            </Typography>
+            {isAsset ? (
+              <>
+                <Typography variant="body2" color="text.secondary">
+                  Status: <Chip 
+                    size="small" 
+                    label={(item as Asset).status === 'in_stock' ? 'W magazynie' : 'W transporcie'}
+                    color={(item as Asset).status === 'in_stock' ? 'success' : 'warning'}
+                  />
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  PYR Code: <Typography component="span" color="text.primary">{(item as Asset).pyrcode || '-'}</Typography>
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                Ilość: <Typography component="span" color="text.primary">{(item as StockItem).quantity}</Typography>
+              </Typography>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -369,7 +422,7 @@ const LocationDetailsPage: React.FC = () => {
   }
 
   return (
-    <Container>
+    <Container maxWidth="xl">
       {/* Nagłówek strony */}
       <Box 
         sx={{ 
@@ -398,7 +451,7 @@ const LocationDetailsPage: React.FC = () => {
             {locationName}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            ID: {locationId}
+            #{locationId}
           </Typography>
         </Box>
         
@@ -446,60 +499,229 @@ const LocationDetailsPage: React.FC = () => {
       <Box 
         sx={{ 
           mb: 4, 
-          p: 3, 
-          bgcolor: 'background.paper', 
+          p: { xs: 2, sm: 3 }, 
+          bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'white', 
           borderRadius: 2, 
           boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
           border: '1px solid',
           borderColor: 'divider'
         }}
       >
-        <Typography 
-          variant="h6" 
-          gutterBottom
-          sx={{ 
-            fontWeight: 600,
-            color: 'text.primary',
-            mb: 2,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
-          }}
-        >
-          <InfoIcon color="primary" />
-          Informacje o lokalizacji
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body1" color="text.secondary" sx={{ minWidth: 100 }}>
-              ID:
-            </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {locationId}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body1" color="text.secondary" sx={{ minWidth: 100 }}>
-              Nazwa:
-            </Typography>
-            <Typography variant="body1" fontWeight={500}>
-              {locationName}
-            </Typography>
-          </Box>
-          {locationDetailsText && (
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-              <Typography variant="body1" color="text.secondary" sx={{ minWidth: 100 }}>
-                Szczegóły:
-              </Typography>
-              <Typography variant="body1">
-                {locationDetailsText}
-              </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Nagłówek sekcji */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2,
+            pb: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <Box sx={{ 
+              p: 1, 
+              borderRadius: 1, 
+              bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.lighter',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <InfoIcon color="primary" />
             </Box>
-          )}
+            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Informacje o lokalizacji
+            </Typography>
+          </Box>
+
+          {/* Główne informacje */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+            gap: 3 
+          }}>
+            {/* Lewa kolumna */}
+            <Box sx={{ 
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Identyfikator
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    #{locationId}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Nazwa lokalizacji
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {locationName}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Prawa kolumna */}
+            <Box sx={{ 
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                  Szczegóły
+                </Typography>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: locationDetailsText === 'Brak szczegółów' ? 'text.secondary' : 'text.primary',
+                    fontStyle: locationDetailsText === 'Brak szczegółów' ? 'italic' : 'normal'
+                  }}
+                >
+                  {locationDetailsText}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Statystyki */}
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+            mt: 1
+          }}>
+            <Box sx={{ 
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Liczba sprzętu
+                </Typography>
+              </Box>
+              <Chip
+                label={locationDetails?.assets?.length || 0}
+                color="primary"
+                size="small"
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
+            <Box sx={{ 
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Liczba zasobów
+                </Typography>
+              </Box>
+              <Chip
+                label={locationDetails?.stock_items?.length || 0}
+                color="primary"
+                size="small"
+                sx={{ fontWeight: 600 }}
+              />
+            </Box>
+          </Box>
         </Box>
       </Box>
 
-      {/* Zaznaczone elementy */}
+      {/* Sprzęt i Zasoby w zakładkach */}
+      <Box sx={{ mt: 4 }}>
+        {locationDetails?.assets && locationDetails.assets.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography 
+              variant="h5" 
+              gutterBottom 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                color: 'primary.main',
+                '&::after': {
+                  content: '""',
+                  flex: 1,
+                  height: '1px',
+                  bgcolor: 'divider',
+                  ml: 2
+                }
+              }}
+            >
+              Sprzęt
+              <Chip 
+                label={filterItems(locationDetails.assets, searchQuery).length}
+                size="small"
+                color="primary"
+                sx={{ ml: 1 }}
+              />
+            </Typography>
+            {isMobile ? (
+              filterItems(locationDetails.assets, searchQuery).map(asset => renderMobileCard(asset, 'asset'))
+            ) : (
+              renderDesktopTable(locationDetails.assets, 'asset')
+            )}
+          </Box>
+        )}
+
+        {locationDetails?.stock_items && locationDetails.stock_items.length > 0 && (
+          <Box sx={{ mb: 4 }}>
+            <Typography 
+              variant="h5" 
+              gutterBottom 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                color: 'primary.main',
+                '&::after': {
+                  content: '""',
+                  flex: 1,
+                  height: '1px',
+                  bgcolor: 'divider',
+                  ml: 2
+                }
+              }}
+            >
+              Zasoby
+              <Chip 
+                label={filterItems(locationDetails.stock_items, searchQuery).length}
+                size="small"
+                color="primary"
+                sx={{ ml: 1 }}
+              />
+            </Typography>
+            {isMobile ? (
+              filterItems(locationDetails.stock_items, searchQuery).map(item => renderMobileCard(item, 'stock'))
+            ) : (
+              renderDesktopTable(locationDetails.stock_items, 'stock')
+            )}
+          </Box>
+        )}
+      </Box>
+
+      {/* Zaznaczone elementy - sticky footer */}
       {(selectedItems.assetIds.length > 0 || selectedItems.stockIds.length > 0) && (
         <Box 
           sx={{ 
@@ -507,8 +729,9 @@ const LocationDetailsPage: React.FC = () => {
             bottom: 0,
             left: 0,
             right: 0,
-            bgcolor: 'background.paper',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'white',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
             p: 2,
             zIndex: 1000,
             display: 'flex',
@@ -526,14 +749,14 @@ const LocationDetailsPage: React.FC = () => {
               <Chip 
                 label={`Sprzęt: ${selectedItems.assetIds.length}`}
                 color="primary"
-                variant="outlined"
+                sx={{ fontWeight: 500 }}
               />
             )}
             {selectedItems.stockIds.length > 0 && (
               <Chip 
                 label={`Zasoby: ${selectedItems.stockIds.length}`}
                 color="primary"
-                variant="outlined"
+                sx={{ fontWeight: 500 }}
               />
             )}
           </Box>
@@ -544,44 +767,12 @@ const LocationDetailsPage: React.FC = () => {
             startIcon={<AddIcon />}
             sx={{ 
               minWidth: 200,
-              borderRadius: 2
+              borderRadius: 2,
+              py: 1.5
             }}
           >
             Utwórz transfer
           </Button>
-        </Box>
-      )}
-
-      {/* Dodajemy padding na dole strony, aby przycisk nie zasłaniał treści */}
-      {(selectedItems.assetIds.length > 0 || selectedItems.stockIds.length > 0) && (
-        <Box sx={{ height: 80 }} />
-      )}
-
-      {/* Sprzęt */}
-      {locationDetails?.assets && locationDetails.assets.length > 0 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Sprzęt
-          </Typography>
-          {isMobile ? (
-            locationDetails.assets.map(asset => renderMobileCard(asset, 'asset'))
-          ) : (
-            renderDesktopTable(locationDetails.assets, 'asset')
-          )}
-        </Box>
-      )}
-
-      {/* Zasoby */}
-      {locationDetails?.stock_items && locationDetails.stock_items.length > 0 && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Zasoby
-          </Typography>
-          {isMobile ? (
-            locationDetails.stock_items.map(item => renderMobileCard(item, 'stock'))
-          ) : (
-            renderDesktopTable(locationDetails.stock_items, 'stock')
-          )}
         </Box>
       )}
 

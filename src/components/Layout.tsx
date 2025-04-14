@@ -156,12 +156,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const handleMenuItemClick = (path: string) => {
-    setActiveItem(path);
-    if (path === '/quests' && prefersAnimations) {
+    if (path === '/quests' && prefersAnimations && !isSystemReducedMotion) {
       setShowQuestTransition(true);
+      window.setTimeout(() => {
+        navigate(path);
+      }, 500); // Nawigacja po 500ms, gdy animacja jest w połowie
     } else {
       navigate(path);
     }
+    setActiveItem(path);
   };
 
   const handleTransitionComplete = () => {

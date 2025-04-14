@@ -3,9 +3,7 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Paper,
   Divider,
-  Grid,
   Chip,
   Card,
   CardContent,
@@ -34,6 +32,7 @@ import { deleteAsset } from '../services/assetService';
 import { BarcodeGenerator } from './BarcodeGenerator';
 import { useLocations } from '../hooks/useLocations';
 import { getApiUrl } from '../config/api';
+import { useTheme } from '@mui/material/styles';
 
 interface AssetLog {
   id: number;
@@ -57,6 +56,7 @@ const EquipmentDetails: React.FC = () => {
   const type = searchParams.get('type') || 'asset';
   const navigate = useNavigate();
   const { locations } = useLocations();
+  const theme = useTheme();
 
   const [details, setDetails] = useState<any | null>(null);
   const [logs, setLogs] = useState<AssetLog[]>([]);
@@ -250,62 +250,187 @@ const EquipmentDetails: React.FC = () => {
       </Box>
 
       {/* Basic Information Section */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper elevation={3} sx={{ padding: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              <Info sx={{ verticalAlign: 'bottom', marginRight: 1 }} />
-              Basic Information
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Box>
-              <Typography>
-                <strong>ID:</strong> {details.id}
-              </Typography>
-              <Typography>
-                <strong>Category:</strong> {details.category?.label || 'N/A'}
-              </Typography>
-              <Typography>
-                <strong>Location:</strong> {details.location?.name || 'N/A'}
-              </Typography>
-              <Typography>
-                <strong>Origin:</strong> {details.origin || 'N/A'}
-              </Typography>
-              {type === 'asset' && (
-                <Typography>
-                  <strong>PyrCode:</strong> {details.pyrcode || 'N/A'}
-                </Typography>
-              )}
-              {type === 'stock' && (
-                <Typography>
-                  <strong>Quantity:</strong> {details.quantity || 'N/A'}
-                </Typography>
-              )}
+      <Box 
+        sx={{ 
+          mb: 4, 
+          p: { xs: 2, sm: 3 }, 
+          bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'white', 
+          borderRadius: 2, 
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          border: '1px solid',
+          borderColor: 'divider'
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Nagłówek sekcji */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2,
+            pb: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider'
+          }}>
+            <Box sx={{ 
+              p: 1, 
+              borderRadius: 1, 
+              bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.lighter',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Info color="primary" />
             </Box>
-          </Paper>
-        </Grid>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              Podstawowe informacje
+            </Typography>
+          </Box>
 
-        {/* Barcode Section */}
-        {type === 'asset' && details.pyrcode && (
-          <Grid item xs={12} md={6}>
-            <Paper elevation={3} sx={{ padding: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Barcode
-              </Typography>
-              <Divider sx={{ my: 2 }} />
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          {/* Główne informacje */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+            gap: 3 
+          }}>
+            {/* Lewa kolumna */}
+            <Box sx={{ 
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Identyfikator
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                    #{details.id}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Kategoria
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {details.category?.label || 'N/A'}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Lokalizacja
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {details.location?.name || 'N/A'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Prawa kolumna */}
+            <Box sx={{ 
+              p: 2,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    Pochodzenie
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                    {details.origin || 'N/A'}
+                  </Typography>
+                </Box>
+                {type === 'asset' && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                      PYR Code
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {details.pyrcode || 'N/A'}
+                    </Typography>
+                  </Box>
+                )}
+                {type === 'stock' && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                      Ilość
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {details.quantity || 'N/A'}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Status i dodatkowe informacje */}
+          <Box sx={{ 
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+            mt: 1
+          }}>
+            {type === 'asset' && (
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 2,
+                bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Status
+                  </Typography>
+                </Box>
+                <Chip
+                  label={details.status === 'in_stock' ? 'W magazynie' : 'W transporcie'}
+                  color={details.status === 'in_stock' ? 'success' : 'warning'}
+                  size="small"
+                  sx={{ fontWeight: 600 }}
+                />
+              </Box>
+            )}
+            {type === 'asset' && details.pyrcode && (
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 2,
+                bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Kod kreskowy
+                  </Typography>
+                </Box>
                 <Button
-                  variant="contained"
-                  color="primary"
+                  variant="outlined"
+                  size="small"
                   onClick={() => setShowBarcode(true)}
+                  sx={{ minWidth: 130 }}
                 >
-                  Wyświetl kod kreskowy
+                  Pokaż kod
                 </Button>
               </Box>
-            </Paper>
-          </Grid>
-        )}
-      </Grid>
+            )}
+          </Box>
+        </Box>
+      </Box>
 
       {/* History Logs Section */}
       <Box sx={{ mt: 4 }}>

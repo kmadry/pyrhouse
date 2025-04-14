@@ -426,7 +426,7 @@ const HomePage: React.FC = () => {
             >
               <ListAlt sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
               <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
-                Przeglądaj dostawy
+                Przeglądaj questy-dostawy
               </Typography>
             </Paper>
           </Grid>
