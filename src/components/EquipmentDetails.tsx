@@ -140,7 +140,7 @@ const EquipmentDetails: React.FC = () => {
   };
 
   const formatLogMessage = (log: AssetLog) => {
-    return log.data.msg;
+    return log.data?.msg || 'Brak wiadomości';
   };
 
   const getLocationInfo = (log: AssetLog) => {
@@ -527,7 +527,7 @@ const EquipmentDetails: React.FC = () => {
                       </Typography>
                     </Box>
                     
-                    {log.data.quantity && (
+                    {log.data?.quantity && (
                       <Box 
                         sx={{ 
                           display: 'inline-flex', 
