@@ -400,7 +400,7 @@ const TransferPage: React.FC = () => {
                           disabled={lockedRows.has(index)}
                         >
                           <MenuItem value="pyr_code">Pyr Code</MenuItem>
-                          <MenuItem value="stock">Stock</MenuItem>
+                          <MenuItem value="stock">Zasoby (Ilościowe)</MenuItem>
                         </Select>
                       )}
                     />

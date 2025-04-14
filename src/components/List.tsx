@@ -161,12 +161,22 @@ const EquipmentList: React.FC = () => {
     fetchEquipment();
   }, []); // Pobieramy dane tylko raz przy montowaniu komponentu
 
+  // Domyślne sortowanie po ID
+  useEffect(() => {
+    if (filteredEquipment.length > 0) {
+      const sortedEquipment = [...filteredEquipment].sort((a, b) => b.id - a.id);
+      setFilteredEquipment(sortedEquipment);
+    }
+  }, [equipment]);
+
   // const handleSort = (field: string) =>
       // setSortField(field
       // setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc')
     // };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string, type: string) => {
+    if (type === 'stock') return null;
+    
     switch (status) {
       case 'in_stock':
       case 'available':
@@ -193,6 +203,37 @@ const EquipmentList: React.FC = () => {
       default:
         return '';
     }
+  };
+
+  const renderStatusOrQuantity = (item: Equipment) => {
+    if (item.type === 'stock') {
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography 
+            component="div" 
+            fontWeight="bold"
+            sx={{ 
+              color: item.quantity && item.quantity > 0 ? 'success.main' : 'text.secondary',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
+            }}
+          >
+            <Icons.Inventory2 />
+            {item.quantity ?? '-'}
+          </Typography>
+        </Box>
+      );
+    }
+    
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {getStatusIcon(item.state, item.type)}
+        <Typography component="div">
+          {getStatusLabel(item.state)}
+        </Typography>
+      </Box>
+    );
   };
 
   const quickFilters: QuickFilter[] = [
@@ -240,7 +281,7 @@ const EquipmentList: React.FC = () => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-            {['ID', 'Typ', 'Ilość', 'Lokalizacja', 'Status', 'PYR_CODE', 'Pochodzenie'].map((field) => (
+            {['ID', 'Typ', 'Lokalizacja', 'Status', 'Ilość/PYR_CODE', 'Pochodzenie'].map((field) => (
               <TableCell 
                 key={field} 
                 sx={{ 
@@ -283,33 +324,19 @@ const EquipmentList: React.FC = () => {
                 </Typography>
               </TableCell>
               <TableCell>
-                <Typography 
-                  component="div" 
-                  fontWeight="bold"
-                  sx={{ 
-                    color: item.quantity && item.quantity > 0 ? 'success.main' : 'text.secondary'
-                  }}
-                >
-                  {item.quantity ?? '-'}
-                </Typography>
-              </TableCell>
-              <TableCell>
                 <Typography component="div">
                   {item.location.name}
                 </Typography>
               </TableCell>
               <TableCell>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {getStatusIcon(item.state)}
-                  <Typography component="div">
-                    {getStatusLabel(item.state)}
-                  </Typography>
-                </Box>
+                {item.type === 'asset' ? renderStatusOrQuantity(item) : '-'}
               </TableCell>
               <TableCell>
-                <Typography component="div">
-                  {item.pyr_code || '-'}
-                </Typography>
+                {item.type === 'stock' ? renderStatusOrQuantity(item) : (
+                  <Typography component="div">
+                    {item.pyr_code || '-'}
+                  </Typography>
+                )}
               </TableCell>
               <TableCell>
                 <Typography component="div">
@@ -348,7 +375,7 @@ const EquipmentList: React.FC = () => {
                   ID: {String(item.id)}
                 </Typography>
                 <Chip 
-                  label={item.type === 'asset' ? 'Asset' : 'Stock'} 
+                  label={item.type === 'asset' ? 'Sprzęt' : 'Materiały'} 
                   size="small" 
                   color={item.type === 'asset' ? 'primary' : 'secondary'}
                 />
@@ -365,34 +392,24 @@ const EquipmentList: React.FC = () => {
                 </Box>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Ilość:</Typography>
-                  <Typography 
-                    variant="body2" 
-                    fontWeight="bold"
-                    sx={{ 
-                      color: item.quantity && item.quantity > 0 ? 'success.main' : 'text.secondary'
-                    }}
-                  >
-                    {item.quantity ?? '-'}
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">Lokalizacja:</Typography>
                   <Typography variant="body2">{item.location.name}</Typography>
                 </Box>
                 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Status:</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    {getStatusIcon(item.state)}
-                    <Typography variant="body2">{getStatusLabel(item.state)}</Typography>
+                {item.type === 'asset' && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" color="text.secondary">Status:</Typography>
+                    {renderStatusOrQuantity(item)}
                   </Box>
-                </Box>
+                )}
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">PYR_CODE:</Typography>
-                  <Typography variant="body2">{item.pyr_code || '-'}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {item.type === 'stock' ? 'Ilość:' : 'PYR_CODE:'}
+                  </Typography>
+                  {item.type === 'stock' ? renderStatusOrQuantity(item) : (
+                    <Typography variant="body2">{item.pyr_code || '-'}</Typography>
+                  )}
                 </Box>
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -562,16 +579,26 @@ const EquipmentList: React.FC = () => {
             loading={locationsLoading}
             onChange={(_, value) => setSelectedLocations(value)}
             size="small"
+            limitTags={2}
             renderInput={(params) => (
               <TextField 
                 {...params} 
-                label="Filtruj po lokalizacjach" 
+                label={selectedLocations.length > 0 ? `Wybrano ${selectedLocations.length} lokalizacji` : "Filtruj po lokalizacjach"}
                 variant="outlined"
                 InputProps={{
                   ...params.InputProps,
-                  sx: { borderRadius: 1 },
+                  sx: { 
+                    borderRadius: 1,
+                    minHeight: '40px',
+                    '& .MuiAutocomplete-input': {
+                      height: '20px',
+                    },
+                  },
                   startAdornment: (
-                    <Icons.LocationOn sx={{ color: 'text.secondary', mr: 1 }} />
+                    <>
+                      <Icons.LocationOn sx={{ color: 'text.secondary', mr: 1 }} />
+                      {params.InputProps.startAdornment}
+                    </>
                   ),
                   endAdornment: (
                     <>
@@ -584,7 +611,10 @@ const EquipmentList: React.FC = () => {
             )}
             renderOption={(props, option: Location) => (
               <li {...props} key={option.id}>
-                <Typography component="span">{option.name}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Icons.LocationOn sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  <Typography component="span">{option.name}</Typography>
+                </Box>
               </li>
             )}
             renderTags={(tagValue, getTagProps) =>
@@ -596,12 +626,37 @@ const EquipmentList: React.FC = () => {
                     {...rest}
                     key={key}
                     size="small"
+                    sx={{
+                      backgroundColor: 'primary.light',
+                      color: 'primary.contrastText',
+                      margin: '2px',
+                      maxWidth: '200px',
+                      '& .MuiChip-label': {
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      },
+                      '& .MuiChip-deleteIcon': {
+                        color: 'primary.contrastText',
+                        '&:hover': {
+                          color: 'error.main',
+                        },
+                      },
+                    }}
                   />
                 );
               })
             }
             isOptionEqualToValue={(option: Location, value: Location) => option.id === value.id}
-            sx={{ flex: 1 }}
+            sx={{ 
+              flex: 1,
+              '& .MuiAutocomplete-tag': {
+                margin: '2px',
+              },
+              '& .MuiInputBase-root': {
+                padding: '2px 4px',
+              },
+            }}
             aria-label="Wybierz lokalizacje"
           />
           <Autocomplete<Category, false, false, false>
@@ -652,8 +707,8 @@ const EquipmentList: React.FC = () => {
             aria-label="Wybierz typ kategorii"
           >
             <MenuItem value="">Wszystkie typy</MenuItem>
-            <MenuItem value="asset">Asset</MenuItem>
-            <MenuItem value="stock">Stock</MenuItem>
+            <MenuItem value="asset">Sprzęt (z pyr_code)</MenuItem>
+            <MenuItem value="stock">Zasoby (ilościowe)</MenuItem>
           </Select>
         </Box>
       </Box>
@@ -717,3 +772,4 @@ const EquipmentList: React.FC = () => {
 };
 
 export default EquipmentList;
+
