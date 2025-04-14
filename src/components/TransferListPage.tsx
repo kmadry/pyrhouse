@@ -232,7 +232,7 @@ const TransfersListPage: React.FC = () => {
             mb: { xs: 1, sm: 0 }
           }}
         >
-          Lista Transferów
+          Questy transportowe
         </Typography>
         <Button
           variant="contained"
@@ -244,7 +244,7 @@ const TransfersListPage: React.FC = () => {
             px: 3
           }}
         >
-          Utwórz Nowy Transfer
+          Utwórz Nowy Quest
         </Button>
       </Box>
 

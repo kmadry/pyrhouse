@@ -374,7 +374,7 @@ const HomePage: React.FC = () => {
             >
               <LocalShipping sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
               <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
-                Utwórz dostawę
+                Utwórz quest-dostawę
               </Typography>
             </Paper>
           </Grid>

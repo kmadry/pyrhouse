@@ -75,6 +75,7 @@ const TransferPage: React.FC = () => {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -174,10 +175,58 @@ const TransferPage: React.FC = () => {
     }
   };
 
+  const getErrorMessage = (error: string): string => {
+    const errorMessages: { [key: string]: string } = {
+      'Invalid transfer data': 'Nieprawidłowe dane transferu',
+      'Unauthorized access': 'Brak autoryzacji',
+      'Access forbidden': 'Dostęp zabroniony',
+      'Resource not found': 'Nie znaleziono zasobu',
+      'Server error occurred': 'Wystąpił błąd serwera',
+      'Request timeout': 'Przekroczono limit czasu żądania',
+      'An unexpected error occurred': 'Wystąpił nieoczekiwany błąd',
+      'Transfer from and to location cannot be the same': 'Lokalizacja źródłowa i docelowa nie mogą być takie same',
+    };
+
+    return errorMessages[error] || 'Wystąpił błąd podczas przetwarzania transferu';
+  };
+
   const onSubmit = async (formData: any) => {
     if (!formData.toLocation) {
+      setErrorMessage('Wybierz lokalizację docelową');
       return;
     }
+
+    if (Number(formData.fromLocation) === Number(formData.toLocation)) {
+      setErrorMessage('Lokalizacja źródłowa i docelowa nie mogą być takie same');
+      return;
+    }
+
+    // Sprawdzanie dostępności ilości dla każdego przedmiotu magazynowego
+    const stockValidationErrors = formData.items
+      .filter((item: any) => item.type === 'stock' && item.id)
+      .map((item: any) => {
+        const selectedStock = stocks.find((stock: any) => stock.id === item.id);
+        if (!selectedStock) {
+          return 'Nie znaleziono wybranego przedmiotu magazynowego';
+        }
+        if (Number(item.quantity) > selectedStock.quantity) {
+          return `Dla przedmiotu "${selectedStock.category.label}" maksymalna dostępna ilość to: ${selectedStock.quantity}`;
+        }
+        if (Number(item.quantity) <= 0) {
+          return `Dla przedmiotu "${selectedStock.category.label}" ilość musi być większa niż 0`;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    if (stockValidationErrors.length > 0) {
+      setErrorMessage(stockValidationErrors[0]);
+      return;
+    }
+
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
     try {
       setLoading(true);
 
@@ -195,16 +244,22 @@ const TransferPage: React.FC = () => {
       if (!payload.assets?.length) delete payload.assets;
       if (!payload.stocks?.length) delete payload.stocks;
 
+      if (!payload.assets?.length && !payload.stocks?.length) {
+        setErrorMessage('Dodaj co najmniej jeden zasób lub pozycję magazynową');
+        return;
+      }
+
       const response = await createTransferAPI(payload);
 
-      setSuccessMessage('Transfer created successfully!');
+      setSuccessMessage('Quest został utworzony pomyślnie!');
       setTimeout(() => {
         navigate(`/transfers/${response.id}`);
       }, 500);
 
       reset();
     } catch (err: any) {
-      console.error('Failed to create transfer:', err.message);
+      console.error('Błąd podczas tworzenia transferu:', err.message);
+      setErrorMessage(getErrorMessage(err.message));
     } finally {
       setLoading(false);
     }
@@ -248,15 +303,19 @@ const TransferPage: React.FC = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Utwórz Transfer
+        Nowy transfer
       </Typography>
 
       {/* Display Errors */}
       {locationError && <ErrorMessage message="Error loading locations" details={locationError} />}
       {stockError && <ErrorMessage message="Error loading stocks" details={stockError} />}
+      {errorMessage && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {errorMessage}
+        </Alert>
+      )}
       {successMessage && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          <CheckCircleIcon sx={{ verticalAlign: 'bottom', mr: 1 }} />
+        <Alert severity="success" sx={{ mb: 2 }}>
           {successMessage}
         </Alert>
       )}
@@ -436,15 +495,30 @@ const TransferPage: React.FC = () => {
                       <Controller
                         name={`items.${index}.quantity`}
                         control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            type="number"
-                            label="Ilość"
-                            fullWidth
-                            inputProps={{ min: 0 }}
-                          />
-                        )}
+                        render={({ field }) => {
+                          const selectedStock = stocks.find((stock: any) => stock.id === items[index].id);
+                          const maxQuantity = selectedStock?.quantity || 0;
+                          
+                          return (
+                            <TextField
+                              {...field}
+                              type="number"
+                              label="Ilość"
+                              fullWidth
+                              error={Number(field.value) > maxQuantity}
+                              helperText={Number(field.value) > maxQuantity ? `Maksymalna dostępna ilość: ${maxQuantity}` : ''}
+                              inputProps={{ 
+                                min: 0,
+                                max: maxQuantity,
+                                step: 1
+                              }}
+                              onChange={(e) => {
+                                const value = Math.min(Number(e.target.value), maxQuantity);
+                                field.onChange(value);
+                              }}
+                            />
+                          );
+                        }}
                       />
                     )}
                     {items[index].type === 'pyr_code' && items[index].status === 'success' && (
@@ -497,7 +571,7 @@ const TransferPage: React.FC = () => {
           disabled={!fromLocation || items.length === 0 || loading}
           sx={{ mt: 2, ml: 2 }}
         >
-          {loading ? <CircularProgress size={20} /> : 'Utwórz Transfer'}
+          {loading ? <CircularProgress size={20} /> : 'Rozpocznij quest'}
         </Button>
       </form>
     </Container>

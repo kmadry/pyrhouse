@@ -20,24 +20,61 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
   
   export const createTransferAPI = async (payload: any): Promise<any> => {
     const token = localStorage.getItem('token');
-    const response = await fetch(
-      getApiUrl('/transfers'),
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+    try {
+      const response = await fetch(
+        getApiUrl('/transfers'),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+  
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        const errorCode = response.status;
+        let errorMessage = errorResponse.error || 'Failed to create transfer';
+  
+        if (errorResponse.code === 'same_location') {
+          errorMessage = 'Transfer from and to location cannot be the same';
+        } else {
+          switch (errorCode) {
+            case 400:
+              errorMessage = errorResponse.error || 'Invalid transfer data';
+              break;
+            case 401:
+              errorMessage = 'Unauthorized access';
+              break;
+            case 403:
+              errorMessage = 'Access forbidden';
+              break;
+            case 404:
+              errorMessage = 'Resource not found';
+              break;
+            case 422:
+              errorMessage = errorResponse.error || 'Invalid transfer data';
+              break;
+            case 500:
+              errorMessage = 'Server error occurred';
+              break;
+            default:
+              errorMessage = 'An unexpected error occurred';
+          }
+        }
+  
+        throw new Error(errorMessage);
       }
-    );
   
-    if (!response.ok) {
-      const errorResponse = await response.json();
-      throw new Error(errorResponse.error || 'Failed to create transfer');
+      return response.json();
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout');
+      }
+      throw error;
     }
-  
-    return response.json();
   };
   
   export const getTransferDetailsAPI = async (transferId: number) => {

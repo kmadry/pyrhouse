@@ -6,6 +6,7 @@ import { getApiUrl } from '../config/api';
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
 
 export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories }) => {
+  const stockCategories = categories.filter((category) => category.type === 'stock');
   const [stockCategoryID, setStockCategoryID] = useState('');
   const [quantity, setQuantity] = useState<number | string>('');
   const [origin, setOrigin] = useState('probis'); // Default value for origin
@@ -13,7 +14,6 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
   const [error, setError] = useState('');
   const [errorDetails, setErrorDetails] = useState(''); // Additional error details
   const [submitting, setSubmitting] = useState(false);
-  const stockCategories = categories.filter((category) => category.type === 'stock');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,7 +61,7 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
       // Reset form
       setStockCategoryID('');
       setQuantity('');
-      setOrigin('probis'); // Reset to default origin
+      // setOrigin('probis'); // Reset to default origin
       setCustomOrigin(''); // Clear custom origin
     } catch (err: any) {
       setError('Wystąpił nieoczekiwany błąd');
@@ -78,12 +78,16 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
 
       {/* Category Select */}
       <FormControl fullWidth required sx={{ mb: 2 }}>
-        <InputLabel>Kategoria</InputLabel>
+        <InputLabel id="category-label" shrink={true} >Kategoria</InputLabel>
         <Select
+          labelId="category-label"
           value={stockCategoryID}
           onChange={(e) => setStockCategoryID(e.target.value)}
-          displayEmpty
           label="Kategoria"
+          displayEmpty
+          sx={{
+            '& .MuiSelect-select': { color: 'text.primary' }
+          }}
         >
           <MenuItem value="" disabled>
             Wybierz kategorię
@@ -114,10 +118,8 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
           value={origin}
           onChange={(e) => setOrigin(e.target.value)}
           label="Pochodzenie"
+          defaultValue='druga-era'
         >
-          <MenuItem value="" disabled>
-            Wybierz pochodzenie
-          </MenuItem>
           {ORIGIN_OPTIONS.map((option) => (
             <MenuItem key={option} value={option}>
               {option}

@@ -170,7 +170,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const menuItems = [
     { path: '/home', label: 'Home', icon: <Icons.Home /> },
-    { path: '/transfers', label: 'Wydania', icon: <Icons.PublishedWithChanges /> },
+    { path: '/transfers', label: 'Questy', icon: <Icons.PublishedWithChanges /> },
     { path: '/add-item', label: 'Dodaj sprzęt', icon: <Icons.Add /> },
     { path: '/list', label: 'Stan Magazynowy', icon: <Icons.List /> },
     { path: '/locations', label: 'Lokalizacje', icon: <Icons.EditLocationAlt /> },
