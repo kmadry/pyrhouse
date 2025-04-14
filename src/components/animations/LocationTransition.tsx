@@ -1,11 +1,9 @@
 import { TransitionAnimation } from './TransitionAnimation';
 
-interface QuestBoardTransitionProps {
+interface LocationTransitionProps {
   onAnimationComplete: () => void;
 }
 
-const QuestBoardTransition = ({ onAnimationComplete }: QuestBoardTransitionProps) => {
+export const LocationTransition = ({ onAnimationComplete }: LocationTransitionProps) => {
   return <TransitionAnimation onAnimationComplete={onAnimationComplete} />;
-};
-
-export default QuestBoardTransition; 
+}; 

@@ -30,6 +30,7 @@ import { useTokenValidation } from '../hooks/useTokenValidation';
 import { useStorage } from '../hooks/useStorage';
 import { useAnimationPreference } from '../hooks/useAnimationPreference';
 import QuestBoardTransition from './animations/QuestBoardTransition';
+import { LocationTransition } from './animations/LocationTransition';
 
 interface JwtPayload {
   role: string;
@@ -40,7 +41,11 @@ interface JwtPayload {
 // Stała określająca margines bezpieczeństwa w sekundach (5 minut)
 const SAFETY_MARGIN = 5 * 60;
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { isTokenValid } = useTokenValidation();
   const theme = useTheme();
@@ -54,6 +59,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<number | null>(null);
   const [showQuestTransition, setShowQuestTransition] = useState(false);
+  const [showLocationTransition, setShowLocationTransition] = useState(false);
   const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
   const { getToken, removeToken } = useStorage();
 
@@ -154,20 +160,25 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return userRole === 'admin' || userRole === 'moderator';
   };
 
-  const handleMenuItemClick = (path: string) => {
-    if (path === '/quests' && prefersAnimations && !isSystemReducedMotion) {
-      setShowQuestTransition(true);
+  const handleMenuItemClick = (path: string): void => {
+    if ((path === '/quests' || path === '/locations') && prefersAnimations && !isSystemReducedMotion) {
+      if (path === '/quests') {
+        setShowQuestTransition(true);
+      } else {
+        setShowLocationTransition(true);
+      }
       window.setTimeout(() => {
         navigate(path);
-      }, 500); // Nawigacja po 500ms, gdy animacja jest w połowie
+      }, 500);
     } else {
       navigate(path);
     }
     setActiveItem(path);
   };
 
-  const handleTransitionComplete = () => {
+  const handleTransitionComplete = (): void => {
     setShowQuestTransition(false);
+    setShowLocationTransition(false);
   };
 
   const menuItems = [
@@ -570,6 +581,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {children}
         {showQuestTransition && (
           <QuestBoardTransition onAnimationComplete={handleTransitionComplete} />
+        )}
+        {showLocationTransition && (
+          <LocationTransition onAnimationComplete={handleTransitionComplete} />
         )}
       </Box>
     </Box>
