@@ -139,9 +139,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setUserMenuAnchor(null);
   };
 
-  const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
-    setThemeMode(mode);
-    handleUserMenuClose();
+  const handleThemeChange = (newMode: 'light' | 'dark' | 'system') => {
+    setThemeMode(newMode);
   };
 
   const handleProfileClick = () => {
@@ -366,7 +365,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               anchorEl={userMenuAnchor}
               open={Boolean(userMenuAnchor)}
               onClose={handleUserMenuClose}
-              onClick={handleUserMenuClose}
+              onClick={(e) => {
+                // Zamykamy menu tylko jeśli kliknięcie nie było na przełączniku motywu
+                const target = e.target as HTMLElement;
+                if (!target.closest('[data-theme-switch]')) {
+                  handleUserMenuClose();
+                }
+              }}
               PaperProps={{
                 sx: {
                   width: 320,
@@ -438,6 +443,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   }}>
                     <Box
                       onClick={() => handleThemeChange('light')}
+                      data-theme-switch
                       sx={{
                         cursor: 'pointer',
                         p: 1,
@@ -454,6 +460,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </Box>
                     <Box
                       onClick={() => handleThemeChange('system')}
+                      data-theme-switch
                       sx={{
                         cursor: 'pointer',
                         p: 1,
@@ -470,6 +477,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </Box>
                     <Box
                       onClick={() => handleThemeChange('dark')}
+                      data-theme-switch
                       sx={{
                         cursor: 'pointer',
                         p: 1,
