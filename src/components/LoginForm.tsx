@@ -28,7 +28,7 @@ import { getApiUrl } from '../config/api';
 import { useStorage } from '../hooks/useStorage';
 import { useAnimationPreference } from '../hooks/useAnimationPreference';
 import pyrkonLogo from '../assets/images/p-logo.svg';
-import { hyperJumpAnimation, starStreakAnimation, fadeInAnimation } from '../animations/keyframes';
+import { hyperJumpAnimation, starStreakAnimation } from '../animations/keyframes';
 
 // Mapowanie komunikatów błędów na polskie tłumaczenia
 const errorMessages: Record<string, string> = {

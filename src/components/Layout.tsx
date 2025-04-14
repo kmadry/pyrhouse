@@ -29,6 +29,7 @@ import { jwtDecode } from 'jwt-decode';
 import { useTokenValidation } from '../hooks/useTokenValidation';
 import { useStorage } from '../hooks/useStorage';
 import { useAnimationPreference } from '../hooks/useAnimationPreference';
+import QuestBoardTransition from './animations/QuestBoardTransition';
 
 interface JwtPayload {
   role: string;
@@ -46,15 +47,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [open, setOpen] = useState(!isMobile);
   const { themeMode, setThemeMode } = useThemeMode();
-  const [themeMenuAnchor, setThemeMenuAnchor] = useState<null | HTMLElement>(null);
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [activeItem, setActiveItem] = useState<string>('');
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
   const [lastScrollY, setLastScrollY] = useState(0);
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<number | null>(null);
-  const { getToken, removeToken } = useStorage();
+  const [showQuestTransition, setShowQuestTransition] = useState(false);
   const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
-  const [animationMenuAnchor, setAnimationMenuAnchor] = useState<null | HTMLElement>(null);
+  const { getToken, removeToken } = useStorage();
 
   const handleLogout = useCallback(() => {
     removeToken();
@@ -130,28 +131,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return null;
   }
 
-  const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setThemeMenuAnchor(event.currentTarget);
+  const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchor(event.currentTarget);
   };
 
-  const handleThemeMenuClose = () => {
-    setThemeMenuAnchor(null);
+  const handleUserMenuClose = () => {
+    setUserMenuAnchor(null);
   };
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
     setThemeMode(mode);
-    handleThemeMenuClose();
-  };
-
-  const getThemeIcon = () => {
-    switch (themeMode) {
-      case 'light':
-        return <Icons.LightMode />;
-      case 'dark':
-        return <Icons.DarkMode />;
-      default:
-        return <Icons.BrightnessAuto />;
-    }
+    handleUserMenuClose();
   };
 
   const handleProfileClick = () => {
@@ -167,10 +157,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleMenuItemClick = (path: string) => {
     setActiveItem(path);
-    navigate(path);
-    if (isMobile) {
-      setOpen(false);
+    if (path === '/quests' && prefersAnimations) {
+      setShowQuestTransition(true);
+    } else {
+      navigate(path);
     }
+  };
+
+  const handleTransitionComplete = () => {
+    setShowQuestTransition(false);
   };
 
   const menuItems = [
@@ -292,14 +287,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     </Box>
   );
 
-  const handleAnimationMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnimationMenuAnchor(event.currentTarget);
-  };
-
-  const handleAnimationMenuClose = () => {
-    setAnimationMenuAnchor(null);
-  };
-
   return (
     <Box sx={styles.root}>
       <CssBaseline />
@@ -348,83 +335,192 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             Pyrhouse
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Przycisk animacji */}
-            <Tooltip title="Ustawienia animacji">
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Tooltip title="Ustawienia użytkownika">
               <IconButton
-                onClick={handleAnimationMenuOpen}
-                color="inherit"
+                onClick={handleUserMenuOpen}
                 sx={{
-                  opacity: isSystemReducedMotion ? 0.5 : 1,
+                  padding: 1,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
                 }}
               >
-                {prefersAnimations ? <Icons.Animation /> : <Icons.BlockTwoTone />}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Icons.Person />
+                  <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    {userId ? 'Użytkownik' : ''}
+                  </Typography>
+                  <Icons.ExpandMore sx={{ fontSize: 20 }} />
+                </Box>
               </IconButton>
             </Tooltip>
 
-            {/* Menu animacji */}
             <Menu
-              anchorEl={animationMenuAnchor}
-              open={Boolean(animationMenuAnchor)}
-              onClose={handleAnimationMenuClose}
-              onClick={handleAnimationMenuClose}
-            >
-              <MenuItem>
-                <ListItemText 
-                  primary="Animacje"
-                  secondary={isSystemReducedMotion ? "Wyłączone przez system" : ""}
-                />
-                <Switch
-                  checked={prefersAnimations}
-                  onChange={toggleAnimations}
-                  disabled={isSystemReducedMotion}
-                />
-              </MenuItem>
-            </Menu>
-
-            {/* Przycisk motywu */}
-            <Tooltip title="Ustawienia motywu">
-              <IconButton onClick={handleThemeMenuOpen} color="inherit">
-                {getThemeIcon()}
-              </IconButton>
-            </Tooltip>
-
-            {/* Menu motywu */}
-            <Menu
-              anchorEl={themeMenuAnchor}
-              open={Boolean(themeMenuAnchor)}
-              onClose={handleThemeMenuClose}
-              anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'right',
+              anchorEl={userMenuAnchor}
+              open={Boolean(userMenuAnchor)}
+              onClose={handleUserMenuClose}
+              onClick={handleUserMenuClose}
+              PaperProps={{
+                sx: {
+                  width: 320,
+                  maxWidth: '100%',
+                  mt: 1.5,
+                }
               }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              <MenuItem onClick={() => handleThemeChange('light')}>
-                <Icons.LightMode sx={{ mr: 2 }} />
-                Jasny
-              </MenuItem>
-              <MenuItem onClick={() => handleThemeChange('dark')}>
-                <Icons.DarkMode sx={{ mr: 2 }} />
-                Ciemny
-              </MenuItem>
-              <MenuItem onClick={() => handleThemeChange('system')}>
-                <Icons.BrightnessAuto sx={{ mr: 2 }} />
-                Systemowy
-              </MenuItem>
-            </Menu>
+              <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Icons.AccountCircle sx={{ fontSize: 40, color: 'primary.main' }} />
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {userId ? 'Użytkownik' : ''}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {userRole === 'admin' ? 'Administrator' : userRole === 'moderator' ? 'Moderator' : 'Użytkownik'}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
 
-            <Tooltip title="Profil użytkownika">
-              <IconButton color="inherit" onClick={handleProfileClick}>
-                <Icons.Person />
-              </IconButton>
-            </Tooltip>
-            <IconButton color="inherit" onClick={handleLogout}>
-              <Icons.Logout />
-            </IconButton>
+              <Box sx={{ p: 1 }}>
+                <MenuItem onClick={handleProfileClick} sx={{ 
+                  borderRadius: 1,
+                  mb: 1,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  }
+                }}>
+                  <ListItemIcon sx={{ color: 'inherit' }}>
+                    <Icons.AccountCircle />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Mój profil"
+                    secondary="Zarządzaj swoim kontem"
+                    secondaryTypographyProps={{
+                      sx: { color: 'primary.contrastText', opacity: 0.8 }
+                    }}
+                  />
+                </MenuItem>
+
+                <Typography variant="overline" sx={{ px: 1, color: 'text.secondary', display: 'block', mt: 2 }}>
+                  Wygląd
+                </Typography>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1,
+                  p: 1,
+                  borderRadius: 1,
+                  '&:hover': {
+                    bgcolor: 'action.hover'
+                  }
+                }}>
+                  <Icons.LightMode sx={{ color: themeMode === 'light' ? 'primary.main' : 'text.secondary' }} />
+                  <Box sx={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    bgcolor: 'action.selected',
+                    borderRadius: 2,
+                    p: 0.5,
+                    mx: 1,
+                    position: 'relative'
+                  }}>
+                    <Box
+                      onClick={() => handleThemeChange('light')}
+                      sx={{
+                        cursor: 'pointer',
+                        p: 1,
+                        borderRadius: 1,
+                        bgcolor: themeMode === 'light' ? 'primary.main' : 'transparent',
+                        color: themeMode === 'light' ? 'primary.contrastText' : 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: themeMode === 'light' ? 'primary.dark' : 'action.hover'
+                        }
+                      }}
+                    >
+                      <Typography variant="body2">Jasny</Typography>
+                    </Box>
+                    <Box
+                      onClick={() => handleThemeChange('system')}
+                      sx={{
+                        cursor: 'pointer',
+                        p: 1,
+                        borderRadius: 1,
+                        bgcolor: themeMode === 'system' ? 'primary.main' : 'transparent',
+                        color: themeMode === 'system' ? 'primary.contrastText' : 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: themeMode === 'system' ? 'primary.dark' : 'action.hover'
+                        }
+                      }}
+                    >
+                      <Typography variant="body2">Auto</Typography>
+                    </Box>
+                    <Box
+                      onClick={() => handleThemeChange('dark')}
+                      sx={{
+                        cursor: 'pointer',
+                        p: 1,
+                        borderRadius: 1,
+                        bgcolor: themeMode === 'dark' ? 'primary.main' : 'transparent',
+                        color: themeMode === 'dark' ? 'primary.contrastText' : 'text.secondary',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: themeMode === 'dark' ? 'primary.dark' : 'action.hover'
+                        }
+                      }}
+                    >
+                      <Typography variant="body2">Ciemny</Typography>
+                    </Box>
+                  </Box>
+                  <Icons.DarkMode sx={{ color: themeMode === 'dark' ? 'primary.main' : 'text.secondary' }} />
+                </Box>
+
+                <Typography variant="overline" sx={{ px: 1, color: 'text.secondary', display: 'block', mt: 2 }}>
+                  Animacje
+                </Typography>
+                <MenuItem sx={{ borderRadius: 1 }}>
+                  <ListItemIcon>
+                    {prefersAnimations ? <Icons.Animation /> : <Icons.BlockTwoTone />}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Animacje interfejsu"
+                    secondary={isSystemReducedMotion ? "Wyłączone przez system" : ""}
+                  />
+                  <Switch
+                    edge="end"
+                    checked={prefersAnimations}
+                    onChange={toggleAnimations}
+                    disabled={isSystemReducedMotion}
+                  />
+                </MenuItem>
+
+                <Divider sx={{ my: 1 }} />
+
+                <MenuItem onClick={handleLogout} sx={{ 
+                  borderRadius: 1,
+                  color: 'error.main',
+                  '&:hover': {
+                    bgcolor: 'error.main',
+                    color: 'error.contrastText',
+                  }
+                }}>
+                  <ListItemIcon sx={{ color: 'inherit' }}>
+                    <Icons.Logout />
+                  </ListItemIcon>
+                  <ListItemText primary="Wyloguj się" />
+                </MenuItem>
+              </Box>
+            </Menu>
           </Box>
         </Toolbar>
       </AppBar>
@@ -461,6 +557,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         }}
       >
         {children}
+        {showQuestTransition && (
+          <QuestBoardTransition onAnimationComplete={handleTransitionComplete} />
+        )}
       </Box>
     </Box>
   );
