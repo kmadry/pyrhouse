@@ -7,10 +7,20 @@ import {
   Paper,
   Menu,
   MenuItem,
+  CircularProgress,
+  Alert,
+  Button,
 } from '@mui/material';
 import { AccessTime, LocationOn } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { jwtDecode } from 'jwt-decode';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useStorage } from '../hooks/useStorage';
+import { getApiUrl } from '../config/api';
+import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
+import { ErrorMessage } from './ErrorMessage';
 
 interface JwtPayload {
   role: string;
@@ -19,16 +29,15 @@ interface JwtPayload {
 }
 
 interface Quest {
-  id: number;
-  deadline: string;
+  recipient: string;
+  delivery_date: string;
+  location: string;
+  pavilion: string;
   items: Array<{
+    item_name: string;
     quantity: number;
-    name: string;
+    notes: string;
   }>;
-  description?: string;
-  reward?: string;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  location?: string;
 }
 
 const QuestCard = styled(Paper)(({ theme }) => ({
@@ -182,32 +191,44 @@ const CountdownTimer: React.FC<{ deadline: string }> = ({ deadline }) => {
 };
 
 const QuestBoardPage: React.FC = () => {
+  const { getToken } = useStorage();
+  const theme = useTheme();
   const [quests, setQuests] = useState<Quest[]>([]);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [difficultyMenuAnchor, setDifficultyMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedQuestId, setSelectedQuestId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Funkcja do sprawdzania roli użytkownika
-  const checkUserRole = () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const decodedToken = jwtDecode<JwtPayload>(token);
-        setIsAdmin(decodedToken.role === 'admin');
-      } catch (error) {
-        console.error('Błąd dekodowania tokenu:', error);
-        setIsAdmin(false);
+  useEffect(() => {
+    fetchQuests();
+  }, []);
+
+  const fetchQuests = async () => {
+    try {
+      setLoading(true);
+      const token = getToken();
+      const response = await fetch(getApiUrl('/sheets/quests'), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się pobrać questów');
       }
-    } else {
-      setIsAdmin(false);
+
+      const data = await response.json();
+      setQuests(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas pobierania questów');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Funkcja określająca poziom trudności na podstawie liczby przedmiotów
-  const determineDifficulty = (items: Quest['items']): Quest['difficulty'] => {
-    if (items.length === 0) return 'easy';
-    if (items.length <= 2) return 'easy';
-    if (items.length <= 5) return 'medium';
+  const determineDifficulty = (items: Quest['items']): 'easy' | 'medium' | 'hard' => {
+    const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+    if (totalItems <= 2) return 'easy';
+    if (totalItems <= 5) return 'medium';
     return 'hard';
   };
 
@@ -217,148 +238,35 @@ const QuestBoardPage: React.FC = () => {
     return date.toLocaleDateString('pl-PL', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
-  // Obsługa menu trudności
-  const handleDifficultyClick = (event: React.MouseEvent<HTMLElement>, questId: number) => {
-    setDifficultyMenuAnchor(event.currentTarget);
-    setSelectedQuestId(questId);
-  };
-
-  const handleDifficultyClose = () => {
-    setDifficultyMenuAnchor(null);
-    setSelectedQuestId(null);
-  };
-
-  const handleDifficultyChange = (newDifficulty: Quest['difficulty']) => {
-    if (selectedQuestId !== null) {
-      setQuests(prevQuests => 
-        prevQuests.map(quest => {
-          if (quest.id === selectedQuestId) {
-            // Automatyczne dostosowanie nagrody w zależności od trudności
-            let newReward = '';
-            switch (newDifficulty) {
-              case 'easy':
-                newReward = `${Math.floor(Math.random() * 201) + 100} złotych monet`;
-                break;
-              case 'medium':
-                newReward = `${Math.floor(Math.random() * 300) + 301} złotych monet`;
-                break;
-              case 'hard':
-                newReward = `${Math.floor(Math.random() * 401) + 600} złotych monet`;
-                break;
-            }
-            return { ...quest, difficulty: newDifficulty, reward: newReward };
-          }
-          return quest;
-        })
-      );
-    }
-    handleDifficultyClose();
-  };
-
-  // Funkcja sprawdzająca, czy zadanie jest pilne (mniej niż godzina)
+  // Funkcja sprawdzająca, czy zadanie jest pilne (mniej niż 3 dni)
   const isUrgent = (deadline: string): boolean => {
     const now = new Date();
     const deadlineDate = new Date(deadline);
     const difference = deadlineDate.getTime() - now.getTime();
-    const hoursLeft = difference / (1000 * 60 * 60);
-    return hoursLeft < 1 && hoursLeft > 0;
+    const daysLeft = difference / (1000 * 60 * 60 * 24);
+    return daysLeft < 3 && daysLeft > 0;
   };
 
-  useEffect(() => {
-    // Sprawdź rolę użytkownika
-    checkUserRole();
-    
-    // Pobierz aktualną datę
-    const now = new Date();
-    
-    // Przykładowe dane (później będą pobierane z API)
-    const mockQuests: Quest[] = [
-      {
-        id: 1,
-        // 2 dni od teraz
-        deadline: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        items: [
-          { quantity: 5, name: 'laptop' },
-          { quantity: 30, name: 'przedłużacz' }
-        ],
-        description: 'Przygotuj sprzęt do sali konferencyjnej na ważne spotkanie gildii.',
-        reward: '300 złotych monet',
-        location: 'Sala Konferencyjna - Poziom 3'
-      },
-      {
-        id: 2,
-        // 5 dni od teraz
-        deadline: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Przygotować salę konferencyjną na zebranie Rady Królewskiej',
-        items: [
-          { quantity: 10, name: 'krzesło' },
-          { quantity: 2, name: 'projektor' },
-          { quantity: 1, name: 'ekran' },
-          { quantity: 2, name: 'mikrofon bezprzewodowy' }
-        ],
-        reward: '500 złotych monet',
-        location: 'Sala Tronowa - Poziom 1'
-      },
-      {
-        id: 3,
-        // 30 minut od teraz (pilne!)
-        deadline: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
-        description: 'Pilne! Przeprowadź inwentaryzację sprzętu w magazynie głównym. Sprawdź numery seryjne i stan techniczny wszystkich urządzeń.',
-        items: [],
-        reward: '200 złotych monet',
-        location: 'Magazyn Główny - Poziom -1'
-      },
-      {
-        id: 4,
-        // 25 dni od teraz
-        deadline: new Date(now.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Zorganizuj sprzęt na wielki turniej e-sportowy w głównej sali.',
-        items: [
-          { quantity: 20, name: 'słuchawki gamingowe' },
-          { quantity: 20, name: 'komputer gamingowy' },
-          { quantity: 4, name: 'router' },
-          { quantity: 2, name: 'switch sieciowy' },
-          { quantity: 1, name: 'serwer turniejowy' },
-          { quantity: 4, name: 'monitor zapasowy' }
-        ],
-        reward: '1000 złotych monet',
-        location: 'Arena Główna - Poziom 2'
-      },
-      {
-        id: 5,
-        // 6 dni od teraz
-        deadline: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Przygotuj mobilne stanowisko do prezentacji w terenie.',
-        items: [
-          { quantity: 1, name: 'projektor przenośny' },
-          { quantity: 1, name: 'ekran projekcyjny' },
-          { quantity: 2, name: 'głośnik bluetooth' },
-          { quantity: 1, name: 'laptop prezentacyjny' }
-        ],
-        reward: '400 złotych monet',
-        location: 'Plac Targowy - Miasto'
-      }
-    ];
-
-    // Dodajemy poziom trudności do każdego questu
-    const questsWithDifficulty = mockQuests.map(quest => ({
-      ...quest,
-      difficulty: determineDifficulty(quest.items)
-    }));
-
-    setQuests(questsWithDifficulty);
-  }, []);
-
-  // Sortowanie zadań po deadline (od najstarszych do najnowszych)
+  // Sortowanie zadań po dacie dostawy
   const sortedQuests = [...quests].sort((a, b) => 
-    new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+    new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime()
   );
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} />;
+  }
 
   return (
     <Box sx={{ 
@@ -380,23 +288,20 @@ const QuestBoardPage: React.FC = () => {
             mb: 6
           }}
         >
-          📜 Quest Board 📜
+          📜 Tablica Zadań 📜
         </Typography>
 
         <Grid container spacing={4}>
-          {sortedQuests.map((quest) => {
-            const urgent = isUrgent(quest.deadline);
+          {sortedQuests.map((quest, index) => {
+            const urgent = isUrgent(quest.delivery_date);
+            const difficulty = determineDifficulty(quest.items);
             const CardComponent = urgent ? UrgentQuestCard : QuestCard;
             
             return (
-              <Grid item xs={12} md={6} key={quest.id}>
+              <Grid item xs={12} md={6} key={index}>
                 <CardComponent elevation={3}>
-                  <DifficultyBadge 
-                    difficulty={quest.difficulty || 'medium'}
-                    onClick={isAdmin ? (e) => handleDifficultyClick(e, quest.id) : undefined}
-                    sx={isAdmin ? { cursor: 'pointer' } : {}}
-                  >
-                    {quest.difficulty?.toUpperCase() || 'MEDIUM'}
+                  <DifficultyBadge difficulty={difficulty}>
+                    {difficulty.toUpperCase()}
                   </DifficultyBadge>
                   
                   {urgent && (
@@ -415,11 +320,11 @@ const QuestBoardPage: React.FC = () => {
                       mb: 2
                     }}
                   >
-                    Quest #{quest.id}
+                    Zlecenie dla: {quest.recipient}
                   </Typography>
 
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <CountdownTimer deadline={quest.deadline} />
+                    <CountdownTimer deadline={quest.delivery_date} />
                     <Typography
                       variant="body2"
                       sx={{
@@ -428,41 +333,26 @@ const QuestBoardPage: React.FC = () => {
                         fontSize: '0.9rem'
                       }}
                     >
-                      Data wykonania: {formatDate(quest.deadline)}
+                      Termin dostawy: {formatDate(quest.delivery_date)}
                     </Typography>
                   </Box>
 
-                  {/* Wyświetlanie lokalizacji */}
-                  {quest.location && (
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 1, 
-                      mt: 2,
-                      color: '#54291E',
-                      backgroundColor: 'rgba(230, 203, 153, 0.3)',
-                      p: 1,
-                      borderRadius: '4px',
-                      border: '1px dashed #A4462D'
-                    }}>
-                      <LocationOn sx={{ color: '#A4462D' }} />
-                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                        Lokalizacja: {quest.location}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: '#54291E',
-                      mt: 2,
-                      fontStyle: 'italic',
-                      fontSize: '1.1rem'
-                    }}
-                  >
-                    {quest.description}
-                  </Typography>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1, 
+                    mt: 2,
+                    color: '#54291E',
+                    backgroundColor: 'rgba(230, 203, 153, 0.3)',
+                    p: 1,
+                    borderRadius: '4px',
+                    border: '1px dashed #A4462D'
+                  }}>
+                    <LocationOn sx={{ color: '#A4462D' }} />
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {quest.location} - {quest.pavilion}
+                    </Typography>
+                  </Box>
 
                   <Box sx={{ mt: 3 }}>
                     <Typography
@@ -480,10 +370,10 @@ const QuestBoardPage: React.FC = () => {
                       pl: 2,
                       listStyle: 'none'
                     }}>
-                      {quest.items.map((item, index) => (
+                      {quest.items.map((item, idx) => (
                         <Box
                           component="li"
-                          key={index}
+                          key={idx}
                           sx={{
                             display: 'flex',
                             alignItems: 'center',
@@ -499,57 +389,31 @@ const QuestBoardPage: React.FC = () => {
                           }}
                         >
                           <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                            {item.quantity}x {item.name}
+                            {item.quantity}x {item.item_name}
+                            {item.notes && (
+                              <Typography
+                                component="span"
+                                sx={{
+                                  ml: 1,
+                                  fontSize: '0.9rem',
+                                  fontStyle: 'italic',
+                                  color: '#A4462D'
+                                }}
+                              >
+                                ({item.notes})
+                              </Typography>
+                            )}
                           </Typography>
                         </Box>
                       ))}
                     </Box>
                   </Box>
-
-                  {quest.reward && (
-                    <Box sx={{ 
-                      mt: 3, 
-                      pt: 2, 
-                      borderTop: '2px solid #54291E',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'flex-end',
-                      gap: 1
-                    }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: '#000000',
-                          fontFamily: '"Cinzel", serif',
-                          textShadow: '0px 0px 1px rgba(230, 203, 153, 0.8)',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          border: '1px solid #E6CB99',
-                          backgroundColor: 'rgba(230, 203, 153, 0.2)',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        Nagroda: {quest.reward}
-                      </Typography>
-                    </Box>
-                  )}
                 </CardComponent>
               </Grid>
             );
           })}
         </Grid>
       </Container>
-
-      {/* Menu do zmiany trudności */}
-      <Menu
-        anchorEl={difficultyMenuAnchor}
-        open={Boolean(difficultyMenuAnchor)}
-        onClose={handleDifficultyClose}
-      >
-        <MenuItem onClick={() => handleDifficultyChange('easy')}>Łatwy</MenuItem>
-        <MenuItem onClick={() => handleDifficultyChange('medium')}>Średni</MenuItem>
-        <MenuItem onClick={() => handleDifficultyChange('hard')}>Trudny</MenuItem>
-      </Menu>
     </Box>
   );
 };
