@@ -5,28 +5,13 @@ import {
   Container,
   Grid,
   Paper,
-  Menu,
-  MenuItem,
   CircularProgress,
-  Alert,
-  Button,
 } from '@mui/material';
 import { AccessTime, LocationOn } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { jwtDecode } from 'jwt-decode';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { useStorage } from '../hooks/useStorage';
 import { getApiUrl } from '../config/api';
-import { useTheme } from '@mui/material/styles';
-import { useMediaQuery } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage';
-
-interface JwtPayload {
-  role: string;
-  exp: number;
-  userID: number;
-}
 
 interface Quest {
   recipient: string;
@@ -54,7 +39,7 @@ const QuestCard = styled(Paper)(({ theme }) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'url("/parchment-texture.png")', // Możesz dodać teksturę pergaminu
+    background: 'url("/parchment-texture.png")',
     opacity: 0.1,
     pointerEvents: 'none',
   },
@@ -192,7 +177,6 @@ const CountdownTimer: React.FC<{ deadline: string }> = ({ deadline }) => {
 
 const QuestBoardPage: React.FC = () => {
   const { getToken } = useStorage();
-  const theme = useTheme();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
