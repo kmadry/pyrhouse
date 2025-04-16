@@ -30,7 +30,8 @@ import { useStocks } from '../hooks/useStocks';
 import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../services/transferService';
 import { getUsersAPI } from '../services/userService';
 import { ErrorMessage } from './ErrorMessage';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { LocationOn, Event, Person } from '@mui/icons-material';
 
 interface User {
   id: number;
@@ -55,6 +56,21 @@ interface PyrCodeSuggestion {
 
 type ValidationStatus = 'success' | 'failure' | '';
 
+interface Stock {
+  id: number;
+  category: {
+    id: number;
+    label: string;
+    type: string;
+  };
+  origin: string;
+  quantity: number;
+  location: {
+    id: number;
+    name: string;
+  };
+}
+
 interface FormItem {
   type: 'pyr_code' | 'stock';
   id: string;
@@ -71,6 +87,18 @@ interface FormData {
   toLocation: string;
   items: FormItem[];
   users: User[];
+}
+
+interface QuestData {
+  recipient: string;
+  deliveryDate: string;
+  location: string;
+  pavilion: string;
+  items: Array<{
+    item_name: string;
+    quantity: number;
+    notes?: string;
+  }>;
 }
 
 const TransferPage: React.FC = () => {
@@ -91,8 +119,6 @@ const TransferPage: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [lockedRows, setLockedRows] = useState<Set<number>>(new Set());
   const [isValidationInProgress, setIsValidationInProgress] = useState<boolean>(false);
-  // @ts-ignore - activeRowIndex jest używane w komponencie
-  const [activeRowIndex, setActiveRowIndex] = useState<number>(0);
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
@@ -104,6 +130,8 @@ const TransferPage: React.FC = () => {
   const { stocks, error: stockError, fetchStocks } = useStocks();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const questData = location.state?.questData as QuestData;
 
   useEffect(() => {
     refetchLocations();
@@ -167,7 +195,6 @@ const TransferPage: React.FC = () => {
       
       if (index === items.length - 1) {
         append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' });
-        setActiveRowIndex(items.length);
       }
     } catch (err: any) {
       setValue(`items.${index}.status`, 'failure' as ValidationStatus);
@@ -321,18 +348,72 @@ const TransferPage: React.FC = () => {
     // Jeśli nie ma pustego wiersza, dodajemy nowy
     if (!hasEmptyRow) {
       append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' });
-      setActiveRowIndex(fields.length);
-    } else {
-      // Znajdź indeks pierwszego pustego wiersza
-      const emptyRowIndex = fields.findIndex((_, idx) =>
-        !items[idx]?.id && !items[idx]?.pyrcode && !items[idx]?.quantity
-      );
-      setActiveRowIndex(emptyRowIndex);
     }
   };
 
   return (
-    <Container>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      {questData && (
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 3, 
+            mb: 4, 
+            backgroundColor: '#FFF8E7',
+            border: '1px solid #E6CB99'
+          }}
+        >
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              mb: 2,
+              color: '#54291E',
+              fontFamily: '"Cinzel", serif'
+            }}
+          >
+            Aktywny Quest
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <Chip
+              icon={<Person />}
+              label={`Odbiorca: ${questData.recipient}`}
+              sx={{ backgroundColor: '#E6CB99' }}
+            />
+            <Chip
+              icon={<Event />}
+              label={`Termin dostawy: ${new Date(questData.deliveryDate).toLocaleDateString()}`}
+              sx={{ backgroundColor: '#E6CB99' }}
+            />
+            <Chip
+              icon={<LocationOn />}
+              label={`Lokalizacja: ${questData.location} - ${questData.pavilion}`}
+              sx={{ backgroundColor: '#E6CB99' }}
+            />
+          </Box>
+
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle1" sx={{ color: '#54291E', mb: 1 }}>
+              Wymagane przedmioty:
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {questData.items.map((item, index) => (
+                <Chip
+                  key={index}
+                  label={`${item.quantity}x ${item.item_name}${item.notes ? ` (${item.notes})` : ''}`}
+                  sx={{ 
+                    backgroundColor: '#E6CB99',
+                    '& .MuiChip-label': {
+                      color: '#54291E'
+                    }
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
       <Typography variant="h4" gutterBottom>
         Nowy transfer
       </Typography>
@@ -548,7 +629,7 @@ const TransferPage: React.FC = () => {
                             <MenuItem value="" disabled>
                               Wybierz zasób
                             </MenuItem>
-                            {stocks.map((stock: any) => (
+                            {stocks.map((stock: Stock) => (
                               <MenuItem key={stock.id} value={stock.id}>
                                 {stock.category.label} ({stock.origin}) [Dostępne: {stock.quantity}]
                               </MenuItem>

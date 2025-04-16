@@ -6,12 +6,19 @@ import {
   Grid,
   Paper,
   CircularProgress,
+  Button,
+  Tabs,
+  Tab,
+  Collapse,
+  IconButton,
 } from '@mui/material';
-import { AccessTime, LocationOn } from '@mui/icons-material';
+import { AccessTime, LocationOn, AddCircleOutline, Info, Close } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useStorage } from '../hooks/useStorage';
 import { getApiUrl } from '../config/api';
 import { ErrorMessage } from './ErrorMessage';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 interface Quest {
   recipient: string;
@@ -175,21 +182,60 @@ const CountdownTimer: React.FC<{ deadline: string }> = ({ deadline }) => {
   );
 };
 
+// Komponent informacyjny dla administratorów
+const AdminInfoBox = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(4),
+  background: `linear-gradient(145deg, #54291E, #A4462D)`,
+  color: '#E6CB99',
+  borderRadius: '8px',
+  boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+  position: 'relative',
+  border: '2px solid #E6CB99',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'url("/parchment-texture.png")',
+    opacity: 0.1,
+    pointerEvents: 'none',
+  },
+}));
+
 const QuestBoardPage: React.FC = () => {
   const { getToken } = useStorage();
+  const { userRole } = useAuth();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'delivered'>('active');
+  const [showAdminInfo, setShowAdminInfo] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const status = searchParams.get('status');
+    if (status === 'delivered') {
+      setActiveTab('delivered');
+    }
+  }, [location]);
 
   useEffect(() => {
     fetchQuests();
-  }, []);
+  }, [activeTab]);
 
   const fetchQuests = async () => {
     try {
       setLoading(true);
       const token = getToken();
-      const response = await fetch(getApiUrl('/sheets/quests'), {
+      const url = activeTab === 'delivered' 
+        ? getApiUrl('/sheets/quests?status=delivered')
+        : getApiUrl('/sheets/quests');
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -206,6 +252,32 @@ const QuestBoardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: 'active' | 'delivered') => {
+    setActiveTab(newValue);
+    const searchParams = new URLSearchParams(location.search);
+    if (newValue === 'delivered') {
+      searchParams.set('status', 'delivered');
+    } else {
+      searchParams.delete('status');
+    }
+    navigate({ search: searchParams.toString() });
+  };
+
+  const handleCreateTransfer = (quest: Quest) => {
+    // Przekazujemy dane questa jako parametry URL
+    navigate('/transfers/create', { 
+      state: { 
+        questData: {
+          recipient: quest.recipient,
+          deliveryDate: quest.delivery_date,
+          location: quest.location,
+          pavilion: quest.pavilion,
+          items: quest.items
+        }
+      } 
+    });
   };
 
   // Funkcja określająca poziom trudności na podstawie liczby przedmiotów
@@ -239,6 +311,11 @@ const QuestBoardPage: React.FC = () => {
   const sortedQuests = [...quests].sort((a, b) => 
     new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime()
   );
+
+  // Funkcja sprawdzająca, czy użytkownik ma uprawnienia administratora
+  const hasAdminAccess = () => {
+    return userRole === 'admin' || userRole === 'moderator';
+  };
 
   if (loading) {
     return (
@@ -274,6 +351,50 @@ const QuestBoardPage: React.FC = () => {
         >
           📜 Tablica Zadań 📜
         </Typography>
+
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={handleTabChange}
+            centered
+            sx={{
+              '& .MuiTab-root': {
+                color: '#E6CB99',
+                '&.Mui-selected': {
+                  color: '#A4462D',
+                },
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#A4462D',
+              },
+            }}
+          >
+            <Tab label="Aktywne Questy" value="active" />
+            <Tab label="Dostarczone Questy" value="delivered" />
+          </Tabs>
+        </Box>
+
+        {hasAdminAccess() && (
+          <Collapse in={showAdminInfo}>
+            <AdminInfoBox>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontFamily: '"Cinzel", serif', display: 'flex', alignItems: 'center' }}>
+                  <Info sx={{ mr: 1 }} /> Informacja dla administratorów
+                </Typography>
+                <IconButton 
+                  size="small" 
+                  onClick={() => setShowAdminInfo(false)}
+                  sx={{ color: '#E6CB99' }}
+                >
+                  <Close />
+                </IconButton>
+              </Box>
+              <Typography variant="body1" paragraph>
+                Lista questów jest aktualizowana z excela. Po utworzeniu transferu dla questa, musisz ręcznie oznaczyć go jako dostarczony w excelu.
+              </Typography>
+            </AdminInfoBox>
+          </Collapse>
+        )}
 
         <Grid container spacing={4}>
           {sortedQuests.map((quest, index) => {
@@ -392,6 +513,23 @@ const QuestBoardPage: React.FC = () => {
                       ))}
                     </Box>
                   </Box>
+
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<AddCircleOutline />}
+                    onClick={() => handleCreateTransfer(quest)}
+                    sx={{ 
+                      mt: 3,
+                      width: '100%',
+                      backgroundColor: '#54291E',
+                      '&:hover': {
+                        backgroundColor: '#A4462D',
+                      }
+                    }}
+                  >
+                    Rozpocznij Quest
+                  </Button>
                 </CardComponent>
               </Grid>
             );

@@ -6,7 +6,9 @@ interface Stock {
   category: {
     id: number;
     label: string;
+    type: string;
   };
+  origin: string;
   quantity: number;
   location: {
     id: number;
