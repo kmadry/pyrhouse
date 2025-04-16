@@ -18,6 +18,7 @@ import {
   CircularProgress,
   Alert,
   Autocomplete,
+  Chip,
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,8 +28,15 @@ import AddIcon from '@mui/icons-material/Add';
 import { useLocations } from '../hooks/useLocations';
 import { useStocks } from '../hooks/useStocks';
 import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../services/transferService';
+import { getUsersAPI } from '../services/userService';
 import { ErrorMessage } from './ErrorMessage';
 import { useNavigate } from 'react-router-dom';
+
+interface User {
+  id: number;
+  username: string;
+  fullname: string;
+}
 
 interface PyrCodeSuggestion {
   id: number;
@@ -62,6 +70,7 @@ interface FormData {
   fromLocation: number;
   toLocation: string;
   items: FormItem[];
+  users: User[];
 }
 
 const TransferPage: React.FC = () => {
@@ -70,6 +79,7 @@ const TransferPage: React.FC = () => {
       fromLocation: 1,
       toLocation: '',
       items: [{ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' }],
+      users: [],
     },
   });
 
@@ -83,6 +93,9 @@ const TransferPage: React.FC = () => {
   const [isValidationInProgress, setIsValidationInProgress] = useState<boolean>(false);
   // @ts-ignore - activeRowIndex jest używane w komponencie
   const [activeRowIndex, setActiveRowIndex] = useState<number>(0);
+  const [users, setUsers] = useState<User[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   const fromLocation = watch('fromLocation');
   const items = watch('items');
@@ -95,6 +108,22 @@ const TransferPage: React.FC = () => {
   useEffect(() => {
     refetchLocations();
   }, [refetchLocations]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setUsersLoading(true);
+      try {
+        const data = await getUsersAPI();
+        setUsers(data);
+      } catch (error: any) {
+        setUsersError(error.message);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const isPyrCodeSelected = (pyrcode: string): boolean => {
     return items.some(item => 
@@ -239,10 +268,12 @@ const TransferPage: React.FC = () => {
         stocks: formData.items
           .filter((item: any) => item.type === 'stock')
           .map((item: any) => ({ id: item.id, quantity: Number(item.quantity) })),
+        users: formData.users.map((user: User) => ({ id: user.id })),
       };
 
       if (!payload.assets?.length) delete payload.assets;
       if (!payload.stocks?.length) delete payload.stocks;
+      if (!payload.users?.length) delete payload.users;
 
       if (!payload.assets?.length && !payload.stocks?.length) {
         setErrorMessage('Dodaj co najmniej jeden zasób lub pozycję magazynową');
@@ -251,7 +282,7 @@ const TransferPage: React.FC = () => {
 
       const response = await createTransferAPI(payload);
 
-      setSuccessMessage('Quest został utworzony pomyślnie!');
+      setSuccessMessage('Transfer został utworzony pomyślnie!');
       setTimeout(() => {
         navigate(`/transfers/${response.id}`);
       }, 500);
@@ -307,8 +338,9 @@ const TransferPage: React.FC = () => {
       </Typography>
 
       {/* Display Errors */}
-      {locationError && <ErrorMessage message="Error loading locations" details={locationError} />}
-      {stockError && <ErrorMessage message="Error loading stocks" details={stockError} />}
+      {locationError && <ErrorMessage message="Błąd podczas ładowania lokalizacji" details={locationError} />}
+      {stockError && <ErrorMessage message="Błąd podczas ładowania zasobów" details={stockError} />}
+      {usersError && <ErrorMessage message="Błąd podczas ładowania użytkowników" details={usersError} />}
       {errorMessage && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {errorMessage}
@@ -344,33 +376,69 @@ const TransferPage: React.FC = () => {
               </Select>
             )}
           />
+
           <Controller
             name="toLocation"
             control={control}
-            rules={{ required: 'Wybierz lokalizację docelową' }}
-            render={({ field, fieldState: { error } }) => (
-              <Box>
-                <Select
-                  {...field}
-                  displayEmpty
-                  fullWidth
-                  error={!!error}
-                >
-                  <MenuItem value="" disabled>
-                    Wybierz lokalizację docelową
+            defaultValue=""
+            render={({ field }) => (
+              <Select
+                {...field}
+                displayEmpty
+                fullWidth
+                value={field.value}
+              >
+                <MenuItem value="" disabled>
+                  Wybierz lokalizację docelową
+                </MenuItem>
+                {locations.map((location: any) => (
+                  <MenuItem key={location.id} value={location.id}>
+                    {location.name}
                   </MenuItem>
-                  {locations.map((location: any) => (
-                    <MenuItem key={location.id} value={location.id}>
-                      {location.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {error && (
-                  <Typography color="error" variant="caption" sx={{ mt: 1 }}>
-                    {error.message}
-                  </Typography>
+                ))}
+              </Select>
+            )}
+          />
+        </Box>
+
+        <Box sx={{ mt: 2 }}>
+          <Controller
+            name="users"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <Autocomplete
+                multiple
+                options={users}
+                loading={usersLoading}
+                value={value}
+                onChange={(_, newValue) => onChange(newValue)}
+                getOptionLabel={(option) => `${option.username}`}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Uczestnicy transferu"
+                    fullWidth
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
                 )}
-              </Box>
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      label={`${option.username}`}
+                      {...getTagProps({ index })}
+                    />
+                  ))
+                }
+              />
             )}
           />
         </Box>
