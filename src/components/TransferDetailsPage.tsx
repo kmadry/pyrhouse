@@ -48,7 +48,8 @@ const statusTranslations: { [key: string]: string } = {
   'created': 'Utworzony',
   'in_transit': 'W drodze',
   'delivered': 'Dostarczony',
-  'cancelled': 'Anulowany'
+  'cancelled': 'Anulowany',
+  'completed': 'Dostarczony'
 };
 
 interface RestoreDialogProps {
@@ -296,6 +297,7 @@ const TransferDetailsPage: React.FC = () => {
       case 'in_transit':
         return 1;
       case 'delivered':
+      case 'completed':
         return 2;
       case 'cancelled':
         return 2;
@@ -474,7 +476,7 @@ const TransferDetailsPage: React.FC = () => {
       </Paper>
 
       <Paper sx={{ mt: 4, p: 3 }}>
-        <Typography variant="h6">Assets</Typography>
+        <Typography variant="h6">Sprzęt</Typography>
         {transfer.assets && transfer.assets.length > 0 ? (
           <List>
             {transfer.assets.map((asset: any) => (
@@ -510,12 +512,12 @@ const TransferDetailsPage: React.FC = () => {
             ))}
           </List>
         ) : (
-          <Typography>No assets in this transfer.</Typography>
+          <Typography>Brak sprzętu w tej dostawie.</Typography>
         )}
       </Paper>
 
       <Paper sx={{ mt: 4, p: 3 }}>
-        <Typography variant="h6">Stock Items</Typography>
+        <Typography variant="h6">Zasoby</Typography>
         {transfer.stock_items && transfer.stock_items.length > 0 ? (
           <List>
             {transfer.stock_items.map((stock: any) => (
@@ -551,7 +553,7 @@ const TransferDetailsPage: React.FC = () => {
             ))}
           </List>
         ) : (
-          <Typography>No stock items in this transfer.</Typography>
+          <Typography>Brak zasobów w tej dostawie.</Typography>
         )}
       </Paper>
 

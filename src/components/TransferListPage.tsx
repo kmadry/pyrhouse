@@ -76,7 +76,7 @@ const TransfersListPage: React.FC = () => {
       case 'in_transit':
         return <Chip icon={<LocalShippingIcon />} label="W trasie" color="warning" />;
       case 'completed':
-        return <Chip icon={<CheckCircleIcon />} label="Zakończony" color="success" />;
+        return <Chip icon={<CheckCircleIcon />} label="Dostarczony" color="success" />;
       case 'created':
         return <Chip icon={<HourglassEmptyIcon />} label="Utworzony" color="default" />;
       case 'cancelled':

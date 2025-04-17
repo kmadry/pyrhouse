@@ -45,6 +45,13 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+interface MenuItem {
+  path?: string;
+  label: string;
+  icon: React.ReactNode;
+  type?: 'divider';
+}
+
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const { isTokenValid } = useTokenValidation();
@@ -186,13 +193,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setShowLocationTransition(false);
   };
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { path: '/home', label: 'Home', icon: <Icons.Home /> },
-    { path: '/transfers', label: 'Questy', icon: <Icons.PublishedWithChanges /> },
-    { path: '/add-item', label: 'Dodaj sprzęt', icon: <Icons.Add /> },
-    { path: '/list', label: 'Stan Magazynowy', icon: <Icons.List /> },
-    { path: '/locations', label: 'Lokalizacje', icon: <Icons.EditLocationAlt /> },
+    { 
+      type: 'divider',
+      label: 'Questy',
+      icon: <Icons.AutoAwesome sx={{ fontSize: '0.9rem' }} />
+    },
+    { path: '/transfers/create', label: 'Nowy quest', icon: <Icons.RocketLaunch /> },
+    { path: '/transfers', label: 'Questy', icon: <Icons.Quiz /> },
     { path: '/quests', label: 'Quest Board', icon: <Icons.Security /> },
+    { 
+      type: 'divider',
+      label: 'Magazyn',
+      icon: <Icons.Inventory2 sx={{ fontSize: '0.9rem' }} />
+    },
+    { path: '/add-item', label: 'Dodaj sprzęt', icon: <Icons.AddTask /> },
+    { path: '/list', label: 'Stan Magazynowy', icon: <Icons.Warehouse /> },
+    { path: '/locations', label: 'Lokalizacje', icon: <Icons.EditLocationAlt /> },
   ];
 
   const adminMenuItems = [
@@ -206,62 +224,106 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       flexDirection: 'column', 
       height: '100%',
       pt: 1
-    }}>
-      <Divider sx={{ mb: 2 }} />
-      
+    }}>      
       <List sx={{ flexGrow: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.path} disablePadding>
-            <ListItemButton
-              onClick={() => handleMenuItemClick(item.path)}
-              sx={{
-                borderRadius: '8px',
-                mx: 1,
-                my: 0.5,
-                backgroundColor: activeItem === item.path ? 'primary.light' : 'transparent',
-                color: activeItem === item.path ? 'primary.contrastText' : 'text.primary',
-                '&:hover': {
-                  backgroundColor: activeItem === item.path ? 'primary.main' : 'action.hover',
-                },
-                transition: 'all 0.2s ease',
-                py: 1.5,
-                pl: 4,
-              }}
-            >
-              <ListItemIcon sx={{ 
-                color: activeItem === item.path ? 'primary.contrastText' : 'primary.main',
-                minWidth: '40px'
-              }}>
+        {menuItems.map((item, index) => (
+          item.type === 'divider' ? (
+            <Box key={`divider-${index}`}>
+              <Divider sx={{ my: 1.5, mx: 2 }} />
+              <Typography 
+                variant="subtitle2" 
+                color="text.secondary" 
+                sx={{ 
+                  px: 3, 
+                  py: 0.8,
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}
+              >
                 {item.icon}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.label} 
-                primaryTypographyProps={{ 
-                  fontWeight: activeItem === item.path ? 600 : 400,
-                  fontSize: '0.95rem'
-                }} 
-              />
-            </ListItemButton>
-          </ListItem>
+                {item.label}
+              </Typography>
+            </Box>
+          ) : (
+            <ListItem key={item.path} disablePadding>
+              <ListItemButton
+                onClick={() => item.path && handleMenuItemClick(item.path)}
+                sx={{
+                  borderRadius: '6px',
+                  mx: 1.5,
+                  my: 0.3,
+                  backgroundColor: activeItem === item.path ? 'primary.light' : 'transparent',
+                  color: activeItem === item.path ? 'primary.contrastText' : 'text.primary',
+                  '&:hover': {
+                    backgroundColor: activeItem === item.path ? 'primary.main' : 'action.hover',
+                    transform: 'translateX(4px)',
+                  },
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  py: 1.2,
+                  pl: 2,
+                  fontSize: '0.9rem',
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '3px',
+                    height: activeItem === item.path ? '70%' : '0%',
+                    backgroundColor: 'primary.main',
+                    borderRadius: '0 4px 4px 0',
+                    transition: 'height 0.2s ease-in-out'
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ 
+                  color: activeItem === item.path ? 'primary.contrastText' : 'primary.main',
+                  minWidth: '36px',
+                  '& .MuiSvgIcon-root': {
+                    fontSize: '1.3rem'
+                  }
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.label} 
+                  primaryTypographyProps={{ 
+                    fontWeight: activeItem === item.path ? 500 : 400,
+                    fontSize: '0.9rem',
+                    letterSpacing: '0.01em'
+                  }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          )
         ))}
       </List>
 
       {hasAdminAccess() && (
         <>
-          <Divider sx={{ my: 2, mx: 2 }} />
+          <Divider sx={{ my: 1.5, mx: 2 }} />
           <Typography 
             variant="subtitle2" 
             color="text.secondary" 
             sx={{ 
               px: 3, 
-              py: 1, 
-              fontWeight: 'bold',
+              py: 0.8,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
               display: 'flex',
               alignItems: 'center',
               gap: 1
             }}
           >
-            <Icons.AdminPanelSettings fontSize="small" />
+            <Icons.AdminPanelSettings sx={{ fontSize: '1rem' }} />
             Admin
           </Typography>
           <List>
@@ -270,30 +332,49 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <ListItemButton
                   onClick={() => handleMenuItemClick(item.path)}
                   sx={{
-                    borderRadius: '8px',
-                    mx: 1,
-                    my: 0.5,
+                    borderRadius: '6px',
+                    mx: 1.5,
+                    my: 0.3,
                     backgroundColor: activeItem === item.path ? 'primary.light' : 'transparent',
                     color: activeItem === item.path ? 'primary.contrastText' : 'text.primary',
                     '&:hover': {
                       backgroundColor: activeItem === item.path ? 'primary.main' : 'action.hover',
+                      transform: 'translateX(4px)',
                     },
-                    transition: 'all 0.2s ease',
-                    py: 1.5,
-                    pl: 4,
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    py: 1.2,
+                    pl: 2,
+                    fontSize: '0.9rem',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '3px',
+                      height: activeItem === item.path ? '70%' : '0%',
+                      backgroundColor: 'primary.main',
+                      borderRadius: '0 4px 4px 0',
+                      transition: 'height 0.2s ease-in-out'
+                    }
                   }}
                 >
                   <ListItemIcon sx={{ 
                     color: activeItem === item.path ? 'primary.contrastText' : 'primary.main',
-                    minWidth: '40px'
+                    minWidth: '36px',
+                    '& .MuiSvgIcon-root': {
+                      fontSize: '1.3rem'
+                    }
                   }}>
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText 
                     primary={item.label} 
                     primaryTypographyProps={{ 
-                      fontWeight: activeItem === item.path ? 600 : 400,
-                      fontSize: '0.95rem'
+                      fontWeight: activeItem === item.path ? 500 : 400,
+                      fontSize: '0.9rem',
+                      letterSpacing: '0.01em'
                     }} 
                   />
                 </ListItemButton>
@@ -561,7 +642,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           ...styles.navigation,
           '& .MuiDrawer-paper': {
-            borderRadius: isMobile ? 0 : '0 16px 16px 0',
             boxShadow: isMobile ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.1)',
             borderRight: isMobile ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
           }

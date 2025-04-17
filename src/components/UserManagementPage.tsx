@@ -157,7 +157,7 @@ const UserManagementPage: React.FC = () => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-            {['ID', 'Username', 'Full Name', 'Role'].map((field) => (
+            {['ID', 'Ksywa', 'Imię i Nazwisko', 'Rola'].map((field) => (
               <TableCell 
                 key={field} 
                 sx={{ 
@@ -247,11 +247,11 @@ const UserManagementPage: React.FC = () => {
               
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Username:</Typography>
+                  <Typography variant="body2" color="text.secondary">Nick:</Typography>
                   <Typography variant="body2">{user.username}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Full Name:</Typography>
+                  <Typography variant="body2" color="text.secondary">Imię i nazwisko:</Typography>
                   <Typography variant="body2">{user.fullname}</Typography>
                 </Box>
               </Box>
