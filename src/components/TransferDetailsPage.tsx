@@ -338,12 +338,7 @@ const TransferDetailsPage: React.FC = () => {
         Status Quest'a
       </Typography>
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h5" component="h1">
-            #{transfer.id} {statusTranslations[transfer.status] || transfer.status}
-          </Typography>
-        </Box>
-        <Box sx={{ mt: 2 }}>
+        <Box>
           <Stepper activeStep={currentStep}>
             {getSteps().map((label) => (
               <Step key={label}>
@@ -458,7 +453,7 @@ const TransferDetailsPage: React.FC = () => {
               Status
             </Typography>
             <Chip 
-              label={transfer.status} 
+              label={statusTranslations[transfer.status] || transfer.status} 
               color={
                 transfer.status === 'completed' ? 'success' : 
                 transfer.status === 'in_transit' ? 'warning' : 

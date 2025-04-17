@@ -22,6 +22,7 @@ const mapContainerStyle = {
 
 const libraries: Libraries = ['places'];
 
+
 const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initialLocation, onSave }) => {
   const [selectedLocation, setSelectedLocation] = useState<MapPosition | null>(initialLocation || null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
