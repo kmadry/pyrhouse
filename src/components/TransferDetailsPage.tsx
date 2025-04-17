@@ -27,6 +27,7 @@ import {
   FormControl,
   InputLabel,
   TextField,
+  Divider,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -34,14 +35,21 @@ import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
 import ErrorIcon from '@mui/icons-material/Error';
 import RestoreIcon from '@mui/icons-material/Restore';
 import CancelIcon from '@mui/icons-material/Cancel';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocations } from '../hooks/useLocations';
 import { MapPosition, locationService } from '../services/locationService';
 import LocationPicker from './LocationPicker';
+import { useAuth } from '../hooks/useAuth';
 
-const steps = ['Created', 'In Transit', 'Delivered'];
+const statusTranslations: { [key: string]: string } = {
+  'created': 'Utworzony',
+  'in_transit': 'W drodze',
+  'delivered': 'Dostarczony',
+  'cancelled': 'Anulowany'
+};
 
 interface RestoreDialogProps {
   open: boolean;
@@ -123,6 +131,7 @@ const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onClose, onConfirm,
 
 const TransferDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { userRole } = useAuth();
   const [transfer, setTransfer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -134,6 +143,10 @@ const TransferDetailsPage: React.FC = () => {
   const { locations } = useLocations();
 
   const numericId = Number(id);
+
+  const hasAdminAccess = () => {
+    return userRole === 'admin' || userRole === 'moderator';
+  };
 
   const fetchTransferDetails = async () => {
     setLoading(true);
@@ -240,13 +253,16 @@ const TransferDetailsPage: React.FC = () => {
   };
 
   const handleLocationUpdate = async (location: MapPosition) => {
+    setLoading(true);
+    setError('');
     try {
-      setError('');
       await locationService.updateTransferLocation(numericId, location);
-      await fetchTransferDetails(); // Odśwież dane transferu
-      // Nie zamykamy dialogu tutaj, tylko czekamy na kliknięcie przycisku "Zapisz"
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas aktualizacji lokalizacji');
+      await fetchTransferDetails();
+    } catch (err: any) {
+      setError(err.message || 'Nie udało się zaktualizować lokalizacji');
+    } finally {
+      setLoading(false);
+      setLocationDialogOpen(false);
     }
   };
 
@@ -264,6 +280,35 @@ const TransferDetailsPage: React.FC = () => {
         return <ErrorIcon sx={{ color: 'red', ml: 2 }} />;
     }
   };
+
+  const getSteps = () => {
+    if (transfer?.status === 'cancelled') {
+      return ['Utworzony', 'W drodze', 'Anulowany'];
+    }
+    return ['Utworzony', 'W drodze', 'Dostarczony'];
+  };
+
+  const getCurrentStep = () => {
+    if (!transfer) return 0;
+    switch (transfer.status) {
+      case 'created':
+        return 0;
+      case 'in_transit':
+        return 1;
+      case 'delivered':
+        return 2;
+      case 'cancelled':
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  useEffect(() => {
+    if (transfer) {
+      setCurrentStep(getCurrentStep());
+    }
+  }, [transfer]);
 
   if (loading) {
     return (
@@ -290,120 +335,189 @@ const TransferDetailsPage: React.FC = () => {
   return (
     <Container>
       <Typography variant="h4" gutterBottom>
-        Transfer Details
+        Status Quest'a
       </Typography>
-
-      <Typography variant="h6" gutterBottom>
-        Status: {transfer.status}
-      </Typography>
-
-      {transfer.status === 'in_transit' && (
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Button
-            variant="outlined"
-            color="error"
-            onClick={() => setCancelDialogOpen(true)}
-            disabled={loading}
-            startIcon={<CancelIcon />}
-            sx={{ mr: 2 }}
-          >
-            Anuluj transfer
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setLocationDialogOpen(true)}
-            disabled={loading}
-            startIcon={<LocationOnIcon />}
-          >
-            Zaktualizuj lokalizację
-          </Button>
-        </Box>
-      )}
-
-      <Dialog
-        open={cancelDialogOpen}
-        onClose={() => setCancelDialogOpen(false)}
-      >
-        <DialogTitle>Potwierdź anulowanie transferu</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Czy na pewno chcesz anulować ten transfer?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCancelDialogOpen(false)}>Anuluj</Button>
-          <Button onClick={handleCancelTransfer} color="error" variant="contained">
-            Potwierdź anulowanie
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography variant="h5" component="h1">
-            Szczegóły transferu #{transfer.id}
+            #{transfer.id} {statusTranslations[transfer.status] || transfer.status}
           </Typography>
         </Box>
         <Box sx={{ mt: 2 }}>
           <Stepper activeStep={currentStep}>
-            {steps.map((label) => (
+            {getSteps().map((label) => (
               <Step key={label}>
                 <StepLabel>{label}</StepLabel>
               </Step>
             ))}
           </Stepper>
         </Box>
+        {transfer.status === 'in_transit' && hasAdminAccess() && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Akcje transferu
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleConfirmTransfer}
+                disabled={loading}
+                startIcon={<CheckCircleIcon />}
+                sx={{ 
+                  py: 1, 
+                  px: 2,
+                  borderRadius: 1.5,
+                  fontSize: '0.875rem',
+                  boxShadow: 1,
+                  '&:hover': {
+                    boxShadow: 2,
+                    backgroundColor: 'success.dark',
+                  }
+                }}
+              >
+                Potwierdź dostawę
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setCancelDialogOpen(true)}
+                disabled={loading}
+                startIcon={<CancelIcon />}
+                sx={{ 
+                  py: 1, 
+                  px: 2,
+                  borderRadius: 1.5,
+                  fontSize: '0.875rem',
+                  borderWidth: 1.5,
+                  '&:hover': {
+                    borderWidth: 1.5,
+                    backgroundColor: 'error.lighter',
+                  }
+                }}
+              >
+                Anuluj quest
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Paper>
 
-          <Paper sx={{ mt: 4, p: 3 }}>
-            <Typography variant="h6">Transfer Information</Typography>
-            <Typography>From: {transfer.from_location?.name}</Typography>
-            <Typography>To: {transfer.to_location?.name}</Typography>
-            <Typography>Status: {transfer.status}</Typography>
-            <Typography>Date: {new Date(transfer.transfer_date).toLocaleString()}</Typography>
-          </Paper>
+      <Paper sx={{ mt: 4, p: 3, borderRadius: 2, boxShadow: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LocalShippingIcon color="primary" />
+            Informacje
+          </Typography>
+          {transfer.status === 'in_transit' && (
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => setLocationDialogOpen(true)}
+              disabled={loading}
+              startIcon={<MyLocationIcon />}
+              sx={{ 
+                py: 0.75,
+                px: 1.5,
+                borderRadius: 1.5,
+                fontSize: '0.875rem',
+                borderWidth: 1.5,
+                '&:hover': {
+                  borderWidth: 1.5,
+                  backgroundColor: 'primary.lighter',
+                }
+              }}
+            >
+              Aktualizuj lokalizację
+            </Button>
+          )}
+        </Box>
+        <Divider sx={{ mb: 3 }} />
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Lokalizacja źródłowa
+            </Typography>
+            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LocationOnIcon fontSize="small" color="action" />
+              {transfer.from_location?.name}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Lokalizacja docelowa
+            </Typography>
+            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LocationOnIcon fontSize="small" color="action" />
+              {transfer.to_location?.name}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Status
+            </Typography>
+            <Chip 
+              label={transfer.status} 
+              color={
+                transfer.status === 'completed' ? 'success' : 
+                transfer.status === 'in_transit' ? 'warning' : 
+                transfer.status === 'cancelled' ? 'error' : 'default'
+              }
+              size="small"
+            />
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Data transferu
+            </Typography>
+            <Typography variant="body1">
+              {new Date(transfer.transfer_date).toLocaleString()}
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
 
-          <Paper sx={{ mt: 4, p: 3 }}>
-            <Typography variant="h6">Assets</Typography>
-            {transfer.assets && transfer.assets.length > 0 ? (
-              <List>
-                {transfer.assets.map((asset: any) => (
-                  <ListItem
-                    key={asset.id}
-                    sx={{ display: 'flex', alignItems: 'center' }}
-                    secondaryAction={
-                      transfer.status === 'in_transit' && (
-                        <Tooltip title="Przywróć do magazynu">
-                          <IconButton
-                            edge="end"
-                            aria-label="restore"
-                            onClick={() => handleRestoreClick(asset.id, 'asset')}
-                          >
-                            <RestoreIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )
-                    }
-                  >
-                    <ListItemAvatar>
-                      <Chip
-                        icon={getStatusIcon(asset.status)}
-                        color="success"
-                        sx={{ mr: 2 }}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}
-                      secondary={`Pochodzenie: ${asset.origin || 'N/A'}`}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            ) : (
-              <Typography>No assets in this transfer.</Typography>
-            )}
-          </Paper>
+      <Paper sx={{ mt: 4, p: 3 }}>
+        <Typography variant="h6">Assets</Typography>
+        {transfer.assets && transfer.assets.length > 0 ? (
+          <List>
+            {transfer.assets.map((asset: any) => (
+              <ListItem
+                key={asset.id}
+                sx={{ display: 'flex', alignItems: 'center' }}
+                secondaryAction={
+                  transfer.status === 'in_transit' && (
+                    <Tooltip title="Przywróć do magazynu">
+                      <IconButton
+                        edge="end"
+                        aria-label="restore"
+                        onClick={() => handleRestoreClick(asset.id, 'asset')}
+                      >
+                        <RestoreIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )
+                }
+              >
+                <ListItemAvatar>
+                  <Chip
+                    icon={getStatusIcon(asset.status)}
+                    color="success"
+                    sx={{ mr: 2 }}
+                  />
+                </ListItemAvatar>
+                <ListItemText
+                  primary={`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}
+                  secondary={`Pochodzenie: ${asset.origin || 'N/A'}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        ) : (
+          <Typography>No assets in this transfer.</Typography>
+        )}
+      </Paper>
 
       <Paper sx={{ mt: 4, p: 3 }}>
         <Typography variant="h6">Stock Items</Typography>
@@ -446,44 +560,6 @@ const TransferDetailsPage: React.FC = () => {
         )}
       </Paper>
 
-      {transfer.status !== 'completed' && (
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            Confirm delivery when all items are delivered
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleConfirmTransfer}
-            disabled={loading}
-            type="button"
-          >
-            Confirm Delivery
-          </Button>
-        </Box>
-      )}
-
-      <Dialog
-        open={locationDialogOpen}
-        onClose={() => setLocationDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Wybierz lokalizację dostawy</DialogTitle>
-        <DialogContent>
-          <LocationPicker
-            onLocationSelect={handleLocationUpdate}
-            initialLocation={transfer?.delivery_location}
-            onSave={() => setLocationDialogOpen(false)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLocationDialogOpen(false)}>
-            Anuluj
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <RestoreDialog
         open={restoreDialogOpen}
         onClose={() => {
@@ -498,6 +574,68 @@ const TransferDetailsPage: React.FC = () => {
           undefined
         }
       />
+
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+      >
+        <DialogTitle>Potwierdź anulowanie transferu</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Czy na pewno chcesz anulować ten transfer?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.5 }}>
+          <Button 
+            onClick={() => setCancelDialogOpen(false)}
+            sx={{ 
+              fontSize: '0.875rem',
+              py: 0.75,
+              px: 1.5,
+            }}
+          >
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleCancelTransfer} 
+            color="error" 
+            variant="contained"
+            sx={{ 
+              fontSize: '0.875rem',
+              py: 0.75,
+              px: 1.5,
+              borderRadius: 1.5,
+            }}
+          >
+            Potwierdź anulowanie
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={locationDialogOpen}
+        onClose={() => setLocationDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <MyLocationIcon color="primary" />
+            <Typography variant="h6">Aktualizuj lokalizację transferu</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <LocationPicker
+            onLocationSelect={handleLocationUpdate}
+            onSave={() => setLocationDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };
