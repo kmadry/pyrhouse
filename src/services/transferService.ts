@@ -1,5 +1,6 @@
 import { getApiUrl } from '../config/api';
 import { API_BASE_URL } from '../config/api';
+import { MapPosition } from './locationService';
 
 const API_TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT) || 30000;
 
@@ -190,5 +191,22 @@ export const validatePyrCodeAPI = async (pyrCode: string) => {
       console.error('Error canceling transfer:', error);
       throw error;
     }
+  };
+  
+  export const updateTransferLocationAPI = async (transferId: number, location: MapPosition) => {
+    // Mock odpowiedzi z API
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          id: transferId,
+          delivery_location: {
+            ...location,
+            timestamp: new Date().toISOString()
+          },
+          status: 'success',
+          message: 'Lokalizacja dostawy została zaktualizowana'
+        });
+      }, 500); // Symulacja opóźnienia sieci
+    });
   };
   

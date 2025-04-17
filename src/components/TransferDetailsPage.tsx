@@ -34,9 +34,12 @@ import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
 import ErrorIcon from '@mui/icons-material/Error';
 import RestoreIcon from '@mui/icons-material/Restore';
 import CancelIcon from '@mui/icons-material/Cancel';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocations } from '../hooks/useLocations';
+import { MapPosition, locationService } from '../services/locationService';
+import LocationPicker from './LocationPicker';
 
 const steps = ['Created', 'In Transit', 'Delivered'];
 
@@ -127,6 +130,7 @@ const TransferDetailsPage: React.FC = () => {
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ id: number; type: 'asset' | 'stock'; originalId?: number } | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const { locations } = useLocations();
 
   const numericId = Number(id);
@@ -235,6 +239,17 @@ const TransferDetailsPage: React.FC = () => {
     }
   };
 
+  const handleLocationUpdate = async (location: MapPosition) => {
+    try {
+      setError('');
+      await locationService.updateTransferLocation(numericId, location);
+      await fetchTransferDetails(); // Odśwież dane transferu
+      // Nie zamykamy dialogu tutaj, tylko czekamy na kliknięcie przycisku "Zapisz"
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas aktualizacji lokalizacji');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'in_transit':
@@ -290,8 +305,18 @@ const TransferDetailsPage: React.FC = () => {
             onClick={() => setCancelDialogOpen(true)}
             disabled={loading}
             startIcon={<CancelIcon />}
+            sx={{ mr: 2 }}
           >
             Anuluj transfer
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setLocationDialogOpen(true)}
+            disabled={loading}
+            startIcon={<LocationOnIcon />}
+          >
+            Zaktualizuj lokalizację
           </Button>
         </Box>
       )}
@@ -437,6 +462,27 @@ const TransferDetailsPage: React.FC = () => {
           </Button>
         </Box>
       )}
+
+      <Dialog
+        open={locationDialogOpen}
+        onClose={() => setLocationDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Wybierz lokalizację dostawy</DialogTitle>
+        <DialogContent>
+          <LocationPicker
+            onLocationSelect={handleLocationUpdate}
+            initialLocation={transfer?.delivery_location}
+            onSave={() => setLocationDialogOpen(false)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLocationDialogOpen(false)}>
+            Anuluj
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <RestoreDialog
         open={restoreDialogOpen}

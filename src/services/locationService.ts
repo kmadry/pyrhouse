@@ -107,4 +107,95 @@ export const createLocation = async (data: Omit<Location, 'id'>): Promise<Locati
   }
   
   return response.json();
-}; 
+};
+
+export interface DeliveryLocation {
+  lat: number;
+  lng: number;
+  timestamp: string;
+}
+
+export interface MapPosition {
+  lat: number;
+  lng: number;
+}
+
+class LocationService {
+  private readonly googleMapsApiKey: string;
+
+  constructor() {
+    this.googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  }
+
+  async getCurrentPosition(): Promise<MapPosition> {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolokalizacja nie jest wspierana przez twoją przeglądarkę'));
+        return;
+      }
+
+      // Dodajemy timeout, aby uniknąć zawieszenia
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Przekroczono czas oczekiwania na lokalizację'));
+      }, 10000); // 10 sekund timeout
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeoutId);
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          clearTimeout(timeoutId);
+          let errorMessage = 'Wystąpił błąd podczas pobierania lokalizacji';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Brak uprawnień do pobrania lokalizacji';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Informacja o lokalizacji jest niedostępna';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Przekroczono czas oczekiwania na lokalizację';
+              break;
+          }
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
+  async updateTransferLocation(transferId: number, location: MapPosition): Promise<void> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(getApiUrl(`/transfers/${transferId}`), {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        delivery_location: {
+          ...location,
+          timestamp: new Date().toISOString(),
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Nie udało się zaktualizować lokalizacji transferu');
+    }
+  }
+
+  getGoogleMapsApiKey(): string {
+    return this.googleMapsApiKey;
+  }
+}
+
+export const locationService = new LocationService(); 
