@@ -174,7 +174,7 @@ class LocationService {
 
   async updateTransferLocation(transferId: number, location: MapPosition): Promise<void> {
     const token = localStorage.getItem('token');
-    const response = await fetch(getApiUrl(`/transfers/${transferId}`), {
+    const response = await fetch(getApiUrl(`/transfers/${transferId}/delivery-location`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

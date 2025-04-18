@@ -5,7 +5,6 @@ import {
   Button,
   Typography,
   Container,
-  CircularProgress,
   Stepper,
   Step,
   StepLabel,
@@ -28,6 +27,8 @@ import {
   InputLabel,
   TextField,
   Divider,
+  Alert,
+  Stack,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -37,12 +38,15 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import CancelIcon from '@mui/icons-material/Cancel';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import NavigationIcon from '@mui/icons-material/Navigation';
+import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocations } from '../hooks/useLocations';
 import { MapPosition, locationService } from '../services/locationService';
 import LocationPicker from './LocationPicker';
 import { useAuth } from '../hooks/useAuth';
+import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 const statusTranslations: { [key: string]: string } = {
   'created': 'Utworzony',
@@ -141,7 +145,10 @@ const TransferDetailsPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<{ id: number; type: 'asset' | 'stock'; originalId?: number } | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [showLocationAlert, setShowLocationAlert] = useState<boolean>(false);
   const { locations, refetch: fetchLocations } = useLocations();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const numericId = Number(id);
 
@@ -259,15 +266,15 @@ const TransferDetailsPage: React.FC = () => {
 
   const handleLocationUpdate = async (location: MapPosition) => {
     setLoading(true);
-    setError('');
+    setLocationError(null);
     try {
       await locationService.updateTransferLocation(numericId, location);
       await fetchTransferDetails();
+      setLocationDialogOpen(false);
     } catch (err: any) {
-      setError(err.message || 'Nie udało się zaktualizować lokalizacji');
+      setLocationError(err.message || 'Nie udało się zaktualizować lokalizacji');
     } finally {
       setLoading(false);
-      setLocationDialogOpen(false);
     }
   };
 
@@ -316,17 +323,184 @@ const TransferDetailsPage: React.FC = () => {
     }
   }, [transfer]);
 
-  if (loading) {
+  const getUserLocation = () => {
+   
+    if (!navigator.geolocation) {
+      console.error('Geolokalizacja nie jest wspierana przez przeglądarkę');
+      setLocationError('Geolokalizacja nie jest wspierana przez Twoją przeglądarkę');
+      return;
+    }
+
+    setLocationError(null);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        console.log('Nowa lokalizacja użytkownika:', newLocation);
+        setUserLocation(newLocation);
+        setShowLocationAlert(true);
+        
+        // Ukryj alert po 5 sekundach
+        setTimeout(() => {
+          setShowLocationAlert(false);
+        }, 4000);
+      },
+      (error) => {
+        console.error('Błąd podczas pobierania lokalizacji:', error);
+        let errorMessage = 'Nie udało się pobrać Twojej lokalizacji';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Brak dostępu do lokalizacji. Sprawdź ustawienia przeglądarki.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Informacje o lokalizacji są niedostępne.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Przekroczono czas oczekiwania na odpowiedź.';
+            break;
+          default:
+            errorMessage = 'Nieznany błąd: ' + error.message;
+        }
+        
+        setLocationError(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  // Dodajmy automatyczne pobieranie lokalizacji przy pierwszym renderowaniu mapy
+  useEffect(() => {
+    if (transfer?.delivery_location?.lat && transfer?.delivery_location?.lng) {
+      getUserLocation();
+    }
+  }, [transfer?.delivery_location]);
+
+  function renderMap() {
+    if (!transfer?.delivery_location?.lat || !transfer?.delivery_location?.lng) {
+      console.warn('Brak danych o lokalizacji:', transfer?.delivery_location);
+      return (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Brak danych o lokalizacji
+        </Alert>
+      );
+    }
+
+    const mapLocation = {
+      lat: transfer.delivery_location.lat,
+      lng: transfer.delivery_location.lng
+    };
+
     return (
-      <Container>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <CircularProgress />
+      <Box 
+        sx={{ 
+          height: '300px', 
+          width: '100%', 
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+          position: 'relative'
+        }}
+        id="map-container"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            zIndex: 1,
+            display: 'flex',
+            gap: 1
+          }}
+        >
+          <Tooltip title="Pokaż moją lokalizację">
+            <IconButton
+              onClick={getUserLocation}
+              sx={{
+                backgroundColor: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                }
+              }}
+            >
+              <GpsFixedIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
-      </Container>
+        <APIProvider apiKey={locationService.getGoogleMapsApiKey()}>
+          <Map
+            defaultCenter={mapLocation}
+            defaultZoom={17}
+            mapId="pyrhouse-map"
+            gestureHandling={'greedy'}
+            disableDefaultUI={false}
+          >
+            <AdvancedMarker position={mapLocation}>
+              <Pin
+                background={'#1976d2'}
+                borderColor={'#1565c0'}
+                glyphColor={'#ffffff'}
+              />
+            </AdvancedMarker>
+            {userLocation && (
+              <AdvancedMarker position={userLocation}>
+                <Pin
+                  background={'#4caf50'}
+                  borderColor={'#388e3c'}
+                  glyphColor={'#ffffff'}
+                />
+              </AdvancedMarker>
+            )}
+          </Map>
+        </APIProvider>
+        {locationError && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              position: 'absolute',
+              bottom: 10,
+              left: 10,
+              right: 10,
+              zIndex: 1
+            }}
+          >
+            {locationError}
+          </Alert>
+        )}
+        {userLocation && showLocationAlert && (
+          <Alert 
+            severity="success" 
+            sx={{ 
+              position: 'absolute',
+              bottom: locationError ? 60 : 10,
+              left: 10,
+              right: 10,
+              zIndex: 1
+            }}
+          >
+            Twoja lokalizacja została oznaczona na mapie (zielony marker)
+          </Alert>
+        )}
+      </Box>
     );
   }
 
-  if (error) {
+  const handleNavigateToLocation = () => {
+    if (transfer?.delivery_location?.lat && transfer?.delivery_location?.lng) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${transfer.delivery_location.lat},${transfer.delivery_location.lng}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  if (!loading && error) {
     return (
       <Container>
         <ErrorMessage message={error} />
@@ -411,27 +585,46 @@ const TransferDetailsPage: React.FC = () => {
             <LocalShippingIcon color="primary" />
             Informacje
           </Typography>
-          {transfer.status === 'in_transit' && (
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => setLocationDialogOpen(true)}
-              disabled={loading}
-              startIcon={<MyLocationIcon />}
-              sx={{ 
-                py: 0.75,
-                px: 1.5,
-                borderRadius: 1.5,
-                fontSize: '0.875rem',
-                borderWidth: 1.5,
-                '&:hover': {
-                  borderWidth: 1.5,
-                  backgroundColor: 'primary.lighter',
-                }
-              }}
-            >
-              Aktualizuj lokalizację
-            </Button>
+          {(transfer.status === 'in_transit' || transfer.status === 'completed') && (
+            <Stack direction="row" spacing={1}>
+              {transfer.status === 'in_transit' && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => setLocationDialogOpen(true)}
+                  disabled={loading}
+                  startIcon={<MyLocationIcon />}
+                  sx={{ 
+                    py: 0.75,
+                    px: 1.5,
+                    borderRadius: 1.5,
+                    fontSize: '0.875rem',
+                    borderWidth: 1.5,
+                    '&:hover': {
+                      borderWidth: 1.5,
+                      backgroundColor: 'primary.lighter',
+                    }
+                  }}
+                >
+                  Aktualizuj lokalizację
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleNavigateToLocation}
+                disabled={!transfer?.delivery_location?.lat || !transfer?.delivery_location?.lng}
+                startIcon={<NavigationIcon />}
+                sx={{ 
+                  py: 0.75,
+                  px: 1.5,
+                  borderRadius: 1.5,
+                  fontSize: '0.875rem',
+                }}
+              >
+                Nawiguj
+              </Button>
+            </Stack>
           )}
         </Box>
         <Divider sx={{ mb: 3 }} />
@@ -477,6 +670,20 @@ const TransferDetailsPage: React.FC = () => {
             </Typography>
           </Box>
         </Box>
+
+        {(transfer.status === 'in_transit' || transfer.status === 'completed') && transfer.delivery_location && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              {transfer.status === 'in_transit' ? 'Aktualna lokalizacja dostawy' : 'Lokalizacja dostawy'}
+            </Typography>
+            <Box sx={{ position: 'relative', mb: 1 }}>
+              {renderMap()}
+            </Box>
+            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+              Ostatnia aktualizacja: {new Date(transfer.delivery_location.timestamp).toLocaleString()}
+            </Typography>
+          </Box>
+        )}
       </Paper>
 
       <Paper sx={{ mt: 4, p: 3 }}>
@@ -631,6 +838,11 @@ const TransferDetailsPage: React.FC = () => {
           </Box>
         </DialogTitle>
         <DialogContent>
+          {locationError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {locationError}
+            </Alert>
+          )}
           <LocationPicker
             onLocationSelect={handleLocationUpdate}
             onSave={() => setLocationDialogOpen(false)}

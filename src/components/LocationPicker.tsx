@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import { GoogleMap, useJsApiLoader, Libraries } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { MapPosition, locationService } from '../services/locationService';
 import { MyLocation, Save } from '@mui/icons-material';
 
@@ -20,9 +20,6 @@ const mapContainerStyle = {
   height: '400px'
 };
 
-const libraries: Libraries = ['places'];
-
-
 const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initialLocation, onSave }) => {
   const [selectedLocation, setSelectedLocation] = useState<MapPosition | null>(initialLocation || null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -33,13 +30,14 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
+    id: 'script-loader',
     googleMapsApiKey: locationService.getGoogleMapsApiKey(),
-    libraries,
+    libraries: ['maps'],
+    language: 'en',
+    region: 'US',
     version: 'weekly',
-    language: 'pl',
-    region: 'PL',
     mapIds: [],
+    nonce: '',
     authReferrerPolicy: 'origin'
   });
 
