@@ -29,6 +29,7 @@ import {
   Divider,
   Alert,
   Stack,
+  CircularProgress,
 } from '@mui/material';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -499,6 +500,26 @@ const TransferDetailsPage: React.FC = () => {
       window.open(url, '_blank');
     }
   };
+
+  if (loading) {
+    return (
+      <Container>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '50vh',
+          flexDirection: 'column',
+          gap: 2
+        }}>
+          <CircularProgress size={60} />
+          <Typography variant="body1" color="text.secondary">
+            Ładowanie szczegółów quest'a...
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   if (!loading && error) {
     return (

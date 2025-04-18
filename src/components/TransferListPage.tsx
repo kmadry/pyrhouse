@@ -281,7 +281,7 @@ const TransfersListPage: React.FC = () => {
         }}>
           <CircularProgress size={40} />
           <Typography variant="body1" color="text.secondary">
-            Ładowanie transferów...
+            Ładowanie questów...
           </Typography>
         </Box>
       ) : error ? (
@@ -298,7 +298,7 @@ const TransfersListPage: React.FC = () => {
           borderColor: 'divider'
         }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            Brak transferów
+            Brak questów
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             {searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Utwórz nowy transfer, aby rozpocząć'}
