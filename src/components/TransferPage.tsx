@@ -651,15 +651,15 @@ const TransferPage: React.FC = () => {
                           return (
                             <TextField
                               {...field}
-                              type="number"
+                              type="text"
                               label="Ilość"
                               fullWidth
                               error={Number(field.value) > maxQuantity}
                               helperText={Number(field.value) > maxQuantity ? `Maksymalna dostępna ilość: ${maxQuantity}` : ''}
                               inputProps={{ 
-                                min: 0,
                                 max: maxQuantity,
-                                step: 1
+                                inputMode: 'numeric',
+                                pattern: '[0-9]*'
                               }}
                               onChange={(e) => {
                                 const value = Math.min(Number(e.target.value), maxQuantity);

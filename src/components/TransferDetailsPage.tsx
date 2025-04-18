@@ -141,7 +141,7 @@ const TransferDetailsPage: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<{ id: number; type: 'asset' | 'stock'; originalId?: number } | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-  const { locations } = useLocations();
+  const { locations, refetch: fetchLocations } = useLocations();
 
   const numericId = Number(id);
 
@@ -185,6 +185,10 @@ const TransferDetailsPage: React.FC = () => {
 
     fetchTransferDetails();
   }, [numericId]);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
 
   const handleConfirmTransfer = async () => {
     setLoading(true);
@@ -557,20 +561,20 @@ const TransferDetailsPage: React.FC = () => {
         )}
       </Paper>
 
-      <RestoreDialog
-        open={restoreDialogOpen}
-        onClose={() => {
-          setRestoreDialogOpen(false);
-          setSelectedItem(null);
-        }}
-        onConfirm={handleRestoreConfirm}
-        locations={locations}
-        itemType={selectedItem?.type || 'asset'}
-        currentQuantity={selectedItem?.type === 'stock' ? 
-          transfer.stock_items.find((item: any) => item.id === selectedItem.originalId)?.quantity : 
-          undefined
-        }
-      />
+      {restoreDialogOpen && selectedItem && (
+        <RestoreDialog
+          open={restoreDialogOpen}
+          onClose={() => setRestoreDialogOpen(false)}
+          onConfirm={handleRestoreConfirm}
+          locations={locations || []}
+          itemType={selectedItem.type}
+          currentQuantity={
+            selectedItem.type === 'stock' 
+              ? transfer?.stock_items.find((item: any) => item.id === selectedItem.originalId)?.quantity 
+              : undefined
+          }
+        />
+      )}
 
       <Dialog
         open={cancelDialogOpen}

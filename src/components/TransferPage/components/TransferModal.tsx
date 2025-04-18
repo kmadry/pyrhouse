@@ -173,9 +173,17 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                     <TextField
                       type="number"
                       size="small"
-                      value={stockQuantities[stockId] || 1}
-                      onChange={(e) => handleQuantityChange(stockId, Number(e.target.value))}
-                      inputProps={{ min: 1, max: stockItem?.quantity || 1 }}
+                      value={stockQuantities[stockId] || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : Number(e.target.value);
+                        handleQuantityChange(stockId, value === '' ? 1 : value);
+                      }}
+                      inputProps={{ 
+                        min: 1, 
+                        max: stockItem?.quantity || 1,
+                        inputMode: 'numeric',
+                        pattern: '[0-9]*'
+                      }}
                       sx={{ width: 100 }}
                     />
                   </Box>

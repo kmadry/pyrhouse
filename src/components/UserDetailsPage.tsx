@@ -25,6 +25,14 @@ import {
   Alert,
   Snackbar,
   SelectChangeEvent,
+  CardHeader,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import { ErrorMessage } from './ErrorMessage';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -38,6 +46,25 @@ import StarIcon from '@mui/icons-material/Star';
 import LockIcon from '@mui/icons-material/Lock';
 import { jwtDecode } from 'jwt-decode';
 import { getApiUrl } from '../config/api';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import {
+  Schedule,
+  CheckCircle,
+  Cancel,
+  LocalShipping,
+  LocationOn,
+} from '@mui/icons-material';
+
+interface Transfer {
+  ID: number;
+  FromLocationID: number;
+  FromLocationName: string;
+  ToLocationID: number;
+  ToLocationName: string;
+  TransferDate: string;
+  Status: 'in_transit' | 'completed' | 'cancelled';
+}
 
 const UserDetailsPage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -59,6 +86,10 @@ const UserDetailsPage: React.FC = () => {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [transfersError, setTransfersError] = useState<string | null>(null);
+  const [transfersLoading, setTransfersLoading] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -84,6 +115,53 @@ const UserDetailsPage: React.FC = () => {
 
     fetchUserData();
   }, [userId]);
+
+  useEffect(() => {
+    const fetchTransfers = async () => {
+      if (!userId) return;
+      
+      setTransfersLoading(true);
+      setTransfersError(null);
+      
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Brak tokenu autoryzacji');
+        }
+
+        const status = tabValue === 0 ? 'in_transit' : 'completed';
+                      
+        const response = await fetch(
+          getApiUrl(`/transfers/users/${userId}?status=${status}`),
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          if (response.status === 400 || response.status === 401) {
+            setTransfersError('Nie udało się pobrać transferów. Spróbuj odświeżyć stronę.');
+            setTransfers([]);
+            return;
+          }
+          throw new Error('Nie udało się pobrać transferów');
+        }
+
+        const data = await response.json();
+        setTransfers(data);
+      } catch (err) {
+        setTransfersError(err instanceof Error ? err.message : 'Wystąpił nieznany błąd');
+        setTransfers([]);
+      } finally {
+        setTransfersLoading(false);
+      }
+    };
+
+    fetchTransfers();
+  }, [userId, tabValue]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -522,6 +600,111 @@ const UserDetailsPage: React.FC = () => {
           Hasło zostało zmienione pomyślnie!
         </Alert>
       </Snackbar>
+
+      <Card sx={{ mt: 4 }}>
+        <CardHeader 
+          title="Questy użytkownika"
+          action={
+            <Tabs 
+              value={tabValue} 
+              onChange={(_, newValue) => setTabValue(newValue)}
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab 
+                icon={<Schedule />} 
+                iconPosition="start" 
+                label="W trakcie" 
+              />
+              <Tab 
+                icon={<CheckCircle />} 
+                iconPosition="start" 
+                label="Ukończone" 
+              />
+            </Tabs>
+          }
+        />
+        <CardContent>
+          {transfersLoading ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : transfersError ? (
+            <Alert severity="error">{transfersError}</Alert>
+          ) : transfers.length === 0 ? (
+            <Alert severity="info">
+              Brak transferów o wybranym statusie
+            </Alert>
+          ) : (
+            <List>
+              {transfers.map((transfer) => {
+                try {
+                  const formattedDate = format(new Date(transfer.TransferDate), 'PPpp', { locale: pl });
+                  return (
+                    <ListItem 
+                      key={transfer.ID}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        mb: 2,
+                        '&:last-child': { mb: 0 }
+                      }}
+                    >
+                      <ListItemButton onClick={() => navigate(`/transfers/${transfer.ID}`)}>
+                        <ListItemIcon>
+                          <LocalShipping />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Typography variant="subtitle1">
+                              Transfer #{transfer.ID}
+                            </Typography>
+                          }
+                          secondary={
+                            <>
+                              <Box display="flex" alignItems="center" gap={1} mt={1}>
+                                <LocationOn fontSize="small" color="action" />
+                                <Typography variant="body2">
+                                  Z: {transfer.FromLocationName}
+                                </Typography>
+                              </Box>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <LocationOn fontSize="small" color="action" />
+                                <Typography variant="body2">
+                                  Do: {transfer.ToLocationName}
+                                </Typography>
+                              </Box>
+                              <Typography variant="caption" display="block" mt={1}>
+                                Utworzono: {formattedDate}
+                              </Typography>
+                            </>
+                          }
+                        />
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Chip
+                            label={
+                              transfer.Status === 'in_transit' ? 'Oczekujący' :
+                              transfer.Status === 'completed' ? 'Potwierdzony' : 'Anulowany'
+                            }
+                            color={
+                              transfer.Status === 'in_transit' ? 'warning' :
+                              transfer.Status === 'completed' ? 'success' : 'error'
+                            }
+                            size="small"
+                          />
+                        </Box>
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                } catch (err) {
+                  console.error('Błąd podczas formatowania daty:', err);
+                  return null;
+                }
+              })}
+            </List>
+          )}
+        </CardContent>
+      </Card>
     </Box>
   );
 };

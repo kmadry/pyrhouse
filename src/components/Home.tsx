@@ -1,52 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Container,
-  Card,
-  CardContent,
   Button,
   CircularProgress,
   Grid,
   Paper,
-  Divider,
-  Stack,
   TextField,
   Chip,
+  Alert,
+  List,
 } from '@mui/material';
 import { 
   LocalShipping, 
   Search, 
-  ArrowForwardIos,
   LocationOn,
   AccessTime,
   Inventory,
   ListAlt
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
 import { styled } from '@mui/material/styles';
 import { getApiUrl } from '../config/api';
-
-// Stylizowany komponent dla pilnych zadań
-const UrgentQuestCard = styled(Card)(() => ({
-  background: `linear-gradient(145deg, #E6A446, #A4462D)`,
-  border: '2px solid #A4462D',
-  boxShadow: '0 4px 12px rgba(164, 70, 45, 0.5)',
-  animation: 'pulse 2s infinite',
-  '@keyframes pulse': {
-    '0%': {
-      boxShadow: '0 4px 12px rgba(164, 70, 45, 0.5)',
-    },
-    '50%': {
-      boxShadow: '0 4px 20px rgba(164, 70, 45, 0.8)',
-    },
-    '100%': {
-      boxShadow: '0 4px 12px rgba(164, 70, 45, 0.5)',
-    },
-  }
-}));
+import { jwtDecode } from 'jwt-decode';
+import { alpha } from '@mui/material/styles';
 
 // Interfejs dla zadania
 interface Quest {
@@ -62,81 +42,181 @@ interface Quest {
   location?: string;
 }
 
-// Komponent licznika czasu
-const CountdownTimer: React.FC<{ deadline: string }> = ({ deadline }) => {
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    totalHours: number;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, totalHours: 0 });
+// Dodaj nowy styled component dla quest item
+const QuestItem = styled(Paper)(({ theme }) => ({
+  position: 'relative',
+  padding: theme.spacing(4),
+  marginBottom: theme.spacing(2),
+  background: theme.palette.mode === 'dark' 
+    ? `linear-gradient(135deg, ${alpha('#462f1d', 0.98)}, ${alpha('#2d1810', 0.95)})`
+    : `linear-gradient(135deg, #f8e7cb, #ebd5b3)`,
+  borderRadius: '8px',
+  cursor: 'pointer',
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 4px 12px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.4)'
+    : '0 4px 12px rgba(139, 109, 76, 0.15), inset 0 0 30px rgba(139, 109, 76, 0.1)',
+  transition: 'all 0.3s ease',
+  border: theme.palette.mode === 'dark'
+    ? '2px solid #8b6d4c'
+    : '2px solid #c4a980',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 6px 16px rgba(0,0,0,0.7), inset 0 0 30px rgba(0,0,0,0.4)'
+      : '0 6px 16px rgba(139, 109, 76, 0.25), inset 0 0 30px rgba(139, 109, 76, 0.1)',
+    '&::before': {
+      opacity: 0.5,
+    },
+    '&::after': {
+      boxShadow: theme.palette.mode === 'dark'
+        ? 'inset 0 0 100px 100px rgba(255, 255, 255, 0.05)'
+        : 'inset 0 0 100px 100px rgba(255, 255, 255, 0.07)',
+    }
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    background: theme.palette.mode === 'dark'
+      ? 'linear-gradient(45deg, #ffd700, #b8860b, #8b6d4c)'
+      : 'linear-gradient(45deg, #daa520, #cd853f, #b8860b)',
+    borderRadius: '10px',
+    opacity: 0.3,
+    transition: 'opacity 0.3s ease',
+    zIndex: -1,
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: theme.palette.mode === 'dark'
+      ? `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.15' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E")`
+      : `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.15' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E")`,
+    borderRadius: '6px',
+    opacity: 0.5,
+    pointerEvents: 'none',
+    transition: 'box-shadow 0.3s ease',
+  }
+}));
 
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date();
-      const deadlineDate = new Date(deadline);
-      const difference = deadlineDate.getTime() - now.getTime();
-      
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-        const totalHours = days * 24 + hours + minutes / 60;
+const QuestTitle = styled(Typography)(({ theme }) => ({
+  fontFamily: '"Cinzel", serif',
+  fontWeight: 700,
+  fontSize: '1.4rem',
+  color: theme.palette.mode === 'dark' ? '#ffd700' : '#8b4513',
+  marginBottom: theme.spacing(2),
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  textShadow: theme.palette.mode === 'dark' 
+    ? '2px 2px 2px rgba(0,0,0,0.8), 0 0 5px rgba(255, 215, 0, 0.3)'
+    : '1px 1px 2px rgba(139, 69, 19, 0.3)',
+  '& .MuiSvgIcon-root': {
+    color: theme.palette.mode === 'dark' ? '#ffd700' : '#8b4513',
+    filter: theme.palette.mode === 'dark' 
+      ? 'drop-shadow(2px 2px 2px rgba(0,0,0,0.8))'
+      : 'drop-shadow(1px 1px 1px rgba(139, 69, 19, 0.3))',
+  }
+}));
 
-        setTimeLeft({
-          days,
-          hours,
-          minutes,
-          seconds,
-          totalHours
-        });
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, totalHours: 0 });
-      }
-    };
+const QuestLocation = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  color: theme.palette.mode === 'dark' ? '#ffd700' : '#8b4513',
+  marginBottom: theme.spacing(1),
+  fontSize: '1rem',
+  fontWeight: 500,
+  textShadow: theme.palette.mode === 'dark' 
+    ? '1px 1px 2px rgba(0,0,0,0.8)'
+    : '1px 1px 1px rgba(139, 69, 19, 0.2)',
+  '& .MuiSvgIcon-root': {
+    color: theme.palette.mode === 'dark' ? '#ffd700' : '#8b4513',
+    filter: theme.palette.mode === 'dark' 
+      ? 'drop-shadow(1px 1px 1px rgba(0,0,0,0.8))'
+      : 'drop-shadow(1px 1px 1px rgba(139, 69, 19, 0.2))',
+  }
+}));
 
-    // Oblicz czas od razu
-    calculateTimeLeft();
+const QuestDate = styled(Typography)(({ theme }) => ({
+  color: theme.palette.mode === 'dark' ? '#d4af37' : '#8b4513',
+  fontSize: '0.9rem',
+  fontStyle: 'italic',
+  fontWeight: 500,
+  textShadow: theme.palette.mode === 'dark' 
+    ? '1px 1px 1px rgba(0,0,0,0.8)'
+    : '1px 1px 1px rgba(139, 69, 19, 0.2)',
+}));
 
-    // Aktualizuj co sekundę
-    const timer = setInterval(calculateTimeLeft, 1000);
-
-    // Wyczyść interval przy odmontowaniu komponentu
-    return () => clearInterval(timer);
-  }, [deadline]);
-
-  return (
-    <Box sx={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: 1,
-      color: '#A4462D',
-      fontFamily: '"Cinzel", serif'
-    }}>
-      <AccessTime sx={{ fontSize: '1.2rem' }} />
-      <Typography variant="h6" sx={{ fontFamily: 'inherit' }}>
-        {timeLeft.days > 0 && `${timeLeft.days}d `}
-        {timeLeft.hours.toString().padStart(2, '0')}:
-        {timeLeft.minutes.toString().padStart(2, '0')}:
-        {timeLeft.seconds.toString().padStart(2, '0')}
-      </Typography>
-    </Box>
-  );
-};
+const QuestStatus = styled(Chip)(({ theme }) => ({
+  position: 'absolute',
+  top: theme.spacing(2),
+  right: theme.spacing(2),
+  backgroundColor: theme.palette.mode === 'dark' ? '#4a3f2c' : '#daa520',
+  color: theme.palette.mode === 'dark' ? '#ffd700' : '#ffffff',
+  border: `1px solid ${theme.palette.mode === 'dark' ? '#ffd700' : '#b8860b'}`,
+  fontWeight: 600,
+  '& .MuiChip-label': {
+    textShadow: theme.palette.mode === 'dark' 
+      ? '1px 1px 1px rgba(0,0,0,0.8)'
+      : '1px 1px 1px rgba(139, 69, 19, 0.3)',
+  },
+}));
 
 const HomePage: React.FC = () => {
-  const { transfers, loading, refreshTransfers } = useTransfers();
+  const { loading } = useTransfers();
   const navigate = useNavigate();
 
   const [pyrcode, setPyrcode] = useState<string>('');
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [urgentQuests, setUrgentQuests] = useState<Quest[]>([]);
+  const [userTransfers, setUserTransfers] = useState<any[]>([]);
+  const [userTransfersLoading, setUserTransfersLoading] = useState(false);
+  const [userTransfersError, setUserTransfersError] = useState<string | null>(null);
 
-  // Fetch transfers on mount
+  // Fetch user transfers
   useEffect(() => {
-    refreshTransfers();
+    const fetchUserTransfers = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const decoded = jwtDecode(token) as any;
+        const userId = decoded.userID;
+
+        setUserTransfersLoading(true);
+        setUserTransfersError(null);
+
+        const response = await fetch(
+          getApiUrl(`/transfers/users/${userId}?status=in_transit`),
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Nie udało się pobrać transferów użytkownika');
+        }
+
+        const data = await response.json();
+        setUserTransfers(data);
+      } catch (err) {
+        setUserTransfersError(err instanceof Error ? err.message : 'Wystąpił nieznany błąd');
+        setUserTransfers([]);
+      } finally {
+        setUserTransfersLoading(false);
+      }
+    };
+
+    fetchUserTransfers();
   }, []);
 
   useEffect(() => {
@@ -231,13 +311,8 @@ const HomePage: React.FC = () => {
     });
 
     // Weź 2-3 najbardziej pilne zadania
-    setUrgentQuests(sortedUrgentQuests.slice(0, 3));
+    setUserTransfers(sortedUrgentQuests.slice(0, 3));
   }, []);
-
-  // Filter transfers to show only those "in transit"
-  const inTransitTransfers = transfers.filter(
-    (transfer) => transfer.status === 'in_transit'
-  );
 
   // Przywracam oryginalną funkcję handleSearch
   const handleSearch = async () => {
@@ -448,7 +523,7 @@ const HomePage: React.FC = () => {
               color: 'text.primary'
             }}
           >
-            Palące Questy
+            Moje Questy
           </Typography>
           <Button 
             variant="outlined" 
@@ -464,235 +539,52 @@ const HomePage: React.FC = () => {
           </Button>
         </Box>
 
-        {urgentQuests.length === 0 ? (
-          <Paper 
-            elevation={1} 
-            sx={{ 
-              p: 3, 
-              textAlign: 'center',
-              borderRadius: 2,
-              backgroundColor: 'background.default'
-            }}
-          >
-            <Typography color="text.secondary">
-              Brak pilnych zadań do wykonania.
-            </Typography>
-          </Paper>
+        {userTransfersLoading ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        ) : userTransfersError ? (
+          <Alert severity="error">{userTransfersError}</Alert>
+        ) : userTransfers.length === 0 ? (
+          <Alert severity="info">
+            Brak aktywnych questów
+          </Alert>
         ) : (
-          <Grid container spacing={3}>
-            {urgentQuests.map((quest) => (
-              <Grid item xs={12} sm={6} md={4} key={quest.id}>
-                <UrgentQuestCard>
-                  <CardContent>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
-                      mb: 2 
-                    }}>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          color: '#fff',
-                          fontWeight: 600
-                        }}
-                      >
-                        Zadanie #{quest.id}
-                      </Typography>
-                      <Chip 
-                        label={quest.difficulty?.toUpperCase() || 'MEDIUM'} 
-                        color={
-                          quest.difficulty === 'easy' ? 'success' : 
-                          quest.difficulty === 'medium' ? 'warning' : 'error'
-                        }
-                        size="small"
-                        sx={{ 
-                          fontWeight: 600,
-                          minWidth: 80
-                        }}
-                      />
-                    </Box>
-                    
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        mb: 2, 
-                        color: '#fff',
-                        minHeight: '3em'
-                      }}
-                    >
-                      {quest.description}
-                    </Typography>
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      mb: 1,
-                      backgroundColor: 'rgba(255,255,255,0.1)',
-                      p: 1,
-                      borderRadius: 1
-                    }}>
-                      <LocationOn sx={{ mr: 1, color: '#fff' }} />
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#fff',
-                          fontWeight: 500
-                        }}
-                      >
-                        {quest.location}
-                      </Typography>
-                    </Box>
-                    
-                    <CountdownTimer deadline={quest.deadline} />
-                    
-                    <Divider sx={{ 
-                      my: 2, 
-                      borderColor: 'rgba(255,255,255,0.3)',
-                      opacity: 0.5
-                    }} />
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center' 
-                    }}>
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          color: '#fff',
-                          fontWeight: 500
-                        }}
-                      >
-                        Nagroda: {quest.reward}
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        color="primary"
-                        onClick={() => navigate('/quests')}
-                        sx={{ 
-                          textTransform: 'none',
-                          fontWeight: 600
-                        }}
-                      >
-                        Szczegóły
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </UrgentQuestCard>
-              </Grid>
+          <List sx={{ mt: 2 }}>
+            {userTransfers.map((transfer) => (
+              <QuestItem
+                key={transfer.ID}
+                onClick={() => navigate(`/transfers/${transfer.ID}`)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <QuestStatus label="W trakcie" />
+                <QuestTitle variant="h6">
+                  <LocalShipping sx={{ color: 'inherit', fontSize: '1.2rem' }} />
+                  Quest #{transfer.ID}
+                </QuestTitle>
+                
+                <QuestLocation>
+                  <LocationOn sx={{ fontSize: '1.1rem' }} />
+                  Z: {transfer.FromLocationName}
+                </QuestLocation>
+                
+                <QuestLocation>
+                  <LocationOn sx={{ fontSize: '1.1rem' }} />
+                  Do: {transfer.ToLocationName}
+                </QuestLocation>
+                
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <QuestDate>
+                    Rozpoczęto: {new Date(transfer.TransferDate).toLocaleString('pl-PL')}
+                  </QuestDate>
+                </Box>
+              </QuestItem>
             ))}
-          </Grid>
+          </List>
         )}
       </Box>
 
-      {/* Dostawy w trakcie */}
-      <Box>
-        <Typography 
-          variant="h5" 
-          gutterBottom 
-          sx={{ 
-            mb: 3,
-            fontWeight: 600,
-            color: 'text.primary'
-          }}
-        >
-          Dostawy w trakcie
-        </Typography>
 
-        {inTransitTransfers.length === 0 && !loading && (
-          <Paper 
-            elevation={1} 
-            sx={{ 
-              p: 3, 
-              textAlign: 'center',
-              borderRadius: 2,
-              backgroundColor: 'background.default'
-            }}
-          >
-            <Typography color="text.secondary">
-              Brak dostaw w trakcie realizacji.
-            </Typography>
-          </Paper>
-        )}
-
-        {inTransitTransfers.length > 0 && (
-          <Grid container spacing={3}>
-            {inTransitTransfers.map((transfer) => (
-              <Grid item xs={12} sm={6} lg={4} key={transfer.id}>
-                <Card
-                  sx={{
-                    borderLeft: '5px solid orange',
-                    boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)',
-                    borderRadius: 2,
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: 4
-                    }
-                  }}
-                >
-                  <CardContent>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                      <LocalShipping sx={{ color: 'primary.main' }} />
-                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                        Dostawa #{transfer.id}
-                      </Typography>
-                    </Stack>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mb: 2,
-                        p: 2,
-                        backgroundColor: 'background.default',
-                        borderRadius: 1
-                      }}
-                    >
-                      <Typography 
-                        variant="body1" 
-                        sx={{ 
-                          fontWeight: 500,
-                          textAlign: 'center',
-                          color: 'text.primary'
-                        }}
-                      >
-                        {transfer.from_location.name}
-                      </Typography>
-                      <ArrowForwardIos sx={{ mx: 2, color: 'orange' }} />
-                      <Typography 
-                        variant="body1" 
-                        sx={{ 
-                          fontWeight: 500,
-                          textAlign: 'center',
-                          color: 'text.primary'
-                        }}
-                      >
-                        {transfer.to_location.name}
-                      </Typography>
-                    </Box>
-
-                    <Button
-                      size="small"
-                      color="primary"
-                      onClick={() => navigate(`/transfers/${transfer.id}`)}
-                      sx={{ 
-                        textTransform: 'none',
-                        fontWeight: 600
-                      }}
-                    >
-                      Zobacz szczegóły
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
     </Container>
   );
 };
