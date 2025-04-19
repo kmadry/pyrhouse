@@ -35,6 +35,7 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
   const [error, setError] = React.useState<string>('');
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isReady, setIsReady] = React.useState(false);
+  const [generatedBarcodes, setGeneratedBarcodes] = React.useState<{imgData: string, asset: Asset}[]>([]);
 
   // Inicjalizacja PDF
   useEffect(() => {
@@ -92,16 +93,9 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
           
           const imgData = canvasRef.current.toDataURL('image/png');
           newBarcodes.push({ imgData, asset });
-          
-          // Aktualizuj indeks dla podglądu
-          setCurrentIndex(i);
-          
-          // Krótka przerwa między generowaniem kodów
-          await new Promise(resolve => setTimeout(resolve, 100));
         }
         
-        // Po wygenerowaniu wszystkich kodów, ustaw je w stanie
-        // Generuj PDF z nowymi kodami kreskowymi
+        setGeneratedBarcodes(newBarcodes);
         generatePDF(newBarcodes);
         setIsReady(true);
       } catch (err) {
@@ -237,13 +231,22 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <canvas ref={canvasRef} style={{ maxWidth: '100%', height: 'auto' }} />
-              <Typography variant="body1" sx={{ mt: 1 }}>
-                {assets[currentIndex]?.pyrcode}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {assets[currentIndex]?.serial} - {assets[currentIndex]?.category.label}
-              </Typography>
+              {generatedBarcodes.length > 0 && (
+                <>
+                  <img 
+                    src={generatedBarcodes[currentIndex].imgData} 
+                    alt={`Kod kreskowy ${generatedBarcodes[currentIndex].asset.pyrcode}`}
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    {generatedBarcodes[currentIndex].asset.pyrcode}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {generatedBarcodes[currentIndex].asset.serial} - {generatedBarcodes[currentIndex].asset.category.label}
+                  </Typography>
+                </>
+              )}
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>

@@ -57,6 +57,9 @@ const ORIGIN_OPTIONS = [
 ];
 
 export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }) => {
+  // Filtrowanie kategorii tylko dla typu "asset"
+  const assetCategories = categories.filter((category) => category.type === 'asset');
+  
   const [assets, setAssets] = useState<AssetEntry[]>([
     { id: Date.now().toString(), serial: '' },
   ]);
@@ -218,7 +221,7 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
               onChange={(e) => setCategoryId(Number(e.target.value))}
               label="Kategoria"
             >
-              {categories.map((category) => (
+              {assetCategories.map((category) => (
                 <MenuItem key={category.id} value={category.id}>
                   {category.label}
                 </MenuItem>
