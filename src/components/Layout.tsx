@@ -63,6 +63,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [activeItem, setActiveItem] = useState<string>('');
   const [scrollDirection, setScrollDirection] = useState<'up' | 'down'>('up');
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrollTimer, setScrollTimer] = useState<NodeJS.Timeout | null>(null);
+  const SCROLL_THRESHOLD = 50; // Minimalny próg przewijania w pikselach
+  const SCROLL_DELAY = 150; // Opóźnienie w milisekundach
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<number | null>(null);
   const [showQuestTransition, setShowQuestTransition] = useState(false);
@@ -111,13 +114,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
-      if (currentScrollY > lastScrollY) {
-        setScrollDirection('down');
-      } else {
-        setScrollDirection('up');
+      // Sprawdź, czy przekroczono próg przewijania
+      if (Math.abs(currentScrollY - lastScrollY) < SCROLL_THRESHOLD) {
+        return;
       }
-      
-      setLastScrollY(currentScrollY);
+
+      // Wyczyść poprzedni timer
+      if (scrollTimer) {
+        clearTimeout(scrollTimer);
+      }
+
+      // Ustaw nowy timer z opóźnieniem
+      const newTimer = setTimeout(() => {
+        if (currentScrollY > lastScrollY) {
+          setScrollDirection('down');
+        } else {
+          setScrollDirection('up');
+        }
+        setLastScrollY(currentScrollY);
+      }, SCROLL_DELAY);
+
+      setScrollTimer(newTimer);
     };
 
     window.addEventListener('resize', handleResize);
@@ -126,8 +143,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
+      if (scrollTimer) {
+        clearTimeout(scrollTimer);
+      }
     };
-  }, [lastScrollY]);
+  }, [lastScrollY, scrollTimer]);
 
   // Ustaw aktywny element na podstawie aktualnej ścieżki
   useEffect(() => {

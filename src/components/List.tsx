@@ -310,7 +310,7 @@ const EquipmentList: React.FC = () => {
                 },
                 transition: 'background-color 0.2s ease'
               }}
-              onClick={() => navigate(`/details/${item.id}?type=${item.type}`)}
+              onClick={() => navigate(`/equipment/${item.id}?type=${item.type}`)}
               aria-label={`Szczegóły dla elementu ${item.id}`}
             >
               <TableCell>
@@ -366,7 +366,7 @@ const EquipmentList: React.FC = () => {
               },
               transition: 'background-color 0.2s ease'
             }}
-            onClick={() => navigate(`/details/${item.id}?type=${item.type}`)}
+            onClick={() => navigate(`/equipment/${item.id}?type=${item.type}`)}
             aria-label={`Szczegóły dla elementu ${item.id}`}
           >
             <CardContent>
