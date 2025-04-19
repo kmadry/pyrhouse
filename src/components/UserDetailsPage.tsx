@@ -67,7 +67,7 @@ interface Transfer {
 }
 
 const UserDetailsPage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -95,7 +95,7 @@ const UserDetailsPage: React.FC = () => {
     const fetchUserData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(getApiUrl(`/users/${userId}`), {
+        const response = await fetch(getApiUrl(`/users/${id}`), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -114,11 +114,11 @@ const UserDetailsPage: React.FC = () => {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [id]);
 
   useEffect(() => {
     const fetchTransfers = async () => {
-      if (!userId) return;
+      if (!id) return;
       
       setTransfersLoading(true);
       setTransfersError(null);
@@ -132,7 +132,7 @@ const UserDetailsPage: React.FC = () => {
         const status = tabValue === 0 ? 'in_transit' : 'completed';
                       
         const response = await fetch(
-          getApiUrl(`/transfers/users/${userId}?status=${status}`),
+          getApiUrl(`/transfers/users/${id}?status=${status}`),
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -161,7 +161,7 @@ const UserDetailsPage: React.FC = () => {
     };
 
     fetchTransfers();
-  }, [userId, tabValue]);
+  }, [id, tabValue]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -190,7 +190,7 @@ const UserDetailsPage: React.FC = () => {
     if (!token) return false;
     try {
       const decoded = jwtDecode(token) as any;
-      return decoded.userID === Number(userId) || decoded.role === 'admin';
+      return decoded.userID === Number(id) || decoded.role === 'admin';
     } catch {
       return false;
     }
@@ -220,7 +220,7 @@ const UserDetailsPage: React.FC = () => {
     setIsUpdating(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl(`/users/${userId}`), {
+      const response = await fetch(getApiUrl(`/users/${id}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -268,7 +268,7 @@ const UserDetailsPage: React.FC = () => {
     setIsPasswordUpdating(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(getApiUrl(`/users/${userId}`), {
+      const response = await fetch(getApiUrl(`/users/${id}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
