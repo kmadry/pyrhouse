@@ -5,7 +5,6 @@ import {
   Container,
   Grid,
   Paper,
-  CircularProgress,
   Button,
   Tabs,
   Tab,
@@ -19,6 +18,7 @@ import { getApiUrl } from '../config/api';
 import { ErrorMessage } from './ErrorMessage';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import QuestLoadingBar from './QuestLoadingBar';
 
 interface Quest {
   recipient: string;
@@ -318,11 +318,7 @@ const QuestBoardPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <QuestLoadingBar />;
   }
 
   if (error) {
