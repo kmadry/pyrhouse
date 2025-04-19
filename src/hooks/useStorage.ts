@@ -5,14 +5,14 @@ export const THEME_MODE_KEY = 'themeMode';
 
 export const useStorage = () => {
   const getItem = useCallback((key: string) => {
-    if (key === TOKEN_KEY) {
+    if (key === TOKEN_KEY || key === THEME_MODE_KEY) {
       return localStorage.getItem(key);
     }
     return sessionStorage.getItem(key);
   }, []);
 
   const setItem = useCallback((key: string, value: string) => {
-    if (key === TOKEN_KEY) {
+    if (key === TOKEN_KEY || key === THEME_MODE_KEY) {
       localStorage.setItem(key, value);
     } else {
       sessionStorage.setItem(key, value);
@@ -20,7 +20,7 @@ export const useStorage = () => {
   }, []);
 
   const removeItem = useCallback((key: string) => {
-    if (key === TOKEN_KEY) {
+    if (key === TOKEN_KEY || key === THEME_MODE_KEY) {
       localStorage.removeItem(key);
     } else {
       sessionStorage.removeItem(key);

@@ -219,6 +219,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleThemeChange = (newMode: 'light' | 'dark' | 'system') => {
+    // Ustawiamy nowy tryb motywu bez zamykania menu
     setThemeMode(newMode);
   };
 
