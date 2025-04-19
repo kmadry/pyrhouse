@@ -70,7 +70,7 @@ interface SelectedItems {
 }
 
 const LocationDetailsPage: React.FC = () => {
-  const { locationId } = useParams<{ locationId: string }>();
+  const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [locationDetails, setLocationDetails] = useState<LocationDetails | null>(null);
@@ -90,8 +90,8 @@ const LocationDetailsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Rozpoczynam pobieranie szczegółów lokalizacji dla ID:', locationId);
-      const data = await getLocationDetails(Number(locationId));
+      console.log('Rozpoczynam pobieranie szczegółów lokalizacji dla ID:', id);
+      const data = await getLocationDetails(Number(id));
       console.log('Pobrano dane lokalizacji:', data);
       setLocationDetails({
         assets: data.assets,
@@ -111,7 +111,7 @@ const LocationDetailsPage: React.FC = () => {
     fetchLocationDetails();
     fetchLocations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationId]);
+  }, [id]);
 
   const handleSelectAllAssets = () => {
     if (locationDetails?.assets) {
@@ -154,7 +154,7 @@ const LocationDetailsPage: React.FC = () => {
   const handleTransferSuccess = () => {
     setSelectedItems({ assetIds: [], stockIds: [] });
     // Odśwież dane lokalizacji
-    if (locationId) {
+    if (id) {
       fetchLocationDetails();
     }
   };
@@ -451,7 +451,7 @@ const LocationDetailsPage: React.FC = () => {
             {locationName}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            #{locationId}
+            #{id}
           </Typography>
         </Box>
         
@@ -552,7 +552,7 @@ const LocationDetailsPage: React.FC = () => {
                     Identyfikator
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                    #{locationId}
+                    #{id}
                   </Typography>
                 </Box>
                 <Box>
@@ -783,7 +783,7 @@ const LocationDetailsPage: React.FC = () => {
         onSuccess={handleTransferSuccess}
         selectedAssets={selectedItems.assetIds}
         selectedStocks={selectedItems.stockIds}
-        fromLocationId={Number(locationId)}
+        fromLocationId={Number(id)}
         locations={locations}
         stockItems={locationDetails?.stock_items || []}
         locationsLoading={locationsLoading}

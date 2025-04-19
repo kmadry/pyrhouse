@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import { getApiUrl } from '../config/api';
 
+// Cache configuration
+const CACHE_KEY = 'categories_cache';
+const CACHE_EXPIRY = 2 * 60 * 1000; // 2 minutes
+
+interface CacheData {
+  data: Category[];
+  timestamp: number;
+}
+
 // Define types for category and add category payload
 interface Category {
   id: number;
@@ -24,12 +33,30 @@ export const useCategories = () => {
 
   const fetchCategories = async () => {
     try {
+      // Check cache first
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (cachedData) {
+        const { data, timestamp } = JSON.parse(cachedData) as CacheData;
+        if (Date.now() - timestamp < CACHE_EXPIRY) {
+          setCategories(data);
+          setLoading(false);
+          return;
+        }
+      }
+
       const token = localStorage.getItem('token');
       const response = await fetch(getApiUrl('/assets/categories'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
+      
+      // Update cache
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }));
+      
       setCategories(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

@@ -12,15 +12,37 @@ import {
   ListItemButton,
   Toolbar,
   Typography,
-  Menu,
+  Menu as MuiMenu,
   MenuItem,
   Tooltip,
   Divider,
   useTheme,
   useMediaQuery,
-  Switch,
+  Switch
 } from '@mui/material';
-import * as Icons from '@mui/icons-material'; // Import all icons as an alias
+import {
+  Home,
+  AutoAwesome,
+  RocketLaunch,
+  Quiz,
+  Security,
+  Inventory2,
+  AddTask,
+  Warehouse,
+  EditLocationAlt,
+  Category,
+  People,
+  AdminPanelSettings,
+  Menu as MenuIcon,
+  Person,
+  ExpandMore,
+  AccountCircle,
+  LightMode,
+  DarkMode,
+  Animation,
+  BlockTwoTone,
+  Logout
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/p-logo.svg';
@@ -51,6 +73,30 @@ interface MenuItem {
   icon: React.ReactNode;
   type?: 'divider';
 }
+
+const Icons = {
+  Home,
+  AutoAwesome,
+  RocketLaunch,
+  Quiz,
+  Security,
+  Inventory2,
+  AddTask,
+  Warehouse,
+  EditLocationAlt,
+  Category,
+  People,
+  AdminPanelSettings,
+  Menu: MenuIcon,
+  Person,
+  ExpandMore,
+  AccountCircle,
+  LightMode,
+  DarkMode,
+  Animation,
+  BlockTwoTone,
+  Logout
+};
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
@@ -479,7 +525,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </IconButton>
             </Tooltip>
 
-            <Menu
+            <MuiMenu
               anchorEl={userMenuAnchor}
               open={Boolean(userMenuAnchor)}
               onClose={handleUserMenuClose}
@@ -649,7 +695,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <ListItemText primary="Wyloguj się" />
                 </MenuItem>
               </Box>
-            </Menu>
+            </MuiMenu>
           </Box>
         </Toolbar>
       </AppBar>

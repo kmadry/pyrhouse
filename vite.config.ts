@@ -2,17 +2,30 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { compression } from 'vite-plugin-compression2'
+import { splitVendorChunkPlugin } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    splitVendorChunkPlugin(),
+    compression({
+      algorithm: 'gzip',
+      exclude: [/\.(br)$/, /\.(gz)$/],
+    }),
+    compression({
+      algorithm: 'brotliCompress',
+      exclude: [/\.(br)$/, /\.(gz)$/],
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
   server: {
-    port: 3000, // Set the port to 3000
+    port: 3000,
     hmr: {
       overlay: false
     }
@@ -23,48 +36,13 @@ export default defineConfig({
     setupFiles: ['./src/setupTests.ts'],
   },
   build: {
-    target: 'esnext',
+    target: 'es2015',
     minify: 'terser',
     cssMinify: true,
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // React i jego ekosystem
-          if (id.includes('node_modules/react') || 
-              id.includes('node_modules/react-dom') || 
-              id.includes('node_modules/react-router-dom')) {
-            return 'react-vendor';
-          }
-          // Material UI i jego zależności
-          if (id.includes('node_modules/@mui/material')) {
-            return 'mui-core';
-          }
-          if (id.includes('node_modules/@mui/icons-material')) {
-            return 'mui-icons';
-          }
-          if (id.includes('node_modules/@emotion')) {
-            return 'emotion';
-          }
-          // Narzędzia i biblioteki pomocnicze
-          if (id.includes('node_modules/lodash')) {
-            return 'lodash';
-          }
-          if (id.includes('node_modules/date-fns')) {
-            return 'date-fns';
-          }
-          if (id.includes('node_modules/jspdf')) {
-            return 'jspdf';
-          }
-          if (id.includes('node_modules/bwip-js')) {
-            return 'bwip-js';
-          }
-          // Mapy i lokalizacja
-          if (id.includes('node_modules/@vis.gl') || 
-              id.includes('node_modules/@react-google-maps')) {
-            return 'maps-vendor';
-          }
-        }
+        // Usuwamy manualChunks, aby splitVendorChunkPlugin mógł działać
       }
     }
   },
@@ -72,13 +50,8 @@ export default defineConfig({
     include: [
       'react', 
       'react-dom', 
-      'react-router-dom', 
       '@mui/material', 
       '@mui/icons-material',
-      'lodash',
-      'date-fns',
-      'jspdf',
-      'bwip-js'
     ],
     exclude: ['@emotion/cache']
   },
