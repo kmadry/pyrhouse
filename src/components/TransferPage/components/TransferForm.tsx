@@ -6,23 +6,25 @@ import {
   IconButton,
   TextField,
   Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Alert,
   CircularProgress,
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
   Autocomplete,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
 import { validatePyrCodeAPI, searchPyrCodesAPI } from '../../../services/transferService';
 import './TransferForm.css';
+import { TransferFormData } from '../../../types/transfer.types';
 
 interface TransferFormProps {
-  onSubmit: (data: any) => void;
+  onSubmit: (data: TransferFormData) => void;
   locations: any[];
   stocks: any[];
   loading: boolean;
@@ -46,23 +48,6 @@ interface PyrCodeSuggestion {
 
 type ValidationStatus = 'success' | 'failure' | '';
 
-interface FormItem {
-  type: 'pyr_code' | 'stock';
-  id: string;
-  pyrcode: string;
-  quantity: number;
-  status: ValidationStatus;
-  category?: {
-    label: string;
-  };
-}
-
-interface FormData {
-  fromLocation: number;
-  toLocation: string;
-  items: FormItem[];
-}
-
 export const TransferForm: React.FC<TransferFormProps> = ({
   onSubmit,
   locations,
@@ -76,11 +61,11 @@ export const TransferForm: React.FC<TransferFormProps> = ({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<TransferFormData>({
     defaultValues: {
-      fromLocation: locations.length > 0 ? locations[0].id : '',
+      fromLocation: locations.length > 0 ? locations[0].id : 0,
       toLocation: '',
-      items: [{ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' }],
+      items: [{ type: 'pyr_code', id: '', pyrcode: '', quantity: 1, status: '' }],
     },
   });
 
@@ -95,16 +80,15 @@ export const TransferForm: React.FC<TransferFormProps> = ({
     name: 'items',
   });
 
-  const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [lockedRows, setLockedRows] = useState<Set<number>>(new Set());
   const [isValidationInProgress, setIsValidationInProgress] = useState<boolean>(false);
   const [isValidationCompleted, setIsValidationCompleted] = useState<boolean>(false);
   const nextInputRef = useRef<HTMLInputElement>(null);
   const rowAddedRef = useRef<boolean>(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const formDataRef = useRef<TransferFormData | null>(null);
+  const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
 
   const fromLocation = watch('fromLocation');
-  const items = watch('items');
 
   const handleValidatePyrCode = async (index: number, pyrcode: string) => {
     if (isValidationInProgress || isValidationCompleted) {
@@ -117,7 +101,6 @@ export const TransferForm: React.FC<TransferFormProps> = ({
       setValue(`items.${index}.id`, response.id);
       setValue(`items.${index}.status`, 'success' as ValidationStatus);
       setValue(`items.${index}.category`, response.category);
-      setLockedRows(prev => new Set([...prev, index]));
       
       if (!rowAddedRef.current) {
         append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus });
@@ -144,245 +127,187 @@ export const TransferForm: React.FC<TransferFormProps> = ({
       return;
     }
 
-    setSearchLoading(true);
     try {
       const suggestions = await searchPyrCodesAPI(value, fromLocation);
       setPyrCodeSuggestions(suggestions);
       rowAddedRef.current = false;
     } catch (error) {
       console.error('Błąd podczas wyszukiwania:', error);
-    } finally {
-      setSearchLoading(false);
+      setPyrCodeSuggestions([]);
+    }
+  };
+
+  const handleAddItem = () => {
+    const availableStock = stocks.length > 0;
+    append({ 
+      type: availableStock ? 'stock' : 'pyr_code', 
+      id: '', 
+      pyrcode: '', 
+      quantity: 1, 
+      status: '' as ValidationStatus 
+    });
+  };
+
+  const handleFormSubmit = (data: TransferFormData) => {
+    formDataRef.current = data;
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    if (formDataRef.current) {
+      onSubmit(formDataRef.current);
+      setShowConfirmation(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="transfer-form">
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+    <>
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="transfer-form">
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
-      <div className="form-section">
-        <Typography variant="h6" className="form-section-title">
-          Lokalizacje
-        </Typography>
-        <div className="form-row">
-          <div className="form-group">
-            <FormControl fullWidth>
-              <InputLabel>Z lokalizacji</InputLabel>
-              <Select
-                {...control.register('fromLocation')}
-                label="Z lokalizacji"
-                className="form-input"
-              >
-                {locations.map((location) => (
-                  <MenuItem key={location.id} value={location.id}>
-                    {location.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </div>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="From Location"
+              {...control.register('fromLocation', { required: true })}
+              error={!!errors.fromLocation}
+              helperText={errors.fromLocation && 'From location is required'}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="To Location"
+              {...control.register('toLocation', { required: true })}
+              error={!!errors.toLocation}
+              helperText={errors.toLocation && 'To location is required'}
+            />
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Typography variant="h6">Items ({stocks.length} available stocks)</Typography>
+            {fields.map((field, index) => (
+              <Grid container spacing={2} key={field.id} sx={{ mt: 1 }}>
+                <Grid item xs={4}>
+                  <Autocomplete
+                    freeSolo
+                    options={pyrCodeSuggestions}
+                    getOptionLabel={(option: PyrCodeSuggestion | string) => 
+                      typeof option === 'string' ? option : option.pyrcode
+                    }
+                    onInputChange={(_, value) => handlePyrCodeSearch(value)}
+                    onChange={(_, value) => {
+                      if (value && typeof value !== 'string') {
+                        handleValidatePyrCode(index, value.pyrcode);
+                      }
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        label="PYR Code"
+                        {...control.register(`items.${index}.pyrcode` as const, { required: true })}
+                        error={!!errors.items?.[index]?.pyrcode}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={3}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Quantity"
+                    {...control.register(`items.${index}.quantity` as const, { 
+                      required: true,
+                      min: 1
+                    })}
+                    error={!!errors.items?.[index]?.quantity}
+                  />
+                </Grid>
+                <Grid item xs={1}>
+                  <IconButton 
+                    onClick={() => remove(index)}
+                    disabled={fields.length === 1}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Grid>
+              </Grid>
+            ))}
+            <Button 
+              onClick={handleAddItem}
+              variant="outlined"
+              sx={{ mt: 2 }}
+            >
+              Add Item
+            </Button>
+          </Grid>
 
-          <div className="form-group">
-            <FormControl fullWidth>
-              <InputLabel>Do lokalizacji</InputLabel>
-              <Select
-                {...control.register('toLocation')}
-                label="Do lokalizacji"
-                className="form-input"
-              >
-                {locations.map((location) => (
-                  <MenuItem key={location.id} value={location.id}>
-                    {location.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </div>
-        </div>
-      </div>
+          <Grid item xs={12}>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary"
+              disabled={loading}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Rozpocznij quest'}
+            </Button>
+          </Grid>
+        </Grid>
+      </form>
 
-      <div className="form-section">
-        <Typography variant="h6" className="form-section-title">
-          Przedmioty
-        </Typography>
-        <div className="items-list">
-          {fields.map((field, index) => (
-            <div key={field.id} className="item-card">
-              <div className="item-header">
-                <Typography className="item-title">
-                  Przedmiot {index + 1}
-                </Typography>
-                <IconButton
-                  onClick={() => remove(index)}
-                  className="remove-item"
-                  size="small"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <FormControl fullWidth>
-                    <InputLabel>Typ</InputLabel>
-                    <Select
-                      {...control.register(`items.${index}.type`)}
-                      label="Typ"
-                      className="form-input"
-                      disabled={lockedRows.has(index)}
-                    >
-                      <MenuItem value="pyr_code">Pyr Code</MenuItem>
-                      <MenuItem value="stock">Stock</MenuItem>
-                    </Select>
-                  </FormControl>
-                </div>
-
-                <div className="form-group">
-                  {items[index].type === 'pyr_code' && (
-                    <Autocomplete
-                      options={pyrCodeSuggestions}
-                      getOptionLabel={(option) => option.pyrcode || ''}
-                      loading={searchLoading}
-                      disabled={lockedRows.has(index)}
-                      value={items[index].pyrcode ? { pyrcode: items[index].pyrcode } as PyrCodeSuggestion : null}
-                      inputValue={items[index].pyrcode || ''}
-                      autoSelect={false}
-                      onInputChange={(_event, value) => {
-                        setValue(`items.${index}.pyrcode`, value);
-                        handlePyrCodeSearch(value);
-                        setIsValidationCompleted(false);
-                      }}
-                      onChange={(_event, value) => {
-                        if (value?.pyrcode && !lockedRows.has(index)) {
-                          setValue(`items.${index}.pyrcode`, value.pyrcode);
-                          setIsValidationCompleted(false);
-                          handleValidatePyrCode(index, value.pyrcode);
-                        }
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' && !lockedRows.has(index)) {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          const currentValue = items[index].pyrcode;
-                          const matchingOption = pyrCodeSuggestions.find(option => option.pyrcode === currentValue);
-                          if (matchingOption) {
-                            handleValidatePyrCode(index, currentValue);
-                          }
-                        }
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Pyr Code"
-                          fullWidth
-                          error={items[index].status === 'failure'}
-                          helperText={items[index].status === 'failure' ? 'Nieprawidłowy kod PYR' : ''}
-                          inputRef={index === fields.length - 1 ? nextInputRef : undefined}
-                        />
-                      )}
-                      renderOption={(props, option) => {
-                        const { key, ...otherProps } = props;
-                        return (
-                          <li 
-                            key={key}
-                            {...otherProps} 
-                            onClick={() => {
-                              if (!lockedRows.has(index)) {
-                                setValue(`items.${index}.pyrcode`, option.pyrcode);
-                                handleValidatePyrCode(index, option.pyrcode);
-                              }
-                            }}
-                          >
-                            {option.pyrcode} - {option.category?.label || 'Brak kategorii'}
-                          </li>
-                        );
-                      }}
-                      isOptionEqualToValue={(option, value) => {
-                        return option.pyrcode === value.pyrcode;
-                      }}
-                      selectOnFocus
-                      clearOnBlur={false}
+      <Dialog 
+        open={showConfirmation} 
+        onClose={() => setShowConfirmation(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Potwierdź quest</DialogTitle>
+        <DialogContent>
+          {formDataRef.current && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Z lokalizacji: {locations.find(l => l.id === formDataRef.current?.fromLocation)?.name}
+              </Typography>
+              <Typography variant="subtitle1" gutterBottom>
+                Do lokalizacji: {formDataRef.current.toLocation}
+              </Typography>
+              
+              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                Elementy do transferu:
+              </Typography>
+              <List>
+                {formDataRef.current.items.map((item, index) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={`${item.pyrcode} (${item.quantity} szt.)`}
+                      secondary={item.category?.label}
                     />
-                  )}
-                  {items[index].type === 'stock' && (
-                    <FormControl fullWidth>
-                      <InputLabel>Stock</InputLabel>
-                      <Select
-                        {...control.register(`items.${index}.id`)}
-                        label="Stock"
-                        className="form-input"
-                      >
-                        {stocks.map((stock) => (
-                          <MenuItem key={stock.id} value={stock.id}>
-                            {stock.category.label} ({stock.origin}) [Dostępne: {stock.quantity}]
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  {items[index].type === 'stock' && (
-                    <TextField
-                      {...control.register(`items.${index}.quantity`)}
-                      label="Ilość"
-                      type="number"
-                      fullWidth
-                      className="form-input"
-                      error={!!errors.items?.[index]?.quantity}
-                      helperText={errors.items?.[index]?.quantity?.message}
-                    />
-                  )}
-                  {items[index].type === 'pyr_code' && items[index].status === 'success' && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CheckCircleIcon color="success" />
-                      <Typography variant="body2" color="success.main">
-                        {items[index].category?.label || 'Brak kategorii'}
-                      </Typography>
-                    </Box>
-                  )}
-                  {items[index].type === 'pyr_code' && items[index].status === 'failure' && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <ErrorIcon color="error" />
-                      <Typography variant="body2" color="error">
-                        Nie znaleziono
-                      </Typography>
-                    </Box>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={() =>
-            append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus })
-          }
-          className="add-item-button"
-        >
-          Dodaj przedmiot
-        </Button>
-      </div>
-
-      <div className="form-actions">
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          disabled={loading}
-          className="submit-button"
-        >
-          {loading ? <CircularProgress size={24} /> : 'Utwórz transfer'}
-        </Button>
-      </div>
-    </form>
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowConfirmation(false)}>
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleConfirmSubmit} 
+            variant="contained" 
+            color="primary"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Potwierdź quest'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }; 

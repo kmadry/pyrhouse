@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -19,6 +19,13 @@ import {
   Alert,
   Autocomplete,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -31,7 +38,7 @@ import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../ser
 import { getUsersAPI } from '../services/userService';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LocationOn, Event, Person } from '@mui/icons-material';
+import { LocationOn, Event, Person, Inventory, Close, Check } from '@mui/icons-material';
 
 interface User {
   id: number;
@@ -122,6 +129,8 @@ const TransferPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const formDataRef = useRef<FormData | null>(null);
 
   const fromLocation = watch('fromLocation');
   const items = watch('items');
@@ -246,22 +255,29 @@ const TransferPage: React.FC = () => {
     return errorMessages[error] || 'Wystąpił błąd podczas przetwarzania transferu';
   };
 
-  const onSubmit = async (formData: any) => {
-    if (!formData.toLocation) {
+  const handleFormSubmit = (formData: FormData) => {
+    formDataRef.current = formData;
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    if (!formDataRef.current) return;
+
+    if (!formDataRef.current.toLocation) {
       setErrorMessage('Wybierz lokalizację docelową');
       return;
     }
 
-    if (Number(formData.fromLocation) === Number(formData.toLocation)) {
+    if (Number(formDataRef.current.fromLocation) === Number(formDataRef.current.toLocation)) {
       setErrorMessage('Lokalizacja źródłowa i docelowa nie mogą być takie same');
       return;
     }
 
     // Sprawdzanie dostępności ilości dla każdego przedmiotu magazynowego
-    const stockValidationErrors = formData.items
-      .filter((item: any) => item.type === 'stock' && item.id)
-      .map((item: any) => {
-        const selectedStock = stocks.find((stock: any) => stock.id === item.id);
+    const stockValidationErrors = formDataRef.current.items
+      .filter((item) => item.type === 'stock' && item.id)
+      .map((item) => {
+        const selectedStock = stocks.find((stock) => stock.id === Number(item.id));
         if (!selectedStock) {
           return 'Nie znaleziono wybranego przedmiotu magazynowego';
         }
@@ -280,46 +296,52 @@ const TransferPage: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
     try {
-      setLoading(true);
+      const assets = formDataRef.current.items
+        .filter((item) => item.type === 'pyr_code' && item.status === 'success')
+        .map((item) => ({ id: Number(item.id) }));
 
-      const payload = {
-        from_location_id: Number(formData.fromLocation),
-        location_id: Number(formData.toLocation),
-        assets: formData.items
-          .filter((item: any) => item.type === 'pyr_code' && item.status === 'success')
-          .map((item: any) => ({ id: item.id })),
-        stocks: formData.items
-          .filter((item: any) => item.type === 'stock')
-          .map((item: any) => ({ id: item.id, quantity: Number(item.quantity) })),
-        users: formData.users.map((user: User) => ({ id: user.id })),
+      const stocks = formDataRef.current.items
+        .filter((item) => item.type === 'stock')
+        .map((item) => ({ id: Number(item.id), quantity: Number(item.quantity) }));
+
+      const users = formDataRef.current.users.map((user) => ({ id: user.id }));
+
+      const payload: {
+        from_location_id: number;
+        location_id: number;
+        assets?: typeof assets;
+        stocks?: typeof stocks;
+        users?: typeof users;
+      } = {
+        from_location_id: Number(formDataRef.current.fromLocation),
+        location_id: Number(formDataRef.current.toLocation),
       };
 
-      if (!payload.assets?.length) delete payload.assets;
-      if (!payload.stocks?.length) delete payload.stocks;
-      if (!payload.users?.length) delete payload.users;
+      if (assets.length > 0) payload.assets = assets;
+      if (stocks.length > 0) payload.stocks = stocks;
+      if (users.length > 0) payload.users = users;
 
-      if (!payload.assets?.length && !payload.stocks?.length) {
+      if (!assets.length && !stocks.length) {
         setErrorMessage('Dodaj co najmniej jeden zasób lub pozycję magazynową');
         return;
       }
 
       const response = await createTransferAPI(payload);
-
       setSuccessMessage('Transfer został utworzony pomyślnie!');
       setTimeout(() => {
         navigate(`/transfers/${response.id}`);
       }, 500);
-
       reset();
-    } catch (err: any) {
-      console.error('Błąd podczas tworzenia transferu:', err.message);
-      setErrorMessage(getErrorMessage(err.message));
+    } catch (error: any) {
+      setErrorMessage(getErrorMessage(error.message));
     } finally {
       setLoading(false);
+      setShowConfirmation(false);
     }
   };
 
@@ -352,21 +374,27 @@ const TransferPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 2 }}>
       {questData && (
         <Paper 
           elevation={3} 
           sx={{ 
-            p: 3, 
-            mb: 4, 
+            p: 2, 
+            mb: 2,
             backgroundColor: '#FFF8E7',
-            border: '1px solid #E6CB99'
+            border: '1px solid #E6CB99',
+            '& .MuiPaper-root': {
+              transition: 'none',
+            },
+            '&:hover': {
+              backgroundColor: '#FFF8E7',
+            }
           }}
         >
           <Typography 
-            variant="h5" 
+            variant="h6" 
             sx={{ 
-              mb: 2,
+              mb: 1,
               color: '#54291E',
               fontFamily: '"Cinzel", serif'
             }}
@@ -374,31 +402,35 @@ const TransferPage: React.FC = () => {
             Aktywny Quest
           </Typography>
           
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             <Chip
+              size="small"
               icon={<Person />}
               label={`Odbiorca: ${questData.recipient}`}
               sx={{ backgroundColor: '#E6CB99' }}
             />
             <Chip
+              size="small"
               icon={<Event />}
-              label={`Termin dostawy: ${new Date(questData.deliveryDate).toLocaleDateString()}`}
+              label={`Termin: ${new Date(questData.deliveryDate).toLocaleDateString()}`}
               sx={{ backgroundColor: '#E6CB99' }}
             />
             <Chip
+              size="small"
               icon={<LocationOn />}
-              label={`Lokalizacja: ${questData.location} - ${questData.pavilion}`}
+              label={`${questData.location} - ${questData.pavilion}`}
               sx={{ backgroundColor: '#E6CB99' }}
             />
           </Box>
 
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle1" sx={{ color: '#54291E', mb: 1 }}>
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="body2" sx={{ color: '#54291E', mb: 0.5 }}>
               Wymagane przedmioty:
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {questData.items.map((item, index) => (
                 <Chip
+                  size="small"
                   key={index}
                   label={`${item.quantity}x ${item.item_name}${item.notes ? ` (${item.notes})` : ''}`}
                   sx={{ 
@@ -414,7 +446,7 @@ const TransferPage: React.FC = () => {
         </Paper>
       )}
 
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h5" gutterBottom>
         Nowy transfer
       </Typography>
 
@@ -433,8 +465,8 @@ const TransferPage: React.FC = () => {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
           <Controller
             name="fromLocation"
             control={control}
@@ -442,6 +474,7 @@ const TransferPage: React.FC = () => {
             render={({ field }) => (
               <Select
                 {...field}
+                size="small"
                 displayEmpty 
                 fullWidth
                 value={locations.length > 0 ? field.value : ''}
@@ -465,6 +498,7 @@ const TransferPage: React.FC = () => {
             render={({ field }) => (
               <Select
                 {...field}
+                size="small"
                 displayEmpty
                 fullWidth
                 value={field.value}
@@ -482,13 +516,14 @@ const TransferPage: React.FC = () => {
           />
         </Box>
 
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 1 }}>
           <Controller
             name="users"
             control={control}
             render={({ field: { onChange, value } }) => (
               <Autocomplete
                 multiple
+                size="small"
                 options={users}
                 loading={usersLoading}
                 value={value}
@@ -498,6 +533,7 @@ const TransferPage: React.FC = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
+                    size="small"
                     label="Uczestnicy transferu"
                     fullWidth
                     InputProps={{
@@ -514,6 +550,7 @@ const TransferPage: React.FC = () => {
                 renderTags={(value, getTagProps) =>
                   value.map((option, index) => (
                     <Chip
+                      size="small"
                       label={`${option.username}`}
                       {...getTagProps({ index })}
                     />
@@ -524,8 +561,34 @@ const TransferPage: React.FC = () => {
           />
         </Box>
 
-        <TableContainer component={Paper} sx={{ mt: 2 }}>
-          <Table>
+        <TableContainer 
+          component={Paper} 
+          sx={{ 
+            mt: 1,
+            '&.MuiPaper-root': {
+              boxShadow: 'none',
+              transition: 'none',
+              transform: 'none',
+              '&:hover': {
+                boxShadow: 'none',
+                transform: 'none'
+              }
+            },
+            '& .MuiTableRow-root': {
+              '&:hover': {
+                backgroundColor: 'transparent !important',
+                cursor: 'default'
+              },
+              '&.Mui-selected, &.Mui-selected:hover': {
+                backgroundColor: 'transparent !important'
+              }
+            },
+            '& .MuiTableRow-head': {
+              backgroundColor: (theme) => theme.palette.background.paper
+            }
+          }}
+        >
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell>Typ</TableCell>
@@ -537,7 +600,10 @@ const TransferPage: React.FC = () => {
             </TableHead>
             <TableBody>
               {fields.map((item, index) => (
-                <TableRow key={item.id}>
+                <TableRow 
+                  key={item.id}
+                  hover={false}
+                >
                   <TableCell>
                     <Controller
                       name={`items.${index}.type`}
@@ -545,7 +611,7 @@ const TransferPage: React.FC = () => {
                       render={({ field }) => (
                         <Select 
                           {...field} 
-                          fullWidth 
+                          size="small"
                           disabled={lockedRows.has(index)}
                         >
                           <MenuItem value="pyr_code">Pyr Code</MenuItem>
@@ -563,6 +629,7 @@ const TransferPage: React.FC = () => {
                           <Autocomplete
                             key={index}
                             data-testid={`pyr-code-input-${index}`}
+                            size="small"
                             options={pyrCodeSuggestions}
                             loading={searchLoading}
                             disabled={lockedRows.has(index)}
@@ -596,6 +663,7 @@ const TransferPage: React.FC = () => {
                             renderInput={(params) => (
                               <TextField
                                 {...params}
+                                size="small"
                                 placeholder="Wpisz kod PYR"
                                 variant="outlined"
                                 fullWidth
@@ -625,7 +693,7 @@ const TransferPage: React.FC = () => {
                         name={`items.${index}.id`}
                         control={control}
                         render={({ field }) => (
-                          <Select {...field} fullWidth>
+                          <Select {...field} size="small">
                             <MenuItem value="" disabled>
                               Wybierz zasób
                             </MenuItem>
@@ -651,6 +719,7 @@ const TransferPage: React.FC = () => {
                           return (
                             <TextField
                               {...field}
+                              size="small"
                               type="text"
                               label="Ilość"
                               fullWidth
@@ -723,6 +792,169 @@ const TransferPage: React.FC = () => {
           {loading ? <CircularProgress size={20} /> : 'Rozpocznij quest'}
         </Button>
       </form>
+
+      <Dialog 
+        open={showConfirmation} 
+        onClose={() => setShowConfirmation(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 1,
+            p: 0.5
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          py: 1
+        }}>
+          <Typography variant="h6">
+            Potwierdź szczegóły questa
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ mt: 1 }}>
+          {formDataRef.current && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {/* Lokalizacje */}
+              <Box sx={{ 
+                p: 1.5, 
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                '&:hover': {
+                  bgcolor: 'background.paper'
+                }
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <LocationOn sx={{ mr: 1, color: 'primary.main' }} />
+                  <Typography variant="subtitle1">Lokalizacje</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box flex={1}>
+                    <Typography variant="body2" color="text.secondary">Z lokalizacji</Typography>
+                    <Typography>{locations.find(l => l.id === formDataRef.current?.fromLocation)?.name}</Typography>
+                  </Box>
+                  <Box flex={1}>
+                    <Typography variant="body2" color="text.secondary">Do lokalizacji</Typography>
+                    <Typography>{locations.find(l => l.id === parseInt(formDataRef.current?.toLocation?.toString() || ''))?.name}</Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Uczestnicy */}
+              {formDataRef.current.users && formDataRef.current.users.length > 0 && (
+                <Box sx={{ 
+                  p: 1.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                  '&:hover': {
+                    bgcolor: 'background.paper'
+                  }
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Person sx={{ mr: 1, color: 'primary.main' }} />
+                    <Typography variant="subtitle1">Uczestnicy questa</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {formDataRef.current.users.map((user) => (
+                      <Chip
+                        key={user.id}
+                        label={user.username}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Elementy */}
+              <Box sx={{ 
+                p: 1.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                '&:hover': {
+                  bgcolor: 'background.paper'
+                }
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Inventory sx={{ mr: 1, color: 'primary.main' }} />
+                  <Typography variant="subtitle1">Elementy do transferu</Typography>
+                </Box>
+                <List disablePadding>
+                  {formDataRef.current.items
+                    .filter(item => item.type === 'pyr_code' ? item.status === 'success' : Boolean(item.id))
+                    .map((item, index) => (
+                      <ListItem 
+                        key={index}
+                        sx={{
+                          py: 0.5,
+                          borderBottom: index !== formDataRef.current!.items.length - 1 ? '1px solid' : 'none',
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <ListItemText
+                          primary={item.type === 'pyr_code' 
+                            ? item.pyrcode
+                            : stocks.find(s => s.id === parseInt(item.id))?.category.label}
+                          secondary={
+                            <Box sx={{ mt: 0.5, display: 'flex', gap: 0.5 }}>
+                              <Chip
+                                size="small"
+                                label={item.type === 'pyr_code' ? 'Sprzęt' : `${item.quantity} szt.`}
+                                color={item.type === 'pyr_code' ? 'primary' : 'default'}
+                                variant="outlined"
+                              />
+                              {item.category?.label && (
+                                <Chip
+                                  size="small"
+                                  label={item.category.label}
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                </List>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ 
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          p: 1,
+          gap: 1 
+        }}>
+          <Button 
+            onClick={() => setShowConfirmation(false)}
+            variant="outlined"
+            startIcon={<Close />}
+          >
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleConfirmSubmit} 
+            variant="contained"
+            color="primary"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : <Check />}
+          >
+            {loading ? 'Tworzenie...' : 'Rozpocznij quest'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
