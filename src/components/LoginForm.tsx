@@ -64,24 +64,24 @@ const LoginForm: React.FC = () => {
 
   // Wykrywanie Caps Lock
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.getModifierState('CapsLock')) {
+    const handleKeyDown = (e: KeyboardEvent | React.KeyboardEvent) => {
+      if (e.getModifierState && e.getModifierState('CapsLock')) {
         setCapsLockOn(true);
       }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.getModifierState('CapsLock')) {
+    const handleKeyUp = (e: KeyboardEvent | React.KeyboardEvent) => {
+      if (e.getModifierState && !e.getModifierState('CapsLock')) {
         setCapsLockOn(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('keydown', handleKeyDown as EventListener);
+    window.addEventListener('keyup', handleKeyUp as EventListener);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('keydown', handleKeyDown as EventListener);
+      window.removeEventListener('keyup', handleKeyUp as EventListener);
     };
   }, []);
 
@@ -198,7 +198,7 @@ const LoginForm: React.FC = () => {
             elevation={6}
             sx={{
               p: 4,
-              borderRadius: 3,
+              borderRadius: 1,
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
               transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
               '&:hover': {
@@ -260,7 +260,7 @@ const LoginForm: React.FC = () => {
                 severity="error" 
                 sx={{ 
                   mb: 3, 
-                  borderRadius: 2,
+                  borderRadius: 1,
                   '& .MuiAlert-icon': {
                     fontSize: '1.2rem',
                   }
@@ -275,7 +275,7 @@ const LoginForm: React.FC = () => {
                 severity="warning" 
                 sx={{ 
                   mb: 3, 
-                  borderRadius: 2,
+                  borderRadius: 1,
                   '& .MuiAlert-icon': {
                     fontSize: '1.2rem',
                   }
@@ -294,10 +294,16 @@ const LoginForm: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoCapitalize="none"
+                autoCorrect="off"
+                inputProps={{
+                  autoComplete: 'username',
+                  spellCheck: 'false'
+                }}
                 sx={{ 
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: 1,
                     transition: 'all 0.2s ease',
                     '&:hover': {
                       '& .MuiOutlinedInput-notchedOutline': {
@@ -331,7 +337,7 @@ const LoginForm: React.FC = () => {
                 sx={{ 
                   mb: 3,
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
+                    borderRadius: 1,
                     transition: 'all 0.2s ease',
                     '&:hover': {
                       '& .MuiOutlinedInput-notchedOutline': {
@@ -373,7 +379,7 @@ const LoginForm: React.FC = () => {
                 disabled={isLoading}
                 sx={{ 
                   py: 1.5,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   fontWeight: 600,
                   fontSize: '1rem',
                   textTransform: 'none',
