@@ -462,7 +462,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         position="fixed"
         sx={{
           ...styles.appBar,
-          transform: isMobile && scrollDirection === 'down' ? 'translateY(-100%)' : 'translateY(0)',
+          transform: isMobile && scrollDirection === 'down' && window.scrollY > 100 ? 'translateY(-100%)' : 'translateY(0)',
           transition: 'transform 0.3s ease-in-out',
           visibility: 'visible',
         }}

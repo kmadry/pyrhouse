@@ -274,7 +274,8 @@ const EquipmentDetails: React.FC = () => {
             <Box sx={{ 
               p: 1, 
               borderRadius: 1, 
-              bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.lighter',
+              border: '1px solid',
+              borderColor: 'primary.main',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'

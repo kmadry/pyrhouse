@@ -204,7 +204,7 @@ const LocationDetailsPage: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow sx={{ 
-              backgroundColor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.light',
+              backgroundColor: 'primary.light',
             }}>
               <TableCell padding="checkbox">
                 <Checkbox
@@ -520,7 +520,8 @@ const LocationDetailsPage: React.FC = () => {
             <Box sx={{ 
               p: 1, 
               borderRadius: 1, 
-              bgcolor: theme.palette.mode === 'dark' ? 'primary.dark' : 'primary.lighter',
+              border: '1px solid',
+              borderColor: 'primary.main',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'

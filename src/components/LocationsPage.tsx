@@ -33,6 +33,7 @@ import { useLocations } from '../hooks/useLocations';
 import { ErrorMessage } from './ErrorMessage';
 import { deleteLocation, updateLocation, createLocation } from '../services/locationService';
 import { Location } from '../models/Location';
+import * as Icons from '@mui/icons-material';
 
 const LocationsPage: React.FC = () => {
   const { locations, error, refetch, loading } = useLocations();
@@ -314,9 +315,20 @@ const LocationsPage: React.FC = () => {
           variant="outlined"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
           sx={{ flex: 1 }}
           InputProps={{
-            sx: { borderRadius: 1 }
+            sx: { 
+              borderRadius: 1,
+              height: '36px',
+              '& input': {
+                height: '36px',
+                padding: '0 12px',
+              }
+            },
+            startAdornment: (
+              <Icons.Search sx={{ color: 'text.secondary', mr: 1 }} />
+            )
           }}
         />
       </Box>

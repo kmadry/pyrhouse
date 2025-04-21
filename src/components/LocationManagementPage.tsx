@@ -16,6 +16,11 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent,
+  Stack,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -23,8 +28,11 @@ import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
 import { ErrorMessage } from './ErrorMessage';
 import { getApiUrl } from '../config/api';
+import * as Icons from '@mui/icons-material';
 
 const LocationManagementPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +44,7 @@ const LocationManagementPage: React.FC = () => {
   const [deleteLocationId, setDeleteLocationId] = useState<number | null>(null);
   const [deleteLocationName, setDeleteLocationName] = useState('');
   const [confirmDeleteName, setConfirmDeleteName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchLocations();
@@ -175,25 +184,95 @@ const LocationManagementPage: React.FC = () => {
     }
   };
 
-  return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Zarządzanie Lokalizacjami
-      </Typography>
+  const filteredLocations = locations.filter(location =>
+    location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (location.details && location.details.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
-      {error && <ErrorMessage message={error} />}
+  const renderLocationList = () => {
+    if (isMobile) {
+      return (
+        <Stack spacing={2}>
+          {filteredLocations.map((location) => (
+            <Card key={location.id} variant="outlined">
+              <CardContent>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    ID: {location.id}
+                  </Typography>
+                  <Typography variant="h6">
+                    {editingLocationId === location.id ? (
+                      <TextField
+                        value={editingValues.name || ''}
+                        onChange={(e) =>
+                          setEditingValues((prev) => ({ ...prev, name: e.target.value }))
+                        }
+                        fullWidth
+                        size="small"
+                      />
+                    ) : (
+                      location.name
+                    )}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {editingLocationId === location.id ? (
+                      <TextField
+                        value={editingValues.details || ''}
+                        onChange={(e) =>
+                          setEditingValues((prev) => ({ ...prev, details: e.target.value }))
+                        }
+                        fullWidth
+                        size="small"
+                        sx={{ mt: 1 }}
+                      />
+                    ) : (
+                      location.details || '-'
+                    )}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {editingLocationId === location.id ? (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSaveLocation}
+                      disabled={loading}
+                      fullWidth
+                      size="small"
+                    >
+                      <SaveIcon sx={{ mr: 1 }} /> Zapisz
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleEditLocation(location.id, location.name, location.details)}
+                        fullWidth
+                        size="small"
+                      >
+                        <EditIcon sx={{ mr: 1 }} /> Edytuj
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleOpenDeleteModal(location.id, location.name)}
+                        fullWidth
+                        size="small"
+                      >
+                        <DeleteIcon sx={{ mr: 1 }} /> Usuń
+                      </Button>
+                    </>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      );
+    }
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setAddModalOpen(true)}
-        >
-          Dodaj Lokalizację
-        </Button>
-      </Box>
-
+    return (
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -205,7 +284,7 @@ const LocationManagementPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {locations.map((location) => (
+            {filteredLocations.map((location) => (
               <TableRow key={location.id}>
                 <TableCell>{location.id}</TableCell>
                 <TableCell>
@@ -216,6 +295,7 @@ const LocationManagementPage: React.FC = () => {
                         setEditingValues((prev) => ({ ...prev, name: e.target.value }))
                       }
                       fullWidth
+                      size="small"
                     />
                   ) : (
                     location.name
@@ -229,6 +309,7 @@ const LocationManagementPage: React.FC = () => {
                         setEditingValues((prev) => ({ ...prev, details: e.target.value }))
                       }
                       fullWidth
+                      size="small"
                     />
                   ) : (
                     location.details || '-'
@@ -236,22 +317,33 @@ const LocationManagementPage: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   {editingLocationId === location.id ? (
-                    <Button color="primary" onClick={handleSaveLocation} disabled={loading}>
-                      <SaveIcon /> Zapisz
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleSaveLocation}
+                      disabled={loading}
+                      size="small"
+                    >
+                      <SaveIcon sx={{ mr: 1 }} /> Zapisz
                     </Button>
                   ) : (
                     <>
                       <Button
+                        variant="outlined"
                         color="primary"
                         onClick={() => handleEditLocation(location.id, location.name, location.details)}
+                        size="small"
+                        sx={{ mr: 1 }}
                       >
-                        <EditIcon /> Edytuj
+                        <EditIcon sx={{ mr: 1 }} /> Edytuj
                       </Button>
                       <Button
+                        variant="outlined"
                         color="error"
                         onClick={() => handleOpenDeleteModal(location.id, location.name)}
+                        size="small"
                       >
-                        <DeleteIcon /> Usuń
+                        <DeleteIcon sx={{ mr: 1 }} /> Usuń
                       </Button>
                     </>
                   )}
@@ -261,8 +353,78 @@ const LocationManagementPage: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+    );
+  };
 
-      <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)}>
+  return (
+    <Box>
+      {error && <ErrorMessage message={error} />}
+
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' }, 
+        gap: 2, 
+        marginBottom: 3,
+        backgroundColor: 'background.default',
+        p: 2,
+        borderRadius: 1
+      }}>
+        <TextField
+          label="Szukaj lokalizacji"
+          variant="outlined"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          sx={{ flex: 1 }}
+          InputProps={{
+            sx: { 
+              borderRadius: 1,
+              height: '36px',
+              '& input': {
+                height: '36px',
+                padding: '0 12px',
+              }
+            },
+            startAdornment: (
+              <Icons.Search sx={{ color: 'text.secondary', mr: 1 }} />
+            )
+          }}
+        />
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setAddModalOpen(true)}
+          sx={{ height: '36px' }}
+        >
+          Dodaj Lokalizację
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : filteredLocations.length === 0 ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography color="text.secondary">
+            {searchQuery ? 'Brak lokalizacji pasujących do wyszukiwania' : 'Brak lokalizacji'}
+          </Typography>
+        </Paper>
+      ) : (
+        renderLocationList()
+      )}
+
+      <Dialog 
+        open={addModalOpen} 
+        onClose={() => setAddModalOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxWidth: '500px',
+            width: '100%'
+          }
+        }}
+      >
         <DialogTitle>Dodaj Lokalizację</DialogTitle>
         <DialogContent>
           <TextField
@@ -270,6 +432,7 @@ const LocationManagementPage: React.FC = () => {
             value={newLocation.name}
             onChange={(e) => setNewLocation((prev) => ({ ...prev, name: e.target.value }))}
             fullWidth
+            size="small"
             sx={{ mb: 2 }}
           />
           <TextField
@@ -277,19 +440,41 @@ const LocationManagementPage: React.FC = () => {
             value={newLocation.details}
             onChange={(e) => setNewLocation((prev) => ({ ...prev, details: e.target.value }))}
             fullWidth
+            size="small"
+            multiline
+            rows={3}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddModalOpen(false)} color="secondary">
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => setAddModalOpen(false)} 
+            variant="outlined"
+            size="small"
+          >
             Anuluj
           </Button>
-          <Button onClick={handleAddLocation} color="primary" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Dodaj'}
+          <Button 
+            onClick={handleAddLocation} 
+            variant="contained"
+            disabled={loading}
+            size="small"
+          >
+            {loading ? <CircularProgress size={20} /> : 'Dodaj'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteModalOpen} onClose={handleCloseDeleteModal}>
+      <Dialog 
+        open={deleteModalOpen} 
+        onClose={handleCloseDeleteModal}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxWidth: '500px',
+            width: '100%'
+          }
+        }}
+      >
         <DialogTitle>Potwierdź usunięcie</DialogTitle>
         <DialogContent>
           <Typography>
@@ -300,15 +485,25 @@ const LocationManagementPage: React.FC = () => {
             value={confirmDeleteName}
             onChange={(e) => setConfirmDeleteName(e.target.value)}
             fullWidth
+            size="small"
             sx={{ mt: 2 }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button variant="contained" color="error" onClick={handleDeleteLocation}>
-            Usuń
-          </Button>
-          <Button variant="outlined" onClick={handleCloseDeleteModal}>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            variant="outlined" 
+            onClick={handleCloseDeleteModal}
+            size="small"
+          >
             Anuluj
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={handleDeleteLocation}
+            size="small"
+          >
+            Usuń
           </Button>
         </DialogActions>
       </Dialog>

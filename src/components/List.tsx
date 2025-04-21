@@ -565,7 +565,14 @@ const EquipmentList: React.FC = () => {
             sx={{ flex: 1 }}
             aria-label="Filtruj po kodzie PYR"
             InputProps={{
-              sx: { borderRadius: 1 },
+              sx: { 
+                borderRadius: 1,
+                height: '36px',
+                '& input': {
+                  height: '36px',
+                  padding: '0 12px',
+                }
+              },
               startAdornment: (
                 <Icons.Search sx={{ color: 'text.secondary', mr: 1 }} />
               )
@@ -589,9 +596,10 @@ const EquipmentList: React.FC = () => {
                   ...params.InputProps,
                   sx: { 
                     borderRadius: 1,
-                    minHeight: '40px',
+                    height: '36px',
                     '& .MuiAutocomplete-input': {
-                      height: '20px',
+                      height: '36px',
+                      padding: '0 12px',
                     },
                   },
                   startAdornment: (

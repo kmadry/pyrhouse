@@ -35,6 +35,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useCategories } from '../hooks/useCategories';
 import { ErrorMessage } from './ErrorMessage';
+import * as Icons from '@mui/icons-material';
 
 const CategoryManagementPage: React.FC = () => {
   const { categories, loading, error, addCategory, deleteCategory } = useCategories();
@@ -300,7 +301,7 @@ const CategoryManagementPage: React.FC = () => {
             mb: { xs: 1, sm: 0 }
           }}
         >
-          Zarządzanie Kategoriami
+          Kategorie
         </Typography>
         <Button 
           variant="contained" 
@@ -330,9 +331,20 @@ const CategoryManagementPage: React.FC = () => {
           variant="outlined"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
           sx={{ flex: 1 }}
           InputProps={{
-            sx: { borderRadius: 1 }
+            sx: { 
+              borderRadius: 1,
+              height: '36px',
+              '& input': {
+                height: '36px',
+                padding: '0 12px',
+              }
+            },
+            startAdornment: (
+              <Icons.Search sx={{ color: 'text.secondary', mr: 1 }} />
+            )
           }}
         />
       </Box>

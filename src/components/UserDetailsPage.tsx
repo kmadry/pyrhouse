@@ -604,26 +604,50 @@ const UserDetailsPage: React.FC = () => {
       <Card sx={{ mt: 4 }}>
         <CardHeader 
           title="Questy użytkownika"
-          action={
-            <Tabs 
-              value={tabValue} 
-              onChange={(_, newValue) => setTabValue(newValue)}
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
-            >
-              <Tab 
-                icon={<Schedule />} 
-                iconPosition="start" 
-                label="W trakcie" 
-              />
-              <Tab 
-                icon={<CheckCircle />} 
-                iconPosition="start" 
-                label="Ukończone" 
-              />
-            </Tabs>
-          }
+          sx={{
+            pb: { xs: 1, sm: 2 },
+            '& .MuiCardHeader-title': {
+              fontSize: { xs: '1.1rem', sm: '1.25rem' }
+            }
+          }}
         />
-        <CardContent>
+        <Box sx={{ px: 2, pb: 1 }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={(_, newValue) => setTabValue(newValue)}
+            variant="fullWidth"
+            sx={{ 
+              '& .MuiTab-root': {
+                minWidth: 0,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                py: { xs: 1, sm: 1.5 },
+                px: { xs: 1, sm: 2 }
+              }
+            }}
+          >
+            <Tab 
+              icon={<Schedule />} 
+              iconPosition="start" 
+              label="W trakcie" 
+              sx={{
+                '& .MuiTab-iconWrapper': {
+                  mr: { xs: 0.5, sm: 1 }
+                }
+              }}
+            />
+            <Tab 
+              icon={<CheckCircle />} 
+              iconPosition="start" 
+              label="Ukończone" 
+              sx={{
+                '& .MuiTab-iconWrapper': {
+                  mr: { xs: 0.5, sm: 1 }
+                }
+              }}
+            />
+          </Tabs>
+        </Box>
+        <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
           {transfersLoading ? (
             <Box display="flex" justifyContent="center" p={3}>
               <CircularProgress />
@@ -635,7 +659,7 @@ const UserDetailsPage: React.FC = () => {
               Brak transferów o wybranym statusie
             </Alert>
           ) : (
-            <List>
+            <List sx={{ p: 0 }}>
               {transfers.map((transfer) => {
                 try {
                   const formattedDate = format(new Date(transfer.TransferDate), 'PPpp', { locale: pl });
@@ -647,40 +671,35 @@ const UserDetailsPage: React.FC = () => {
                         borderColor: 'divider',
                         borderRadius: 1,
                         mb: 2,
+                        p: 0,
                         '&:last-child': { mb: 0 }
                       }}
                     >
-                      <ListItemButton onClick={() => navigate(`/transfers/${transfer.ID}`)}>
-                        <ListItemIcon>
-                          <LocalShipping />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Typography variant="subtitle1">
-                              Transfer #{transfer.ID}
-                            </Typography>
-                          }
-                          secondary={
-                            <>
-                              <Box display="flex" alignItems="center" gap={1} mt={1}>
-                                <LocationOn fontSize="small" color="action" />
-                                <Typography variant="body2">
-                                  Z: {transfer.FromLocationName}
-                                </Typography>
-                              </Box>
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <LocationOn fontSize="small" color="action" />
-                                <Typography variant="body2">
-                                  Do: {transfer.ToLocationName}
-                                </Typography>
-                              </Box>
-                              <Typography variant="caption" display="block" mt={1}>
-                                Utworzono: {formattedDate}
+                      <ListItemButton 
+                        onClick={() => navigate(`/transfers/${transfer.ID}`)}
+                        sx={{
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'flex-start', sm: 'center' },
+                          p: 2
+                        }}
+                      >
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          width: '100%',
+                          mb: { xs: 1, sm: 0 }
+                        }}>
+                          <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                            <LocalShipping />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={
+                              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                                Transfer #{transfer.ID}
                               </Typography>
-                            </>
-                          }
-                        />
-                        <Box display="flex" alignItems="center" gap={2}>
+                            }
+                            sx={{ m: 0 }}
+                          />
                           <Chip
                             label={
                               transfer.Status === 'in_transit' ? 'Oczekujący' :
@@ -691,7 +710,30 @@ const UserDetailsPage: React.FC = () => {
                               transfer.Status === 'completed' ? 'success' : 'error'
                             }
                             size="small"
+                            sx={{ ml: { xs: 'auto', sm: 2 } }}
                           />
+                        </Box>
+                        
+                        <Box sx={{ 
+                          width: '100%', 
+                          mt: { xs: 1, sm: 0 },
+                          pl: { xs: 0, sm: 7 }
+                        }}>
+                          <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                            <LocationOn fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              Z: {transfer.FromLocationName}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                            <LocationOn fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              Do: {transfer.ToLocationName}
+                            </Typography>
+                          </Box>
+                          <Typography variant="caption" display="block" color="text.secondary">
+                            Utworzono: {formattedDate}
+                          </Typography>
                         </Box>
                       </ListItemButton>
                     </ListItem>

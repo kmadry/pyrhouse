@@ -8,10 +8,10 @@ import {
   Button,
   Tabs,
   Tab,
-  Collapse,
-  IconButton,
+  Snackbar,
+  Alert,
 } from '@mui/material';
-import { AccessTime, LocationOn, AddCircleOutline, Info, Close } from '@mui/icons-material';
+import { AccessTime, LocationOn, AddCircleOutline } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useStorage } from '../hooks/useStorage';
 import { getApiUrl } from '../config/api';
@@ -182,29 +182,6 @@ const CountdownTimer: React.FC<{ deadline: string }> = ({ deadline }) => {
   );
 };
 
-// Komponent informacyjny dla administratorów
-const AdminInfoBox = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(4),
-  background: `linear-gradient(145deg, #54291E, #A4462D)`,
-  color: '#E6CB99',
-  borderRadius: '8px',
-  boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-  position: 'relative',
-  border: '2px solid #E6CB99',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'url("/parchment-texture.png")',
-    opacity: 0.1,
-    pointerEvents: 'none',
-  },
-}));
-
 const QuestBoardPage: React.FC = () => {
   const { getToken } = useStorage();
   const { userRole } = useAuth();
@@ -215,6 +192,22 @@ const QuestBoardPage: React.FC = () => {
   const [showAdminInfo, setShowAdminInfo] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Funkcja sprawdzająca, czy użytkownik ma uprawnienia administratora
+  const hasAdminAccess = () => {
+    return userRole === 'admin' || userRole === 'moderator';
+  };
+
+  // Automatyczne zamykanie informacji dla administratorów po 5 sekundach
+  useEffect(() => {
+    if (hasAdminAccess()) {
+      const timer = setTimeout(() => {
+        setShowAdminInfo(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -312,11 +305,6 @@ const QuestBoardPage: React.FC = () => {
     new Date(a.delivery_date).getTime() - new Date(b.delivery_date).getTime()
   );
 
-  // Funkcja sprawdzająca, czy użytkownik ma uprawnienia administratora
-  const hasAdminAccess = () => {
-    return userRole === 'admin' || userRole === 'moderator';
-  };
-
   if (loading) {
     return <QuestLoadingBar />;
   }
@@ -371,25 +359,35 @@ const QuestBoardPage: React.FC = () => {
         </Box>
 
         {hasAdminAccess() && (
-          <Collapse in={showAdminInfo}>
-            <AdminInfoBox>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ fontFamily: '"Cinzel", serif', display: 'flex', alignItems: 'center' }}>
-                  <Info sx={{ mr: 1 }} /> Informacja dla administratorów
-                </Typography>
-                <IconButton 
-                  size="small" 
-                  onClick={() => setShowAdminInfo(false)}
-                  sx={{ color: '#E6CB99' }}
-                >
-                  <Close />
-                </IconButton>
-              </Box>
-              <Typography variant="body1" paragraph>
+          <Snackbar
+            open={showAdminInfo}
+            autoHideDuration={3000}
+            onClose={() => setShowAdminInfo(false)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+            <Alert
+              onClose={() => setShowAdminInfo(false)}
+              severity="info"
+              sx={{
+                width: '100%',
+                backgroundColor: '#54291E',
+                color: '#E6CB99',
+                '& .MuiAlert-icon': {
+                  color: '#E6CB99'
+                },
+                '& .MuiAlert-action': {
+                  color: '#E6CB99'
+                }
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontFamily: '"Cinzel", serif', mb: 1 }}>
+                Informacja dla administratorów
+              </Typography>
+              <Typography variant="body2">
                 Lista questów jest aktualizowana z excela. Po utworzeniu transferu dla questa, musisz ręcznie oznaczyć go jako dostarczony w excelu.
               </Typography>
-            </AdminInfoBox>
-          </Collapse>
+            </Alert>
+          </Snackbar>
         )}
 
         <Grid container spacing={4}>

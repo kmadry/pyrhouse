@@ -12,14 +12,17 @@ import {
   Chip,
   Alert,
   List,
+  Autocomplete,
 } from '@mui/material';
 import { 
   LocalShipping, 
   Search, 
+  RocketLaunch,
   LocationOn,
   AccessTime,
   Inventory,
-  ListAlt
+  ListAlt,
+  AddTask
 } from '@mui/icons-material';
 import { useTransfers } from '../hooks/useTransfers';
 import { ErrorMessage } from './ErrorMessage';
@@ -40,6 +43,21 @@ interface Quest {
   reward?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   location?: string;
+}
+
+interface PyrCodeSuggestion {
+  id: number;
+  pyrcode: string;
+  serial: string;
+  location: {
+    id: number;
+    name: string;
+  };
+  category: {
+    id: number;
+    label: string;
+  };
+  status: 'in_stock' | 'available' | 'unavailable';
 }
 
 // Dodaj nowy styled component dla quest item
@@ -169,6 +187,37 @@ const QuestStatus = styled(Chip)(({ theme }) => ({
   },
 }));
 
+const SearchContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(2),
+  marginBottom: theme.spacing(4),
+  marginTop: theme.spacing(-3),
+  borderRadius: theme.shape.borderRadius * 2,
+  background: theme.palette.mode === 'dark' 
+    ? '#2d2d2d'
+    : '#ffffff',
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 4px 20px rgba(0,0,0,0.3)'
+    : '0 4px 20px rgba(0,0,0,0.05)',
+  transition: 'none',
+  '&:hover': {
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 4px 20px rgba(0,0,0,0.3)'
+      : '0 4px 20px rgba(0,0,0,0.05)',
+    transform: 'none'
+  }
+}));
+
+const SearchButton = styled(Button)(({ theme }) => ({
+  height: '40px',
+  minWidth: '120px',
+  borderRadius: theme.shape.borderRadius * 2,
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-1px)',
+    boxShadow: theme.shadows[2]
+  }
+}));
+
 const HomePage: React.FC = () => {
   const { loading } = useTransfers();
   const navigate = useNavigate();
@@ -178,6 +227,8 @@ const HomePage: React.FC = () => {
   const [userTransfers, setUserTransfers] = useState<any[]>([]);
   const [userTransfersLoading, setUserTransfersLoading] = useState(false);
   const [userTransfersError, setUserTransfersError] = useState<string | null>(null);
+  const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   // Fetch user transfers
   useEffect(() => {
@@ -314,7 +365,46 @@ const HomePage: React.FC = () => {
     setUserTransfers(sortedUrgentQuests.slice(0, 3));
   }, []);
 
-  // Przywracam oryginalną funkcję handleSearch
+  const handlePyrCodeSearch = async (value: string) => {
+    if (!/^[a-zA-Z0-9-]*$/.test(value)) {
+      return;
+    }
+
+    if (value.length < 2) {
+      setPyrCodeSuggestions([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        getApiUrl(`/locations/1/search?q=${encodeURIComponent(value)}`),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Nie udało się wyszukać kodów PYR');
+      }
+
+      const suggestions = await response.json();
+      setPyrCodeSuggestions(suggestions);
+    } catch (error) {
+      console.error('Błąd podczas wyszukiwania:', error);
+      setPyrCodeSuggestions([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   const handleSearch = async () => {
     if (!pyrcode.trim()) {
       setSearchError('Proszę podać kod Pyrcode.');
@@ -341,76 +431,118 @@ const HomePage: React.FC = () => {
       }
 
       const data = await response.json();
-      navigate(`/details/${data.id}?type=${data.category.type || 'asset'}`);
+      navigate(`/equipment/${data.id}?type=${data.category.type || 'asset'}`);
     } catch (err: any) {
       setSearchError(err.message || 'Wystąpił nieoczekiwany błąd.');
     }
   };
 
+  const handleOptionSelected = (_event: any, value: PyrCodeSuggestion | string | null) => {
+    if (!value || typeof value === 'string') {
+      return;
+    }
+
+    // Przekieruj bezpośrednio do szczegółów sprzętu
+    navigate(`/equipment/${value.id}?type=asset`);
+  };
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Paper 
-        elevation={2} 
-        sx={{ 
-          p: 3, 
-          mb: 6,
-          borderRadius: 2,
-          background: (theme) => theme.palette.mode === 'dark' 
-            ? 'linear-gradient(to right, #1a1a1a, #2d2d2d)'
-            : 'linear-gradient(to right, #ffffff, #f8f9fa)'
-        }}
-      >
+      <SearchContainer elevation={0}>
         <Box sx={{ 
           display: 'flex', 
           flexDirection: { xs: 'column', sm: 'row' },
           alignItems: 'center', 
           gap: 2 
         }}>
-          <TextField
+          <Autocomplete
             fullWidth
-            label="Wyszukaj po Pyrcode"
-            variant="outlined"
-            placeholder="Wprowadź kod Pyrcode..."
-            value={pyrcode}
-            onChange={(e) => setPyrcode(e.target.value)}
-            sx={{ 
-              flex: 1,
-              '& .MuiOutlinedInput-root': {
-                backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#fff',
-                '& fieldset': {
-                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
-                },
-                '&:hover fieldset': {
-                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: 'primary.main',
-                },
-                '& input': {
-                  color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
-                },
-                '& .MuiInputLabel-root': {
-                  color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit',
-                },
-              }
+            freeSolo
+            options={pyrCodeSuggestions}
+            getOptionLabel={(option) => 
+              typeof option === 'string' ? option : option.pyrcode
+            }
+            onChange={handleOptionSelected}
+            renderOption={(props, option) => {
+              const { key, ...otherProps } = props;
+              return (
+                <Box key={key} component="li" {...otherProps}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="body1">{option.pyrcode}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.category.label} - {option.location.name}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
             }}
+            loading={searchLoading}
+            onInputChange={(_, newValue) => {
+              setPyrcode(newValue);
+              handlePyrCodeSearch(newValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                // label="Wyszukaj po Pyrcode"
+                variant="outlined"
+                placeholder="Wprowadź kod Pyrcode..."
+                onKeyDown={handleKeyDown}
+                InputProps={{
+                  ...params.InputProps,
+                  sx: {
+                    height: '40px',
+                    '& input': {
+                      height: '40px',
+                      padding: '0 14px',
+                    }
+                  },
+                  endAdornment: (
+                    <>
+                      {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+                sx={{ 
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#fff',
+                    '& fieldset': {
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                    '& input': {
+                      color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit',
+                    },
+                  }
+                }}
+              />
+            )}
           />
-          <Button
+          <SearchButton
             variant="contained"
             color="primary"
             startIcon={<Search />}
             onClick={handleSearch}
             disabled={loading}
-            sx={{ 
-              minWidth: { xs: '100%', sm: 'auto' },
-              height: { xs: '48px', sm: '56px' }
+            sx={{
+              borderRadius: 1,
             }}
           >
             {loading ? <CircularProgress size={24} /> : 'Szukaj'}
-          </Button>
+          </SearchButton>
         </Box>
         {searchError && <ErrorMessage message={searchError} />}
-      </Paper>
+      </SearchContainer>
 
       {/* Szybkie akcje */}
       <Box sx={{ mb: 6 }}>
@@ -427,9 +559,9 @@ const HomePage: React.FC = () => {
         </Typography>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <Paper
-              elevation={2}
+              elevation={0}
               sx={{
                 p: 3,
                 height: '100%',
@@ -438,24 +570,30 @@ const HomePage: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                transition: 'transform 0.2s, box-shadow 0.2s',
+                transition: 'all 0.3s ease',
+                background: (theme) => theme.palette.mode === 'dark' 
+                  ? '#2d2d2d'
+                  : '#ffffff',
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                 '&:hover': { 
                   transform: 'translateY(-4px)',
-                  boxShadow: 4
-                },
-                borderRadius: 2
+                  boxShadow: (theme) => theme.palette.mode === 'dark' 
+                    ? '0 8px 24px rgba(0,0,0,0.4)'
+                    : '0 8px 24px rgba(0,0,0,0.08)',
+                }
               }}
               onClick={() => navigate('/transfers/create')}
             >
-              <LocalShipping sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+              <RocketLaunch sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
               <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
                 Utwórz quest-dostawę
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={4} md={3}>
             <Paper
-              elevation={2}
+              elevation={0}
               sx={{
                 p: 3,
                 height: '100%',
@@ -464,12 +602,50 @@ const HomePage: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                transition: 'transform 0.2s, box-shadow 0.2s',
+                transition: 'all 0.3s ease',
+                background: (theme) => theme.palette.mode === 'dark' 
+                  ? '#2d2d2d'
+                  : '#ffffff',
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                 '&:hover': { 
                   transform: 'translateY(-4px)',
-                  boxShadow: 4
-                },
-                borderRadius: 2
+                  boxShadow: (theme) => theme.palette.mode === 'dark' 
+                    ? '0 8px 24px rgba(0,0,0,0.4)'
+                    : '0 8px 24px rgba(0,0,0,0.08)',
+                }
+              }}
+              onClick={() => navigate('/add-item')}
+            >
+              <AddTask sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                Dodaj sprzęt
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={4} md={3}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                background: (theme) => theme.palette.mode === 'dark' 
+                  ? '#2d2d2d'
+                  : '#ffffff',
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                '&:hover': { 
+                  transform: 'translateY(-4px)',
+                  boxShadow: (theme) => theme.palette.mode === 'dark' 
+                    ? '0 8px 24px rgba(0,0,0,0.4)'
+                    : '0 8px 24px rgba(0,0,0,0.08)',
+                }
               }}
               onClick={() => navigate('/list')}
             >
@@ -479,9 +655,9 @@ const HomePage: React.FC = () => {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={4} md={3}>
             <Paper
-              elevation={2}
+              elevation={0}
               sx={{
                 p: 3,
                 height: '100%',
@@ -490,12 +666,18 @@ const HomePage: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                transition: 'transform 0.2s, box-shadow 0.2s',
+                transition: 'all 0.3s ease',
+                background: (theme) => theme.palette.mode === 'dark' 
+                  ? '#2d2d2d'
+                  : '#ffffff',
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                 '&:hover': { 
                   transform: 'translateY(-4px)',
-                  boxShadow: 4
-                },
-                borderRadius: 2
+                  boxShadow: (theme) => theme.palette.mode === 'dark' 
+                    ? '0 8px 24px rgba(0,0,0,0.4)'
+                    : '0 8px 24px rgba(0,0,0,0.08)',
+                }
               }}
               onClick={() => navigate('/transfers')}
             >
