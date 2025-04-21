@@ -586,7 +586,7 @@ const EquipmentList: React.FC = () => {
             loading={locationsLoading}
             onChange={(_, value) => setSelectedLocations(value)}
             size="small"
-            limitTags={2}
+            limitTags={isMobile ? 1 : 2}
             renderInput={(params) => (
               <TextField 
                 {...params} 
@@ -596,11 +596,16 @@ const EquipmentList: React.FC = () => {
                   ...params.InputProps,
                   sx: { 
                     borderRadius: 1,
-                    height: '36px',
+                    minHeight: '36px',
+                    height: 'auto',
+                    padding: '4px',
                     '& .MuiAutocomplete-input': {
-                      height: '36px',
-                      padding: '0 12px',
+                      height: '28px',
+                      padding: '0 8px',
                     },
+                    '& .MuiInputAdornment-root': {
+                      height: '36px',
+                    }
                   },
                   startAdornment: (
                     <>
@@ -635,17 +640,20 @@ const EquipmentList: React.FC = () => {
                     key={key}
                     size="small"
                     sx={{
-                      backgroundColor: 'primary.light',
-                      color: 'primary.contrastText',
-                      margin: '2px',
-                      maxWidth: '200px',
+                      m: 0.25,
+                      height: '24px',
+                      maxWidth: { xs: '120px', sm: '150px' },
                       '& .MuiChip-label': {
+                        px: 1,
+                        fontSize: '0.75rem',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       },
                       '& .MuiChip-deleteIcon': {
-                        color: 'primary.contrastText',
+                        fontSize: '16px',
+                        margin: '0 2px',
+                        color: 'inherit',
                         '&:hover': {
                           color: 'error.main',
                         },
@@ -662,7 +670,11 @@ const EquipmentList: React.FC = () => {
                 margin: '2px',
               },
               '& .MuiInputBase-root': {
+                flexWrap: 'wrap',
+                gap: 0.5,
                 padding: '2px 4px',
+                minHeight: '36px',
+                height: 'auto',
               },
             }}
             aria-label="Wybierz lokalizacje"
@@ -710,7 +722,7 @@ const EquipmentList: React.FC = () => {
             size="small"
             sx={{ 
               flex: { xs: 1, md: 0.5 },
-              borderRadius: 1
+              borderRadius: 0
             }}
             aria-label="Wybierz typ kategorii"
           >

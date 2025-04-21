@@ -634,10 +634,30 @@ const TransferPage: React.FC = () => {
                           {...field} 
                           size="small"
                           disabled={lockedRows.has(index)}
-                          sx={{ width: '100%' }}
+                          sx={{ 
+                            width: '100%',
+                            '& .MuiSelect-select': {
+                              display: 'flex',
+                              alignItems: 'center',
+                              py: 1
+                            },
+                            borderRadius: 0.5
+                          }}
                         >
-                          <MenuItem value="pyr_code" sx={{ width: '100%' }}>Pyr Code</MenuItem>
-                          <MenuItem value="stock" sx={{ width: '100%' }}>Zasoby (Ilościowe)</MenuItem>
+                          <MenuItem value="pyr_code" sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            py: 1
+                          }}>
+                            Pyr Code
+                          </MenuItem>
+                          <MenuItem value="stock" sx={{ 
+                            display: 'flex',
+                            alignItems: 'center',
+                            py: 1
+                          }}>
+                            Zasoby (Ilościowe)
+                          </MenuItem>
                         </Select>
                       )}
                     />
