@@ -600,7 +600,7 @@ const TransferDetailsPage: React.FC = () => {
         )}
       </Paper>
 
-      <Paper sx={{ mt: 4, p: 3, borderRadius: 2, boxShadow: 2 }}>
+      <Paper sx={{ mt: 4, p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <LocalShippingIcon color="primary" />

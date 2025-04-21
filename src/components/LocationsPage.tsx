@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../hooks/useLocations';
 import { ErrorMessage } from './ErrorMessage';
@@ -291,6 +292,7 @@ const LocationsPage: React.FC = () => {
         <Button 
           variant="contained" 
           color="primary" 
+          startIcon={<AddIcon />}
           onClick={() => handleOpenDialog()}
           sx={{
             borderRadius: 1,

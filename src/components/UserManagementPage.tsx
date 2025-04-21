@@ -33,6 +33,7 @@ import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import SecurityIcon from '@mui/icons-material/Security';
+import SearchIcon from '@mui/icons-material/Search';
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -330,9 +331,20 @@ const UserManagementPage: React.FC = () => {
           variant="outlined"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
           sx={{ flex: 1 }}
           InputProps={{
-            sx: { borderRadius: 1 }
+            sx: { 
+              borderRadius: 1,
+              height: '36px',
+              '& input': {
+                height: '36px',
+                padding: '0 12px',
+              }
+            },
+            startAdornment: (
+              <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+            )
           }}
         />
       </Box>
