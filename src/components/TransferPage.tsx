@@ -466,7 +466,12 @@ const TransferPage: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit(handleFormSubmit)}>
-        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          gap: 1, 
+          mt: 1 
+        }}>
           <Controller
             name="fromLocation"
             control={control}
@@ -516,7 +521,7 @@ const TransferPage: React.FC = () => {
           />
         </Box>
 
-        <Box sx={{ mt: 1 }}>
+        <Box sx={{ mt: 2 }}>
           <Controller
             name="users"
             control={control}
@@ -553,6 +558,7 @@ const TransferPage: React.FC = () => {
                       size="small"
                       label={`${option.username}`}
                       {...getTagProps({ index })}
+                      sx={{ maxWidth: { xs: '150px', sm: 'none' } }}
                     />
                   ))
                 }
@@ -564,7 +570,8 @@ const TransferPage: React.FC = () => {
         <TableContainer 
           component={Paper} 
           sx={{ 
-            mt: 1,
+            mt: 2,
+            overflow: 'auto',
             '&.MuiPaper-root': {
               boxShadow: 'none',
               transition: 'none',
@@ -585,17 +592,31 @@ const TransferPage: React.FC = () => {
             },
             '& .MuiTableRow-head': {
               backgroundColor: (theme) => theme.palette.background.paper
+            },
+            '& .MuiTableCell-root': {
+              padding: { xs: 1, sm: 2 },
+              '&:first-of-type': {
+                paddingLeft: { xs: 1, sm: 2 }
+              },
+              '&:last-of-type': {
+                paddingRight: { xs: 1, sm: 2 }
+              }
+            },
+            '& .MuiSelect-select': {
+              minHeight: '32px !important',
+              paddingTop: '4px !important',
+              paddingBottom: '4px !important'
             }
           }}
         >
-          <Table size="small">
+          <Table size="small" sx={{ minWidth: { xs: '650px', sm: 'auto' } }}>
             <TableHead>
               <TableRow>
-                <TableCell>Typ</TableCell>
-                <TableCell>ID / Kategoria</TableCell>
-                <TableCell>Ilość/Typ</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Akcje</TableCell>
+                <TableCell width="20%">Typ</TableCell>
+                <TableCell width="40%">ID / Kategoria</TableCell>
+                <TableCell width="20%">Ilość/Typ</TableCell>
+                <TableCell width="10%">Status</TableCell>
+                <TableCell width="10%">Akcje</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -613,9 +634,10 @@ const TransferPage: React.FC = () => {
                           {...field} 
                           size="small"
                           disabled={lockedRows.has(index)}
+                          sx={{ width: '100%' }}
                         >
-                          <MenuItem value="pyr_code">Pyr Code</MenuItem>
-                          <MenuItem value="stock">Zasoby (Ilościowe)</MenuItem>
+                          <MenuItem value="pyr_code" sx={{ width: '100%' }}>Pyr Code</MenuItem>
+                          <MenuItem value="stock" sx={{ width: '100%' }}>Zasoby (Ilościowe)</MenuItem>
                         </Select>
                       )}
                     />
@@ -676,6 +698,7 @@ const TransferPage: React.FC = () => {
                                     </React.Fragment>
                                   ),
                                 }}
+                                sx={{ width: '100%' }}
                               />
                             )}
                             value={field.value}
@@ -684,6 +707,7 @@ const TransferPage: React.FC = () => {
                               return !isPyrCodeSelected(option.pyrcode);
                             })}
                             freeSolo
+                            sx={{ width: '100%' }}
                           />
                         )}
                       />
@@ -693,7 +717,7 @@ const TransferPage: React.FC = () => {
                         name={`items.${index}.id`}
                         control={control}
                         render={({ field }) => (
-                          <Select {...field} size="small">
+                          <Select {...field} size="small" fullWidth sx={{ width: '100%' }}>
                             <MenuItem value="" disabled>
                               Wybierz zasób
                             </MenuItem>
@@ -770,27 +794,39 @@ const TransferPage: React.FC = () => {
           </Table>
         </TableContainer>
 
-        <Button
-          variant="outlined"
-          color="secondary"
-          startIcon={<AddIcon />}
-          onClick={() =>
-            append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus })
-          }
-          sx={{ mt: 2 }}
-        >
-          Dodaj Wiersz
-        </Button>
+        <Box sx={{ 
+          mt: 2,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1
+        }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<AddIcon />}
+            onClick={() =>
+              append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus })
+            }
+            fullWidth={false}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            Dodaj Wiersz
+          </Button>
 
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          disabled={!fromLocation || items.length === 0 || loading}
-          sx={{ mt: 2, ml: 2 }}
-        >
-          {loading ? <CircularProgress size={20} /> : 'Rozpocznij quest'}
-        </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            type="submit"
+            disabled={!fromLocation || items.length === 0 || loading}
+            fullWidth={false}
+            sx={{ 
+              width: { xs: '100%', sm: 'auto' },
+              ml: { xs: 0, sm: 2 }
+            }}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Rozpocznij quest'}
+          </Button>
+        </Box>
       </form>
 
       <Dialog 
