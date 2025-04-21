@@ -111,7 +111,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrollTimer, setScrollTimer] = useState<NodeJS.Timeout | null>(null);
   const SCROLL_THRESHOLD = 50; // Minimalny próg przewijania w pikselach
-  const SCROLL_DELAY = 150; // Opóźnienie w milisekundach
+  const SCROLL_DELAY = 150; // Opóźnienie w milisekundach (tylko dla chowania paska)
   const [userRole, setUserRole] = useState<string>('');
   const [userId, setUserId] = useState<number | null>(null);
   const [showQuestTransition, setShowQuestTransition] = useState(false);
@@ -165,18 +165,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         return;
       }
 
-      // Wyczyść poprzedni timer
+      // Przewijanie w górę - natychmiastowa reakcja
+      if (currentScrollY < lastScrollY) {
+        setScrollDirection('up');
+        setLastScrollY(currentScrollY);
+        return;
+      }
+
+      // Przewijanie w dół - opóźniona reakcja
       if (scrollTimer) {
         clearTimeout(scrollTimer);
       }
 
-      // Ustaw nowy timer z opóźnieniem
       const newTimer = setTimeout(() => {
-        if (currentScrollY > lastScrollY) {
-          setScrollDirection('down');
-        } else {
-          setScrollDirection('up');
-        }
+        setScrollDirection('down');
         setLastScrollY(currentScrollY);
       }, SCROLL_DELAY);
 
