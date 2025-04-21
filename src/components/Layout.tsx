@@ -41,7 +41,8 @@ import {
   DarkMode,
   Animation,
   BlockTwoTone,
-  Logout
+  Logout,
+  Help
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
@@ -95,7 +96,8 @@ const Icons = {
   DarkMode,
   Animation,
   BlockTwoTone,
-  Logout
+  Logout,
+  Help
 };
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -512,7 +514,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   padding: 1,
                   border: '1px solid',
                   borderColor: 'divider',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   '&:hover': {
                     backgroundColor: 'action.hover',
                   },
@@ -581,6 +583,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     secondary="Zarządzaj swoim kontem"
                     secondaryTypographyProps={{
                       sx: { color: 'primary.contrastText', opacity: 0.8 }
+                    }}
+                  />
+                </MenuItem>
+
+                <MenuItem 
+                  onClick={() => navigate('/tutorial')} 
+                  sx={{ 
+                    borderRadius: 1,
+                    mb: 1,
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <Icons.Help sx={{ color: 'primary.main' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Przewodnik po systemie"
+                    secondary="Poznaj podstawy obsługi aplikacji"
+                    secondaryTypographyProps={{
+                      sx: { color: 'text.secondary' }
                     }}
                   />
                 </MenuItem>

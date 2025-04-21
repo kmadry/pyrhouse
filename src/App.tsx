@@ -22,6 +22,7 @@ const QuestBoard = lazy(() => import('./components/QuestBoardPage'));
 const EquipmentDetails = lazy(() => import('./components/EquipmentDetails'));
 const LocationsPage = lazy(() => import('./components/LocationsPage'));
 const LocationDetailsPage = lazy(() => import('./components/LocationDetailsPage'));
+const TutorialPage = lazy(() => import('./components/TutorialPage'));
 
 function App() {
   return (
@@ -81,6 +82,11 @@ function App() {
             <Route path="locations/:id" element={
               <Suspense fallback={<LoadingSkeleton />}>
                 <LocationDetailsPage />
+              </Suspense>
+            } />
+            <Route path="tutorial" element={
+              <Suspense fallback={<LoadingSkeleton />}>
+                <TutorialPage />
               </Suspense>
             } />
           </Route>

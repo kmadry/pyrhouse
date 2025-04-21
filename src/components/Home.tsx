@@ -528,18 +528,20 @@ const HomePage: React.FC = () => {
               />
             )}
           />
-          <SearchButton
-            variant="contained"
-            color="primary"
-            startIcon={<Search />}
-            onClick={handleSearch}
-            disabled={loading}
-            sx={{
-              borderRadius: 1,
-            }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Szukaj'}
-          </SearchButton>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <SearchButton
+              variant="contained"
+              color="primary"
+              startIcon={<Search />}
+              onClick={handleSearch}
+              disabled={loading}
+              sx={{
+                borderRadius: 1,
+              }}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Szukaj'}
+            </SearchButton>
+          </Box>
         </Box>
         {searchError && <ErrorMessage message={searchError} />}
       </SearchContainer>
@@ -559,7 +561,7 @@ const HomePage: React.FC = () => {
         </Typography>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={4} md={3}>
             <Paper
               elevation={0}
               sx={{
@@ -713,7 +715,7 @@ const HomePage: React.FC = () => {
             onClick={() => navigate('/quests')}
             startIcon={<AccessTime />}
             sx={{ 
-              borderRadius: 2,
+              borderRadius: 1,
               textTransform: 'none'
             }}
           >
