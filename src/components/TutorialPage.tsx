@@ -12,7 +12,9 @@ import {
   useTheme,
   Card,
   CardContent,
-  Grid
+  Grid,
+  Stack,
+  Chip
 } from '@mui/material';
 import {
   Search,
@@ -24,6 +26,16 @@ import {
   ArrowBack,
   Close,
   Check,
+  LocationOn,
+  MyLocation,
+  Map,
+  AccountCircle,
+  Home,
+  Navigation,
+  History,
+  Update,
+  Info,
+  GpsFixed
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -37,9 +49,115 @@ const TUTORIAL_STEPS = [
   },
   {
     label: 'Tworzenie questów-dostaw',
-    description: 'Utwórz nową dostawę, aby zorganizować transport sprzętu między lokalizacjami. Możesz dodać wiele przedmiotów i określić kto bierze udział w dostawie.',
+    description: 'Utwórz nową dostawę, aby zorganizować transport sprzętu między lokalizacjami. Możesz dodać wiele przedmiotów i określić kto bierze udział w dostawie. Pamiętaj o wybraniu lokalizacji docelowej i uczestników questa.',
     icon: <RocketLaunch />,
     action: '/transfers/create',
+  },
+  {
+    label: 'Zarządzanie dostawą',
+    description: (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          Jako uczestnik questa masz dostęp do wielu funkcji ułatwiających zarządzanie dostawą:
+        </Typography>
+        
+        <Stack spacing={2}>
+          {/* Sekcja Aktualizacji Lokalizacji */}
+          <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <MyLocation color="primary" />
+              <Typography variant="subtitle2" fontWeight="600">
+                Aktualizacja Lokalizacji
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              W szczegółach transferu użyj przycisku "Aktualizuj lokalizację" aby zaznaczyć aktualną pozycję sprzętu na mapie.
+            </Typography>
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                mt: 1.5, 
+                mb: 1.5, 
+                p: 1.5, 
+                bgcolor: 'info.lighter',
+                border: '1px solid',
+                borderColor: 'info.light',
+                borderRadius: 1
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Info color="info" sx={{ mt: 0.3 }} />
+                <Typography variant="body2">
+                  System może poprosić o dostęp do Twojej lokalizacji - pomoże to w dokładniejszym określeniu pozycji sprzętu. Nie martw się, nie zbieramy ani nie przechowujemy tych danych.
+                </Typography>
+              </Stack>
+            </Paper>
+            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+              <Chip 
+                icon={<Map fontSize="small" />} 
+                label="Mapa" 
+                size="small" 
+                variant="outlined" 
+              />
+              <Chip 
+                icon={<Navigation fontSize="small" />} 
+                label="GPS" 
+                size="small" 
+                variant="outlined" 
+              />
+              <Chip 
+                icon={<GpsFixed fontSize="small" />} 
+                label="Lokalizacja" 
+                size="small" 
+                variant="outlined" 
+              />
+            </Stack>
+          </Paper>
+
+          {/* Sekcja Śledzenia Dostaw */}
+          <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <History color="primary" />
+              <Typography variant="subtitle2" fontWeight="600">
+                Śledzenie Dostaw
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Monitoruj swoje aktywne questy w dwóch wygodnych miejscach:
+            </Typography>
+            <Stack spacing={1} sx={{ mt: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Home fontSize="small" color="action" />
+                <Typography variant="body2">
+                  Strona główna - szybki podgląd bieżących questów
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccountCircle fontSize="small" color="action" />
+                <Typography variant="body2">
+                  "Mój profil" w górnym pasku - pełna lista Twoich questów
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Sekcja Historii */}
+          <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <Update color="primary" />
+              <Typography variant="subtitle2" fontWeight="600">
+                Historia i Status
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Śledź historię lokalizacji i postęp dostawy w czasie rzeczywistym. System automatycznie zapisuje wszystkie aktualizacje i zmiany statusu.
+            </Typography>
+          </Paper>
+        </Stack>
+      </Box>
+    ),
+    icon: <LocationOn />,
+    action: '/transfers',
   },
   {
     label: 'Dodawanie nowego sprzętu',
@@ -49,13 +167,13 @@ const TUTORIAL_STEPS = [
   },
   {
     label: 'Zarządzanie magazynem',
-    description: 'Przeglądaj stan magazynowy, sprawdzaj dostępność sprzętu i zarządzaj jego lokalizacjami.',
+    description: 'Przeglądaj stan magazynowy, sprawdzaj dostępność sprzętu i zarządzaj jego lokalizacjami. Możesz filtrować sprzęt po kategorii i lokalizacji.',
     icon: <Inventory />,
     action: '/list',
   },
   {
     label: 'Przeglądanie questów',
-    description: 'Sprawdź wszystkie aktywne i zakończone dostawy, ich status i szczegóły.',
+    description: 'Sprawdź wszystkie aktywne i zakończone dostawy, ich status i szczegóły. W szczegółach questa zobaczysz historię lokalizacji sprzętu, co pomoże Ci śledzić przebieg dostawy.',
     icon: <ListAlt />,
     action: '/transfers',
   },
@@ -94,7 +212,6 @@ const TutorialPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
-  // Używamy useMemo, aby uniknąć niepotrzebnych przeliczeń
   const currentStep = useMemo(() => TUTORIAL_STEPS[activeStep], [activeStep]);
 
   const handleNext = () => {
@@ -167,15 +284,20 @@ const TutorialPage: React.FC = () => {
                         {step.label}
                       </StepLabel>
                       <StepContent>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                          {step.description}
-                        </Typography>
-                        <Box sx={{ mb: 2 }}>
+                        <Box sx={{ mt: 2 }}>
                           <Button
                             variant="contained"
                             onClick={() => navigate(step.action)}
                             endIcon={<ArrowForward />}
-                            sx={{ mr: 1 }}
+                            fullWidth
+                            sx={{ 
+                              py: 1,
+                              borderRadius: 1.5,
+                              boxShadow: 'none',
+                              '&:hover': {
+                                boxShadow: 1
+                              }
+                            }}
                           >
                             Wypróbuj
                           </Button>
@@ -194,28 +316,34 @@ const TutorialPage: React.FC = () => {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
                 p: 4,
                 background: theme.palette.background.default,
                 borderRadius: 2,
               }}
             >
-              <Box sx={{ mb: 4, textAlign: 'center' }}>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="h5" gutterBottom sx={{ 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  {currentStep.icon}
                   {currentStep.label}
                 </Typography>
-                <Typography variant="body1" color="text.secondary">
+                <Box sx={{ mt: 3 }}>
                   {currentStep.description}
-                </Typography>
+                </Box>
               </Box>
 
-              <StepNavigation 
-                activeStep={activeStep} 
-                totalSteps={TUTORIAL_STEPS.length} 
-                onBack={handleBack} 
-                onNext={handleNext} 
-              />
+              <Box sx={{ mt: 'auto', pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
+                <StepNavigation 
+                  activeStep={activeStep} 
+                  totalSteps={TUTORIAL_STEPS.length} 
+                  onBack={handleBack} 
+                  onNext={handleNext} 
+                />
+              </Box>
             </Box>
           </Grid>
         </Grid>
