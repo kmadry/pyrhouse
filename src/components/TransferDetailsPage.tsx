@@ -1,36 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Typography,
-  Container,
-  Stepper,
-  Step,
-  StepLabel,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Chip,
-  ListItemAvatar,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  TextField,
-  Divider,
-  Alert,
-  Stack,
-  CircularProgress,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Stepper from '@mui/material/Stepper';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import Paper from '@mui/material/Paper';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Chip from '@mui/material/Chip';
+import ListItemAvatar from '@mui/material/ListItemAvatar';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContentText from '@mui/material/DialogContentText';
+import Divider from '@mui/material/Divider';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import CircularProgress from '@mui/material/CircularProgress';
+
+// Icons
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
@@ -40,14 +35,18 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import NavigationIcon from '@mui/icons-material/Navigation';
-import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+
+// Services and hooks
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../services/transferService';
 import { ErrorMessage } from './ErrorMessage';
 import { useLocations } from '../hooks/useLocations';
 import { MapPosition, locationService } from '../services/locationService';
-import LocationPicker from './LocationPicker';
 import { useAuth } from '../hooks/useAuth';
-import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+
+// Lazy loaded components
+const MapComponent = lazy(() => import('./MapComponent'));
+const LocationPicker = lazy(() => import('./LocationPicker'));
+const RestoreDialog = lazy(() => import('./RestoreDialog'));
 
 const statusTranslations: { [key: string]: string } = {
   'created': 'Utworzony',
@@ -55,84 +54,6 @@ const statusTranslations: { [key: string]: string } = {
   'delivered': 'Dostarczony',
   'cancelled': 'Anulowany',
   'completed': 'Dostarczony'
-};
-
-interface RestoreDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: (locationId: number, quantity?: number) => void;
-  locations: any[];
-  itemType: 'asset' | 'stock';
-  currentQuantity?: number;
-}
-
-const RestoreDialog: React.FC<RestoreDialogProps> = ({ open, onClose, onConfirm, locations, itemType, currentQuantity }) => {
-  const [selectedLocation, setSelectedLocation] = useState<number>(1);
-  const [quantity, setQuantity] = useState<string>('');
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || /^\d+$/.test(value)) {
-      setQuantity(value);
-    }
-  };
-
-  const handleConfirm = () => {
-    const numericQuantity = quantity === '' ? 0 : parseInt(quantity);
-    if (itemType === 'stock' && (numericQuantity <= 0 || numericQuantity > (currentQuantity || 1))) {
-      return;
-    }
-    onConfirm(selectedLocation, itemType === 'stock' ? numericQuantity : undefined);
-  };
-
-  return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Przywróć do magazynu</DialogTitle>
-      <DialogContent>
-        <FormControl fullWidth sx={{ mt: 2 }}>
-          <InputLabel>Wybierz magazyn</InputLabel>
-          <Select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(Number(e.target.value))}
-            label="Wybierz magazyn"
-          >
-            {locations.map((location) => (
-              <MenuItem key={location.id} value={location.id}>
-                {location.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {itemType === 'stock' && (
-          <TextField
-            fullWidth
-            label="Ilość do zwrócenia"
-            value={quantity}
-            onChange={handleQuantityChange}
-            inputProps={{ 
-              inputMode: 'numeric',
-              pattern: '[0-9]*',
-              min: 1,
-              max: currentQuantity
-            }}
-            helperText={`Maksymalna dostępna ilość: ${currentQuantity}`}
-            sx={{ mt: 2 }}
-          />
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Anuluj</Button>
-        <Button 
-          onClick={handleConfirm} 
-          variant="contained" 
-          color="primary"
-          disabled={itemType === 'stock' && (quantity === '' || parseInt(quantity) <= 0 || parseInt(quantity) > (currentQuantity || 1))}
-        >
-          Potwierdź
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
 };
 
 const TransferDetailsPage: React.FC = () => {
@@ -385,112 +306,17 @@ const TransferDetailsPage: React.FC = () => {
   }, [transfer?.delivery_location]);
 
   function renderMap() {
-    if (!transfer?.delivery_location?.lat || !transfer?.delivery_location?.lng) {
-      console.warn('Brak danych o lokalizacji:', transfer?.delivery_location);
-      return (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          Brak danych o lokalizacji
-        </Alert>
-      );
-    }
-
-    const mapLocation = {
-      lat: transfer.delivery_location.lat,
-      lng: transfer.delivery_location.lng
-    };
-
     return (
-      <Box 
-        sx={{ 
-          height: '300px', 
-          width: '100%', 
-          borderRadius: 2,
-          overflow: 'hidden',
-          border: '1px solid',
-          borderColor: 'divider',
-          position: 'relative'
-        }}
-        id="map-container"
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 10,
-            right: 10,
-            zIndex: 1,
-            display: 'flex',
-            gap: 1
-          }}
-        >
-          <Tooltip title="Pokaż moją lokalizację">
-            <IconButton
-              onClick={getUserLocation}
-              sx={{
-                backgroundColor: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                }
-              }}
-            >
-              <GpsFixedIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        <APIProvider apiKey={locationService.getGoogleMapsApiKey()}>
-          <Map
-            defaultCenter={mapLocation}
-            defaultZoom={17}
-            mapId="pyrhouse-map"
-            gestureHandling={'greedy'}
-            disableDefaultUI={false}
-          >
-            <AdvancedMarker position={mapLocation}>
-              <Pin
-                background={'#1976d2'}
-                borderColor={'#1565c0'}
-                glyphColor={'#ffffff'}
-              />
-            </AdvancedMarker>
-            {userLocation && (
-              <AdvancedMarker position={userLocation}>
-                <Pin
-                  background={'#4caf50'}
-                  borderColor={'#388e3c'}
-                  glyphColor={'#ffffff'}
-                />
-              </AdvancedMarker>
-            )}
-          </Map>
-        </APIProvider>
-        {locationError && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              position: 'absolute',
-              bottom: 10,
-              left: 10,
-              right: 10,
-              zIndex: 1
-            }}
-          >
-            {locationError}
-          </Alert>
-        )}
-        {userLocation && showLocationAlert && (
-          <Alert 
-            severity="success" 
-            sx={{ 
-              position: 'absolute',
-              bottom: locationError ? 60 : 10,
-              left: 10,
-              right: 10,
-              zIndex: 1
-            }}
-          >
-            Twoja lokalizacja została oznaczona na mapie (zielony marker)
-          </Alert>
-        )}
-      </Box>
+      <Suspense fallback={<CircularProgress />}>
+        <MapComponent
+          transfer={transfer}
+          userLocation={userLocation}
+          onLocationUpdate={handleLocationUpdate}
+          locationError={locationError}
+          showLocationAlert={showLocationAlert}
+          onGetUserLocation={getUserLocation}
+        />
+      </Suspense>
     );
   }
 
@@ -790,18 +616,20 @@ const TransferDetailsPage: React.FC = () => {
       </Paper>
 
       {restoreDialogOpen && selectedItem && (
-        <RestoreDialog
-          open={restoreDialogOpen}
-          onClose={() => setRestoreDialogOpen(false)}
-          onConfirm={handleRestoreConfirm}
-          locations={locations || []}
-          itemType={selectedItem.type}
-          currentQuantity={
-            selectedItem.type === 'stock' 
-              ? transfer?.stock_items.find((item: any) => item.id === selectedItem.originalId)?.quantity 
-              : undefined
-          }
-        />
+        <Suspense fallback={<CircularProgress />}>
+          <RestoreDialog
+            open={restoreDialogOpen}
+            onClose={() => setRestoreDialogOpen(false)}
+            onConfirm={handleRestoreConfirm}
+            locations={locations || []}
+            itemType={selectedItem.type}
+            currentQuantity={
+              selectedItem.type === 'stock' 
+                ? transfer?.stock_items.find((item: any) => item.id === selectedItem.originalId)?.quantity 
+                : undefined
+            }
+          />
+        </Suspense>
       )}
 
       <Dialog
@@ -864,10 +692,12 @@ const TransferDetailsPage: React.FC = () => {
               {locationError}
             </Alert>
           )}
-          <LocationPicker
-            onLocationSelect={handleLocationUpdate}
-            onSave={() => setLocationDialogOpen(false)}
-          />
+          <Suspense fallback={<CircularProgress />}>
+            <LocationPicker
+              onLocationSelect={handleLocationUpdate}
+              onSave={() => setLocationDialogOpen(false)}
+            />
+          </Suspense>
         </DialogContent>
       </Dialog>
     </Container>

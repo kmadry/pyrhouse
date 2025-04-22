@@ -131,6 +131,8 @@ const TransferPage: React.FC = () => {
   const [usersError, setUsersError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const formDataRef = useRef<FormData | null>(null);
+  const lastInputRef = useRef<HTMLInputElement>(null);
+  const [lastFieldId, setLastFieldId] = useState<string | null>(null);
 
   const fromLocation = watch('fromLocation');
   const items = watch('items');
@@ -176,12 +178,26 @@ const TransferPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromLocation]);
 
+  useEffect(() => {
+    const handleFocus = () => {
+      const inputs = document.querySelectorAll('.MuiAutocomplete-input');
+      const lastInput = inputs[inputs.length - 1] as HTMLInputElement;
+      if (lastInput) {
+        lastInput.focus();
+      }
+    };
+
+    if (fields.length > 0 && fields[fields.length - 1].id !== lastFieldId) {
+      setLastFieldId(fields[fields.length - 1].id);
+      setTimeout(handleFocus, 100);
+    }
+  }, [fields, lastFieldId]);
+
   const handleValidatePyrCode = async (index: number, pyrcode: string) => {
     if (isValidationInProgress) {
       return;
     }
 
-    // Sprawdź czy kod PYR jest już wybrany
     if (isPyrCodeSelected(pyrcode)) {
       setValue(`items.${index}.status`, 'failure' as ValidationStatus);
       return;
@@ -204,6 +220,14 @@ const TransferPage: React.FC = () => {
       
       if (index === items.length - 1) {
         append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' });
+        
+        setTimeout(() => {
+          const inputs = document.querySelectorAll('.MuiAutocomplete-input');
+          const lastInput = inputs[inputs.length - 1] as HTMLInputElement;
+          if (lastInput) {
+            lastInput.focus();
+          }
+        }, 500);
       }
     } catch (err: any) {
       setValue(`items.${index}.status`, 'failure' as ValidationStatus);
@@ -373,6 +397,16 @@ const TransferPage: React.FC = () => {
     }
   };
 
+  const handleAddRow = () => {
+    append({ 
+      type: stocks.length > 0 ? 'stock' : 'pyr_code', 
+      id: '', 
+      pyrcode: '', 
+      quantity: 1, 
+      status: '' as ValidationStatus 
+    });
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
       {questData && (
@@ -391,16 +425,11 @@ const TransferPage: React.FC = () => {
             }
           }}
         >
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              mb: 1,
-              color: '#54291E',
-              fontFamily: '"Cinzel", serif'
-            }}
-          >
-            Aktywny Quest
-          </Typography>
+          <Box sx={{ mb: 1, color: '#54291E', fontFamily: '"Cinzel", serif' }}>
+            <Typography variant="h6">
+              Aktywny Quest
+            </Typography>
+          </Box>
           
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             <Chip
@@ -423,25 +452,25 @@ const TransferPage: React.FC = () => {
             />
           </Box>
 
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="body2" sx={{ color: '#54291E', mb: 0.5 }}>
+          <Box sx={{ color: '#54291E', mb: 0.5 }}>
+            <Typography variant="body2">
               Wymagane przedmioty:
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {questData.items.map((item, index) => (
-                <Chip
-                  size="small"
-                  key={index}
-                  label={`${item.quantity}x ${item.item_name}${item.notes ? ` (${item.notes})` : ''}`}
-                  sx={{ 
-                    backgroundColor: '#E6CB99',
-                    '& .MuiChip-label': {
-                      color: '#54291E'
-                    }
-                  }}
-                />
-              ))}
-            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {questData.items.map((item, index) => (
+              <Chip
+                size="small"
+                key={index}
+                label={`${item.quantity}x ${item.item_name}${item.notes ? ` (${item.notes})` : ''}`}
+                sx={{ 
+                  backgroundColor: '#E6CB99',
+                  '& .MuiChip-label': {
+                    color: '#54291E'
+                  }
+                }}
+              />
+            ))}
           </Box>
         </Paper>
       )}
@@ -693,10 +722,10 @@ const TransferPage: React.FC = () => {
                             onInputChange={(_, value) => {
                               handlePyrCodeSearch(value);
                             }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                const inputValue = (event.target as HTMLInputElement).value;
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const inputValue = (e.target as HTMLInputElement).value;
                                 if (inputValue && inputValue.length >= 2) {
                                   handleValidatePyrCode(index, inputValue);
                                 }
@@ -709,6 +738,7 @@ const TransferPage: React.FC = () => {
                                 placeholder="Wpisz kod PYR"
                                 variant="outlined"
                                 fullWidth
+                                inputRef={index === fields.length - 1 ? lastInputRef : undefined}
                                 InputProps={{
                                   ...params.InputProps,
                                   endAdornment: (
@@ -718,7 +748,6 @@ const TransferPage: React.FC = () => {
                                     </React.Fragment>
                                   ),
                                 }}
-                                sx={{ width: '100%' }}
                               />
                             )}
                             value={field.value}
@@ -824,9 +853,7 @@ const TransferPage: React.FC = () => {
             variant="outlined"
             color="secondary"
             startIcon={<AddIcon />}
-            onClick={() =>
-              append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus })
-            }
+            onClick={handleAddRow}
             fullWidth={false}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
@@ -861,11 +888,14 @@ const TransferPage: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ 
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          py: 1
-        }}>
+        <DialogTitle 
+          component="div"
+          sx={{ 
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            py: 1
+          }}
+        >
           <Typography variant="h6">
             Potwierdź szczegóły questa
           </Typography>

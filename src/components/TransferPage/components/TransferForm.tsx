@@ -1,27 +1,36 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
-import {
-  Box,
-  Button,
-  IconButton,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-  Grid,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  Autocomplete,
-} from '@mui/material';
+import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useForm, useFieldArray, useFormContext } from 'react-hook-form';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Grid from '@mui/material/Grid';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Autocomplete from '@mui/material/Autocomplete';
+import Chip from '@mui/material/Chip';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { validatePyrCodeAPI, searchPyrCodesAPI } from '../../../services/transferService';
+import { searchPyrCodesAPI } from '../../../services/transferService';
 import './TransferForm.css';
 import { TransferFormData } from '../../../types/transfer.types';
+import { Controller } from 'react-hook-form';
+
+// Dynamiczne importy dla dużych komponentów
+const LocationPicker = lazy(() => import('../../../components/LocationPicker'));
+
+interface User {
+  id: number;
+  username: string;
+  fullname: string;
+}
 
 interface TransferFormProps {
   onSubmit: (data: TransferFormData) => void;
@@ -29,24 +38,9 @@ interface TransferFormProps {
   stocks: any[];
   loading: boolean;
   error?: string;
+  users: User[];
+  usersLoading: boolean;
 }
-
-interface PyrCodeSuggestion {
-  id: number;
-  pyrcode: string;
-  serial: string;
-  location: {
-    id: number;
-    name: string;
-  };
-  category: {
-    id: number;
-    label: string;
-  };
-  status: 'in_stock' | 'available' | 'unavailable';
-}
-
-type ValidationStatus = 'success' | 'failure' | '';
 
 export const TransferForm: React.FC<TransferFormProps> = ({
   onSubmit,
@@ -54,68 +48,35 @@ export const TransferForm: React.FC<TransferFormProps> = ({
   stocks,
   loading,
   error,
+  users,
+  usersLoading,
 }) => {
   const {
     control,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors },
+    setValue,
   } = useForm<TransferFormData>({
     defaultValues: {
       fromLocation: locations.length > 0 ? locations[0].id : 0,
       toLocation: '',
       items: [{ type: 'pyr_code', id: '', pyrcode: '', quantity: 1, status: '' }],
+      users: [],
     },
   });
 
-  useEffect(() => {
-    if (locations.length > 0 && !watch('fromLocation')) {
-      setValue('fromLocation', locations[0].id);
-    }
-  }, [locations, setValue, watch]);
-
   const { fields, append, remove } = useFieldArray({
-    control,
+    control: useFormContext().control,
     name: 'items',
   });
 
-  const [isValidationInProgress, setIsValidationInProgress] = useState<boolean>(false);
-  const [isValidationCompleted, setIsValidationCompleted] = useState<boolean>(false);
-  const nextInputRef = useRef<HTMLInputElement>(null);
-  const rowAddedRef = useRef<boolean>(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const formDataRef = useRef<TransferFormData | null>(null);
-  const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
 
   const fromLocation = watch('fromLocation');
 
-  const handleValidatePyrCode = async (index: number, pyrcode: string) => {
-    if (isValidationInProgress || isValidationCompleted) {
-      return;
-    }
-    
-    try {
-      setIsValidationInProgress(true);
-      const response = await validatePyrCodeAPI(pyrcode);
-      setValue(`items.${index}.id`, response.id);
-      setValue(`items.${index}.status`, 'success' as ValidationStatus);
-      setValue(`items.${index}.category`, response.category);
-      
-      if (!rowAddedRef.current) {
-        append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' as ValidationStatus });
-        rowAddedRef.current = true;
-        setTimeout(() => {
-          nextInputRef.current?.focus();
-        }, 0);
-      }
-    } catch (err: any) {
-      setValue(`items.${index}.status`, 'failure' as ValidationStatus);
-    } finally {
-      setIsValidationInProgress(false);
-      setIsValidationCompleted(true);
-    }
-  };
+  const [rowAddedRef] = useState({ current: false });
 
   const handlePyrCodeSearch = async (value: string) => {
     if (!/^[a-zA-Z0-9-]*$/.test(value)) {
@@ -123,30 +84,35 @@ export const TransferForm: React.FC<TransferFormProps> = ({
     }
 
     if (value.length < 2) {
-      setPyrCodeSuggestions([]);
       return;
     }
 
     try {
-      const suggestions = await searchPyrCodesAPI(value, fromLocation);
-      setPyrCodeSuggestions(suggestions);
-      rowAddedRef.current = false;
+      await searchPyrCodesAPI(value, fromLocation);
     } catch (error) {
-      console.error('Błąd podczas wyszukiwania:', error);
-      setPyrCodeSuggestions([]);
+      console.error('Błąd podczas wyszukiwania kodów PYR:', error);
     }
   };
 
-  const handleAddItem = () => {
-    const availableStock = stocks.length > 0;
-    append({ 
-      type: availableStock ? 'stock' : 'pyr_code', 
-      id: '', 
-      pyrcode: '', 
-      quantity: 1, 
-      status: '' as ValidationStatus 
-    });
-  };
+  const handleAddItem = useCallback(() => {
+    append({ type: 'pyr_code', id: '', pyrcode: '', quantity: 0, status: '' });
+    rowAddedRef.current = true;
+  }, [append]);
+
+  useEffect(() => {
+    if (rowAddedRef.current && fields.length > 0) {
+      const timer = setTimeout(() => {
+        const inputs = document.querySelectorAll('input[data-pyr-input]');
+        const lastInput = inputs[inputs.length - 1] as HTMLInputElement;
+        if (lastInput) {
+          lastInput.focus();
+          lastInput.select();
+        }
+        rowAddedRef.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [fields.length]);
 
   const handleFormSubmit = (data: TransferFormData) => {
     formDataRef.current = data;
@@ -171,13 +137,23 @@ export const TransferForm: React.FC<TransferFormProps> = ({
 
         <Grid container spacing={3}>
           <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="From Location"
-              {...control.register('fromLocation', { required: true })}
-              error={!!errors.fromLocation}
-              helperText={errors.fromLocation && 'From location is required'}
-            />
+            <Suspense fallback={<CircularProgress />}>
+              <LocationPicker
+                onLocationSelect={(location) => {
+                  const locationId = locations.find(l => 
+                    l.latitude === location.lat && 
+                    l.longitude === location.lng
+                  )?.id;
+                  if (locationId) {
+                    setValue('fromLocation', locationId);
+                  }
+                }}
+                initialLocation={locations.find(l => l.id === fromLocation) ? {
+                  lat: locations.find(l => l.id === fromLocation)?.latitude || 0,
+                  lng: locations.find(l => l.id === fromLocation)?.longitude || 0
+                } : undefined}
+              />
+            </Suspense>
           </Grid>
           <Grid item xs={12}>
             <TextField
@@ -192,31 +168,30 @@ export const TransferForm: React.FC<TransferFormProps> = ({
           <Grid item xs={12}>
             <Typography variant="h6">Items ({stocks.length} available stocks)</Typography>
             {fields.map((field, index) => (
-              <Grid container spacing={2} key={field.id} sx={{ mt: 1 }}>
-                <Grid item xs={4}>
-                  <Autocomplete
-                    freeSolo
-                    options={pyrCodeSuggestions}
-                    getOptionLabel={(option: PyrCodeSuggestion | string) => 
-                      typeof option === 'string' ? option : option.pyrcode
-                    }
-                    onInputChange={(_, value) => handlePyrCodeSearch(value)}
-                    onChange={(_, value) => {
-                      if (value && typeof value !== 'string') {
-                        handleValidatePyrCode(index, value.pyrcode);
-                      }
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        fullWidth
-                        label="PYR Code"
-                        {...control.register(`items.${index}.pyrcode` as const, { required: true })}
-                        error={!!errors.items?.[index]?.pyrcode}
-                      />
-                    )}
-                  />
-                </Grid>
+              <Box key={field.id} sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Controller
+                  name={`items.${index}.pyrcode`}
+                  control={control}
+                  render={({ field: { onChange, value } }) => (
+                    <TextField
+                      data-pyr-input
+                      label="Wpisz kod PYR"
+                      value={value}
+                      onChange={(e) => {
+                        onChange(e);
+                        handlePyrCodeSearch(e.target.value);
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddItem();
+                        }
+                      }}
+                      error={!!errors.items?.[index]?.pyrcode}
+                      helperText={errors.items?.[index]?.pyrcode?.message}
+                    />
+                  )}
+                />
                 <Grid item xs={3}>
                   <TextField
                     fullWidth
@@ -237,7 +212,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({
                     <DeleteIcon />
                   </IconButton>
                 </Grid>
-              </Grid>
+              </Box>
             ))}
             <Button 
               onClick={handleAddItem}
@@ -246,6 +221,52 @@ export const TransferForm: React.FC<TransferFormProps> = ({
             >
               Add Item
             </Button>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Controller
+              name="users"
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <Autocomplete<User, true, false, false>
+                  multiple
+                  size="small"
+                  options={users}
+                  loading={usersLoading}
+                  value={value || []}
+                  onChange={(_, newValue) => onChange(newValue)}
+                  getOptionLabel={(option) => `${option.username}`}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      label="Uczestnicy transferu"
+                      fullWidth
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        size="small"
+                        label={`${option.username}`}
+                        {...getTagProps({ index })}
+                        sx={{ maxWidth: { xs: '150px', sm: 'none' } }}
+                      />
+                    ))
+                  }
+                />
+              )}
+            />
           </Grid>
 
           <Grid item xs={12}>

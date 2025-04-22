@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   AppBar,
   Box,
@@ -20,30 +20,6 @@ import {
   useMediaQuery,
   Switch
 } from '@mui/material';
-import {
-  Home,
-  AutoAwesome,
-  RocketLaunch,
-  Quiz,
-  Castle,
-  Inventory2,
-  AddTask,
-  Warehouse,
-  EditLocationAlt,
-  Category,
-  People,
-  AdminPanelSettings,
-  Menu as MenuIcon,
-  Person,
-  ExpandMore,
-  AccountCircle,
-  LightMode,
-  DarkMode,
-  Animation,
-  BlockTwoTone,
-  Logout,
-  Help
-} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/p-logo.svg';
@@ -54,6 +30,37 @@ import { useStorage } from '../hooks/useStorage';
 import { useAnimationPreference } from '../hooks/useAnimationPreference';
 import QuestBoardTransition from './animations/QuestBoardTransition';
 import { LocationTransition } from './animations/LocationTransition';
+
+// Lazy loading dla ikon
+const MenuIcon = lazy(() => import('@mui/icons-material/Menu'));
+const Home = lazy(() => import('@mui/icons-material/Home'));
+const AutoAwesome = lazy(() => import('@mui/icons-material/AutoAwesome'));
+const RocketLaunch = lazy(() => import('@mui/icons-material/RocketLaunch'));
+const Quiz = lazy(() => import('@mui/icons-material/Quiz'));
+const Castle = lazy(() => import('@mui/icons-material/Castle'));
+const Inventory2 = lazy(() => import('@mui/icons-material/Inventory2'));
+const AddTask = lazy(() => import('@mui/icons-material/AddTask'));
+const Warehouse = lazy(() => import('@mui/icons-material/Warehouse'));
+const EditLocationAlt = lazy(() => import('@mui/icons-material/EditLocationAlt'));
+const Category = lazy(() => import('@mui/icons-material/Category'));
+const People = lazy(() => import('@mui/icons-material/People'));
+const AdminPanelSettings = lazy(() => import('@mui/icons-material/AdminPanelSettings'));
+const Person = lazy(() => import('@mui/icons-material/Person'));
+const ExpandMore = lazy(() => import('@mui/icons-material/ExpandMore'));
+const AccountCircle = lazy(() => import('@mui/icons-material/AccountCircle'));
+const LightMode = lazy(() => import('@mui/icons-material/LightMode'));
+const DarkMode = lazy(() => import('@mui/icons-material/DarkMode'));
+const Animation = lazy(() => import('@mui/icons-material/Animation'));
+const BlockTwoTone = lazy(() => import('@mui/icons-material/BlockTwoTone'));
+const Logout = lazy(() => import('@mui/icons-material/Logout'));
+const Help = lazy(() => import('@mui/icons-material/Help'));
+
+// Komponent do opakowywania lazy-loaded ikon
+const LazyIcon = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<Box sx={{ width: 24, height: 24 }} />}>
+    {children}
+  </Suspense>
+);
 
 interface JwtPayload {
   role: string;
@@ -316,7 +323,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   gap: 1
                 }}
               >
-                {item.icon}
+                <LazyIcon>
+                  {item.icon}
+                </LazyIcon>
                 {item.label}
               </Typography>
             </Box>
@@ -360,7 +369,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     fontSize: '1.3rem'
                   }
                 }}>
-                  {item.icon}
+                  <LazyIcon>
+                    {item.icon}
+                  </LazyIcon>
                 </ListItemIcon>
                 <ListItemText 
                   primary={item.label} 
@@ -394,7 +405,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               gap: 1
             }}
           >
-            <Icons.AdminPanelSettings sx={{ fontSize: '1rem' }} />
+            <LazyIcon>
+              <Icons.AdminPanelSettings sx={{ fontSize: '1rem' }} />
+            </LazyIcon>
             Admin
           </Typography>
           <List>
@@ -438,7 +451,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       fontSize: '1.3rem'
                     }
                   }}>
-                    {item.icon}
+                    <LazyIcon>
+                      {item.icon}
+                    </LazyIcon>
                   </ListItemIcon>
                   <ListItemText 
                     primary={item.label} 
@@ -477,7 +492,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             onClick={toggleDrawer}
             sx={{ mr: 2 }}
           >
-            <Icons.Menu />
+            <LazyIcon>
+              <Icons.Menu />
+            </LazyIcon>
           </IconButton>
 
           <Box
@@ -521,11 +538,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Icons.Person />
+                  <LazyIcon>
+                    <Icons.Person />
+                  </LazyIcon>
                   <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
                     {userId ? 'Użytkownik' : ''}
                   </Typography>
-                  <Icons.ExpandMore sx={{ fontSize: 20 }} />
+                  <LazyIcon>
+                    <Icons.ExpandMore sx={{ fontSize: 20 }} />
+                  </LazyIcon>
                 </Box>
               </IconButton>
             </Tooltip>
@@ -553,7 +574,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Icons.AccountCircle sx={{ fontSize: 40, color: 'primary.main' }} />
+                  <LazyIcon>
+                    <Icons.AccountCircle sx={{ fontSize: 40, color: 'primary.main' }} />
+                  </LazyIcon>
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                       {userId ? 'Użytkownik' : ''}
@@ -576,7 +599,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }
                 }}>
                   <ListItemIcon sx={{ color: 'inherit' }}>
-                    <Icons.AccountCircle />
+                    <LazyIcon>
+                      <Icons.AccountCircle />
+                    </LazyIcon>
                   </ListItemIcon>
                   <ListItemText 
                     primary="Mój profil"
@@ -598,7 +623,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }}
                 >
                   <ListItemIcon>
-                    <Icons.Help sx={{ color: 'primary.main' }} />
+                    <LazyIcon>
+                      <Icons.Help sx={{ color: 'primary.main' }} />
+                    </LazyIcon>
                   </ListItemIcon>
                   <ListItemText 
                     primary="Przewodnik po systemie"
@@ -622,7 +649,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     bgcolor: 'action.hover'
                   }
                 }}>
-                  <Icons.LightMode sx={{ color: themeMode === 'light' ? 'primary.main' : 'text.secondary' }} />
+                  <LazyIcon>
+                    <Icons.LightMode sx={{ color: themeMode === 'light' ? 'primary.main' : 'text.secondary' }} />
+                  </LazyIcon>
                   <Box sx={{ 
                     display: 'flex',
                     alignItems: 'center',
@@ -684,7 +713,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <Typography variant="body2">Ciemny</Typography>
                     </Box>
                   </Box>
-                  <Icons.DarkMode sx={{ color: themeMode === 'dark' ? 'primary.main' : 'text.secondary' }} />
+                  <LazyIcon>
+                    <Icons.DarkMode sx={{ color: themeMode === 'dark' ? 'primary.main' : 'text.secondary' }} />
+                  </LazyIcon>
                 </Box>
 
                 <Typography variant="overline" sx={{ px: 1, color: 'text.secondary', display: 'block', mt: 2 }}>
@@ -692,7 +723,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Typography>
                 <MenuItem sx={{ borderRadius: 1 }}>
                   <ListItemIcon>
-                    {prefersAnimations ? <Icons.Animation /> : <Icons.BlockTwoTone />}
+                    {prefersAnimations ? <LazyIcon><Icons.Animation /></LazyIcon> : <LazyIcon><Icons.BlockTwoTone /></LazyIcon>}
                   </ListItemIcon>
                   <ListItemText 
                     primary="Animacje interfejsu"
@@ -717,7 +748,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }
                 }}>
                   <ListItemIcon sx={{ color: 'inherit' }}>
-                    <Icons.Logout />
+                    <LazyIcon>
+                      <Icons.Logout />
+                    </LazyIcon>
                   </ListItemIcon>
                   <ListItemText primary="Wyloguj się" />
                 </MenuItem>

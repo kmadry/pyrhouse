@@ -24,11 +24,21 @@ const LocationsPage = lazy(() => import('./components/LocationsPage'));
 const LocationDetailsPage = lazy(() => import('./components/LocationDetailsPage'));
 const TutorialPage = lazy(() => import('./components/TutorialPage'));
 
+// Konfiguracja flag React Router v7
+const routerFutureConfig = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+  v7_fetcherPersist: true,
+  v7_normalizeFormMethod: true,
+  v7_partialHydration: true,
+  v7_skipActionErrorRevalidation: true
+};
+
 function App() {
   return (
     <ThemeProvider>
       <CssBaseline />
-      <Router>
+      <Router future={routerFutureConfig}>
         <Routes>
           <Route path="/login" element={<LoginForm />} />
           <Route path="/" element={<PrivateRoute><Layout><Outlet /></Layout></PrivateRoute>}>

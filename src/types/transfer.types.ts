@@ -65,6 +65,11 @@ export interface TransferFormData {
       label: string;
     };
   }[];
+  users: {
+    id: number;
+    username: string;
+    fullname: string;
+  }[];
 }
 
 // Interfejs dla sugestii kodów PYR
