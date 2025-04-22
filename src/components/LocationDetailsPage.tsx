@@ -422,7 +422,7 @@ const LocationDetailsPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="xl" sx={{ pb: { xs: 8, sm: 6 } }}>
       {/* Nagłówek strony */}
       <Box 
         sx={{ 
@@ -739,10 +739,29 @@ const LocationDetailsPage: React.FC = () => {
             justifyContent: 'space-between',
             alignItems: 'center',
             borderTop: '1px solid',
-            borderColor: 'divider'
+            borderColor: 'divider',
+            transform: 'translateY(0)',
+            transition: 'transform 0.3s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(0)',
+            },
+            '@media (max-width: 600px)': {
+              flexDirection: 'column',
+              gap: 2,
+              p: 3,
+            }
           }}
         >
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 2, 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            '@media (max-width: 600px)': {
+              width: '100%',
+              justifyContent: 'center'
+            }
+          }}>
             <Typography variant="subtitle1">
               Zaznaczone elementy:
             </Typography>
@@ -769,7 +788,10 @@ const LocationDetailsPage: React.FC = () => {
             sx={{ 
               minWidth: 200,
               borderRadius: 2,
-              py: 1.5
+              py: 1.5,
+              '@media (max-width: 600px)': {
+                width: '100%'
+              }
             }}
           >
             Utwórz transfer
