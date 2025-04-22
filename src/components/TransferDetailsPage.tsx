@@ -517,6 +517,27 @@ const TransferDetailsPage: React.FC = () => {
               {new Date(transfer.transfer_date).toLocaleString()}
             </Typography>
           </Box>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Gżdacze
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {transfer.users && transfer.users.length > 0 ? (
+            transfer.users.map((user: any) => (
+              <Chip
+                key={user.id}
+                label={user.username}
+                icon={<PersonIcon />}
+                color="primary"
+                variant="outlined"
+              />
+            ))
+          ) : (
+            <Typography color="text.secondary">-</Typography>
+          )}
+        </Box>
+        </Box>
+
         </Box>
 
         {(transfer.status === 'in_transit' || transfer.status === 'completed') && transfer.delivery_location && (
@@ -614,28 +635,6 @@ const TransferDetailsPage: React.FC = () => {
         ) : (
           <Typography>Brak zasobów w tej dostawie.</Typography>
         )}
-      </Paper>
-
-      <Paper sx={{ mt: 4, p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <PersonIcon sx={{ mr: 1, color: 'primary.main' }} />
-          <Typography variant="h6">Uczestnicy</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          {transfer.users && transfer.users.length > 0 ? (
-            transfer.users.map((user: any) => (
-              <Chip
-                key={user.id}
-                label={user.username}
-                icon={<PersonIcon />}
-                color="primary"
-                variant="outlined"
-              />
-            ))
-          ) : (
-            <Typography color="text.secondary">Brak przypisanych użytkowników.</Typography>
-          )}
-        </Box>
       </Paper>
 
       {restoreDialogOpen && selectedItem && (
