@@ -12,12 +12,12 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
+  DialogActions
 } from '@mui/material';
 import {
   CheckCircle,
   LocationOn,
-  Schedule,
+  Inventory2,
   History,
   Info,
   Delete as DeleteIcon,
@@ -25,6 +25,8 @@ import {
   RemoveCircle,
   CheckCircleOutline,
   Warehouse,
+  GpsFixed,
+  Navigation,
 } from '@mui/icons-material';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { ErrorMessage } from './ErrorMessage';
@@ -33,6 +35,8 @@ import { BarcodeGenerator } from './BarcodeGenerator';
 import { useLocations } from '../hooks/useLocations';
 import { getApiUrl } from '../config/api';
 import { useTheme } from '@mui/material/styles';
+import { locationService } from '../services/locationService';
+import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 interface AssetLog {
   id: number;
@@ -46,6 +50,13 @@ interface AssetLog {
     quantity?: number;
     from_location_id?: number;
     to_location_id?: number;
+    location?: {
+      latitude: number;
+      longitude: number;
+      location_id: number;
+      timestamp: string;
+    };
+    asset_id?: number;
   };
   created_at: string;
 }
@@ -175,6 +186,8 @@ const EquipmentDetails: React.FC = () => {
         return 'W dostawie';
       case 'REMOVE':
         return 'Usunięte';
+      case 'LAST_KNOWN_LOCATION':
+        return 'Ostatnia znana lokalizacja';
       default:
         return action.toUpperCase();
     }
@@ -195,9 +208,83 @@ const EquipmentDetails: React.FC = () => {
         return <LocalShipping sx={{ mr: 1, color: 'info.main' }} />;
       case 'REMOVE':
         return <RemoveCircle sx={{ mr: 1, color: 'error.main' }} />;
+      case 'LAST_KNOWN_LOCATION':
+        return <GpsFixed sx={{ mr: 1, color: 'primary.main' }} />;
       default:
         return <Info sx={{ mr: 1 }} />;
     }
+  };
+
+  const renderLocationMap = (log: AssetLog) => {
+    if (log.action !== 'last_known_location' || !log.data.location) {
+      return null;
+    }
+
+    const mapLocation = {
+      lat: log.data.location.latitude,
+      lng: log.data.location.longitude
+    };
+
+    const handleNavigateToLocation = () => {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${mapLocation.lat},${mapLocation.lng}`;
+      window.open(url, '_blank');
+    };
+
+    return (
+      <>
+        <Box 
+          sx={{ 
+            height: '200px', 
+            width: '100%', 
+            borderRadius: '8px 8px 0 0',
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: 'divider',
+            position: 'relative',
+            mt: 2
+          }}
+        >
+          <APIProvider apiKey={locationService.getGoogleMapsApiKey()}>
+            <Map
+              defaultCenter={mapLocation}
+              defaultZoom={17}
+              mapId="pyrhouse-map"
+              gestureHandling={'greedy'}
+              disableDefaultUI={false}
+            >
+              <AdvancedMarker position={mapLocation}>
+                <Pin
+                  background={'#1976d2'}
+                  borderColor={'#1565c0'}
+                  glyphColor={'#ffffff'}
+                />
+              </AdvancedMarker>
+            </Map>
+          </APIProvider>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<Navigation />}
+          onClick={handleNavigateToLocation}
+          fullWidth
+          sx={{
+            mt: -1,
+            borderRadius: '0 0 8px 8px',
+            py: 1.5,
+            bgcolor: 'primary.main',
+            '&:hover': {
+              bgcolor: 'primary.dark',
+            },
+            boxShadow: 'none',
+            borderTop: 'none',
+            border: '1px solid',
+            borderColor: 'primary.main'
+          }}
+        >
+          Nawiguj do lokalizacji
+        </Button>
+      </>
+    );
   };
 
   if (loading) {
@@ -229,20 +316,20 @@ const EquipmentDetails: React.FC = () => {
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 4 }}>
         <Chip
           icon={<CheckCircle />}
-          label={`Type: ${type.charAt(0).toUpperCase() + type.slice(1)}`}
+          label={`${type.charAt(0).toUpperCase() + type.slice(1)}`}
           color="success"
           sx={{ fontSize: '0.875rem' }}
         />
         <Chip
           icon={<LocationOn />}
-          label={`Location: ${details.location?.name || 'Unknown'}`}
+          label={`${details.location?.name || 'Unknown'}`}
           color="primary"
           sx={{ fontSize: '0.875rem' }}
         />
         {type === 'stock' && (
           <Chip
-            icon={<Schedule />}
-            label={`Quantity: ${details.quantity || 'N/A'}`}
+            icon={<Inventory2 />}
+            label={`${details.quantity || 'N/A'} szt.`}
             color="secondary"
             sx={{ fontSize: '0.875rem' }}
           />
@@ -545,6 +632,8 @@ const EquipmentDetails: React.FC = () => {
                         </Typography>
                       </Box>
                     )}
+
+                    {renderLocationMap(log)}
                   </CardContent>
                 </Card>
               );
