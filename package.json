@@ -12,10 +12,11 @@
     "analyze": "vite build --mode analyze"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.4",
-    "@emotion/styled": "^11.11.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^5.15.13",
     "@mui/material": "^5.15.13",
+    "@mui/styles": "^6.4.11",
     "@react-google-maps/api": "^2.19.3",
     "@vis.gl/react-google-maps": "^1.5.2",
     "bwip-js": "^4.3.2",

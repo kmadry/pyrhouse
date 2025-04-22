@@ -11,7 +11,7 @@ import { createTransferAPI } from '../../services/transferService';
 import { getUsersAPI } from '../../services/userService';
 import { ErrorMessage } from '../ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { TransferForm } from './components/TransferForm';
+import TransferForm from './components/TransferForm';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { QuestSection } from './components/QuestSection';
 import { TransferFormData } from '../../types/transfer.types';
@@ -202,6 +202,7 @@ const TransferPage: React.FC = () => {
 
       <TransferForm
         onSubmit={handleFormSubmit}
+        onCancel={() => navigate('/transfers')}
         locations={locations}
         stocks={stocks}
         loading={locationsLoading || stocksLoading}

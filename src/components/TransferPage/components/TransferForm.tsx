@@ -1,29 +1,31 @@
 import React, { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
-import { useForm, useFieldArray, useFormContext } from 'react-hook-form';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Autocomplete from '@mui/material/Autocomplete';
-import Chip from '@mui/material/Chip';
+import { useForm, useFieldArray, useFormContext, Controller } from 'react-hook-form';
+import { styled } from '@mui/material/styles';
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  CircularProgress, 
+  Alert, 
+  Typography, 
+  IconButton, 
+  Grid, 
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  Autocomplete,
+  Chip
+} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { searchPyrCodesAPI } from '../../../services/transferService';
 import './TransferForm.css';
 import { TransferFormData } from '../../../types/transfer.types';
-import { Controller } from 'react-hook-form';
+import { Location } from '../../../models/Location';
 
-// Dynamiczne importy dla dużych komponentów
 const LocationPicker = lazy(() => import('../../../components/LocationPicker'));
 
 interface User {
@@ -32,20 +34,71 @@ interface User {
   fullname: string;
 }
 
+interface Stock {
+  id: number;
+  category: {
+    label: string;
+  };
+  quantity: number;
+}
+
 interface TransferFormProps {
-  onSubmit: (data: TransferFormData) => void;
-  locations: any[];
-  stocks: any[];
+  onSubmit: (formData: TransferFormData) => void;
+  onCancel: () => void;
+  locations: Location[];
+  stocks: Stock[];
   loading: boolean;
   error?: string;
   users: User[];
   usersLoading: boolean;
 }
 
-export const TransferForm: React.FC<TransferFormProps> = ({
+const StyledForm = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(3),
+}));
+
+const FormSection = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(2),
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(3),
+}));
+
+const SectionHeader = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(2),
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  '&:hover': {
+    backgroundColor: theme.palette.primary.dark,
+  },
+}));
+
+const StyledListItem = styled(ListItem)(({ theme }) => ({
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
+
+const DialogButton = styled(Button)(({ theme }) => ({
+  margin: theme.spacing(1),
+}));
+
+const ItemsList = styled(List)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+}));
+
+const TransferForm: React.FC<TransferFormProps> = ({
   onSubmit,
+  onCancel,
   locations,
-  stocks,
   loading,
   error,
   users,
@@ -56,7 +109,6 @@ export const TransferForm: React.FC<TransferFormProps> = ({
     handleSubmit,
     watch,
     formState: { errors },
-    setValue,
   } = useForm<TransferFormData>({
     defaultValues: {
       fromLocation: locations.length > 0 ? locations[0].id : 0,
@@ -128,159 +180,189 @@ export const TransferForm: React.FC<TransferFormProps> = ({
 
   return (
     <>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="transfer-form">
+      <StyledForm component="form" onSubmit={handleSubmit(handleFormSubmit)}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Suspense fallback={<CircularProgress />}>
-              <LocationPicker
-                onLocationSelect={(location) => {
-                  const locationId = locations.find(l => 
-                    l.latitude === location.lat && 
-                    l.longitude === location.lng
-                  )?.id;
-                  if (locationId) {
-                    setValue('fromLocation', locationId);
-                  }
-                }}
-                initialLocation={locations.find(l => l.id === fromLocation) ? {
-                  lat: locations.find(l => l.id === fromLocation)?.latitude || 0,
-                  lng: locations.find(l => l.id === fromLocation)?.longitude || 0
-                } : undefined}
-              />
-            </Suspense>
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="To Location"
-              {...control.register('toLocation', { required: true })}
-              error={!!errors.toLocation}
-              helperText={errors.toLocation && 'To location is required'}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Typography variant="h6">Items ({stocks.length} available stocks)</Typography>
-            {fields.map((field, index) => (
-              <Box key={field.id} sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <Controller
-                  name={`items.${index}.pyrcode`}
-                  control={control}
-                  render={({ field: { onChange, value } }) => (
-                    <TextField
-                      data-pyr-input
-                      label="Wpisz kod PYR"
-                      value={value}
-                      onChange={(e) => {
-                        onChange(e);
-                        handlePyrCodeSearch(e.target.value);
-                      }}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleAddItem();
-                        }
-                      }}
-                      error={!!errors.items?.[index]?.pyrcode}
-                      helperText={errors.items?.[index]?.pyrcode?.message}
-                    />
-                  )}
-                />
-                <Grid item xs={3}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Quantity"
-                    {...control.register(`items.${index}.quantity` as const, { 
-                      required: true,
-                      min: 1
-                    })}
-                    error={!!errors.items?.[index]?.quantity}
-                  />
-                </Grid>
-                <Grid item xs={1}>
-                  <IconButton 
-                    onClick={() => remove(index)}
-                    disabled={fields.length === 1}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Grid>
-              </Box>
-            ))}
-            <Button 
-              onClick={handleAddItem}
-              variant="outlined"
-              sx={{ mt: 2 }}
-            >
-              Add Item
-            </Button>
-          </Grid>
-
-          <Grid item xs={12}>
+        <FormSection>
+          <SectionHeader variant="h6">
+            Wybierz lokalizację
+          </SectionHeader>
+          <Suspense fallback={<CircularProgress />}>
             <Controller
-              name="users"
+              name="fromLocation"
               control={control}
-              render={({ field: { onChange, value } }) => (
-                <Autocomplete<User, true, false, false>
-                  multiple
-                  size="small"
-                  options={users}
-                  loading={usersLoading}
-                  value={value || []}
-                  onChange={(_, newValue) => onChange(newValue)}
-                  getOptionLabel={(option) => `${option.username}`}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      size="small"
-                      label="Uczestnicy transferu"
-                      fullWidth
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <>
-                            {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      }}
-                    />
-                  )}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                      <Chip
-                        size="small"
-                        label={`${option.username}`}
-                        {...getTagProps({ index })}
-                        sx={{ maxWidth: { xs: '150px', sm: 'none' } }}
-                      />
-                    ))
-                  }
+              render={({ field }) => (
+                <LocationPicker
+                  onLocationSelect={(location) => {
+                    const locationId = locations.find(l => 
+                      l.lat === location.lat && 
+                      l.lng === location.lng
+                    )?.id;
+                    if (locationId) {
+                      field.onChange(locationId);
+                    }
+                  }}
+                  initialLocation={locations.find(l => l.id === fromLocation) ? {
+                    lat: locations.find(l => l.id === fromLocation)?.lat || 0,
+                    lng: locations.find(l => l.id === fromLocation)?.lng || 0
+                  } : undefined}
                 />
               )}
             />
-          </Grid>
+          </Suspense>
+        </FormSection>
 
-          <Grid item xs={12}>
-            <Button 
-              type="submit" 
-              variant="contained" 
-              color="primary"
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Rozpocznij quest'}
-            </Button>
-          </Grid>
-        </Grid>
-      </form>
+        <FormSection>
+          <SectionHeader variant="h6">
+            Szczegóły transferu
+          </SectionHeader>
+          <Controller
+            name="toLocation"
+            control={control}
+            defaultValue=""
+            rules={{ required: 'To location is required' }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="To Location"
+                fullWidth
+                error={!!errors.toLocation}
+                helperText={errors.toLocation?.message}
+              />
+            )}
+          />
+        </FormSection>
+
+        <FormSection>
+          <SectionHeader variant="h6">
+            Elementy do transferu
+          </SectionHeader>
+          {fields.map((field, index) => (
+            <Box key={field.id} sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Controller
+                name={`items.${index}.pyrcode`}
+                control={control}
+                render={({ field: { onChange, value } }) => (
+                  <TextField
+                    data-pyr-input
+                    label="Wpisz kod PYR"
+                    value={value}
+                    onChange={(e) => {
+                      onChange(e);
+                      handlePyrCodeSearch(e.target.value);
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddItem();
+                      }
+                    }}
+                    error={!!errors.items?.[index]?.pyrcode}
+                    helperText={errors.items?.[index]?.pyrcode?.message}
+                  />
+                )}
+              />
+              <Grid item xs={3}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Quantity"
+                  {...control.register(`items.${index}.quantity` as const, { 
+                    required: true,
+                    min: 1
+                  })}
+                  error={!!errors.items?.[index]?.quantity}
+                />
+              </Grid>
+              <Grid item xs={1}>
+                <IconButton 
+                  onClick={() => remove(index)}
+                  disabled={fields.length === 1}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Grid>
+            </Box>
+          ))}
+          <Button 
+            onClick={handleAddItem}
+            variant="outlined"
+            sx={{ mt: 2 }}
+          >
+            Add Item
+          </Button>
+        </FormSection>
+
+        <FormSection>
+          <SectionHeader variant="h6">
+            Uczestnicy transferu
+          </SectionHeader>
+          <Controller
+            name="users"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <Autocomplete<User, true, false, false>
+                multiple
+                size="small"
+                options={users}
+                loading={usersLoading}
+                value={value || []}
+                onChange={(_, newValue) => onChange(newValue)}
+                getOptionLabel={(option) => `${option.username}`}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Uczestnicy transferu"
+                    fullWidth
+                    InputProps={{
+                      ...params.InputProps,
+                      endAdornment: (
+                        <>
+                          {usersLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      size="small"
+                      label={`${option.username}`}
+                      {...getTagProps({ index })}
+                      sx={{ maxWidth: { xs: '150px', sm: 'none' } }}
+                    />
+                  ))
+                }
+              />
+            )}
+          />
+        </FormSection>
+
+        <Box display="flex" gap={2} justifyContent="flex-end">
+          <Button
+            variant="outlined"
+            onClick={onCancel}
+          >
+            Anuluj
+          </Button>
+          <StyledButton
+            variant="contained"
+            color="primary"
+            type="submit"
+            fullWidth
+          >
+            Zatwierdź transfer
+          </StyledButton>
+        </Box>
+      </StyledForm>
 
       <Dialog 
         open={showConfirmation} 
@@ -302,33 +384,35 @@ export const TransferForm: React.FC<TransferFormProps> = ({
               <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
                 Elementy do transferu:
               </Typography>
-              <List>
+              <ItemsList>
                 {formDataRef.current.items.map((item, index) => (
-                  <ListItem key={index}>
+                  <StyledListItem key={index}>
                     <ListItemText
                       primary={`${item.pyrcode} (${item.quantity} szt.)`}
                       secondary={item.category?.label}
                     />
-                  </ListItem>
+                  </StyledListItem>
                 ))}
-              </List>
+              </ItemsList>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowConfirmation(false)}>
+          <DialogButton onClick={() => setShowConfirmation(false)}>
             Anuluj
-          </Button>
-          <Button 
+          </DialogButton>
+          <DialogButton 
             onClick={handleConfirmSubmit} 
             variant="contained" 
             color="primary"
             disabled={loading}
           >
             {loading ? <CircularProgress size={24} /> : 'Potwierdź quest'}
-          </Button>
+          </DialogButton>
         </DialogActions>
       </Dialog>
     </>
   );
-}; 
+};
+
+export default TransferForm; 

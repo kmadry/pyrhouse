@@ -25,6 +25,32 @@ body {
   transition: all 0.2s ease;
 }
 
+/* Style dla list i menu */
+.MuiList-root {
+  padding: 8px;
+}
+
+.MuiListItem-root {
+  border-radius: 8px;
+  margin: 4px 0;
+  transition: all 0.2s ease;
+}
+
+.MuiListItemButton-root {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+/* Style dla kart i kontenerów */
+.MuiCard-root {
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.MuiContainer-root {
+  padding: 16px;
+}
+
 /* Podstawowe animacje */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -65,4 +91,15 @@ body {
   font-weight: 700;
   font-display: swap;
   src: local('Roboto Bold'), local('Roboto-Bold');
+}
+
+/* Style dla responsywności */
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding: 8px;
+  }
+  
+  .MuiPaper-root {
+    border-radius: 4px;
+  }
 } 

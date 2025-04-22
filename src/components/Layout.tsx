@@ -1,25 +1,19 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import {
-  AppBar,
-  Box,
-  CssBaseline,
-  Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemButton,
-  Toolbar,
-  Typography,
-  Menu as MuiMenu,
-  MenuItem,
-  Tooltip,
-  Divider,
-  useTheme,
-  useMediaQuery,
-  Switch
-} from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import CssBaseline from '@mui/material/CssBaseline';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import MenuIcon from '@mui/icons-material/Menu';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../assets/images/p-logo.svg';
@@ -30,9 +24,15 @@ import { useStorage } from '../hooks/useStorage';
 import { useAnimationPreference } from '../hooks/useAnimationPreference';
 import QuestBoardTransition from './animations/QuestBoardTransition';
 import { LocationTransition } from './animations/LocationTransition';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Tooltip from '@mui/material/Tooltip';
+import Switch from '@mui/material/Switch';
+
+// Dynamiczne importy dla mniej krytycznych komponentów
+const LazyIcon = lazy(() => import('./LazyIcon'));
 
 // Lazy loading dla ikon
-const MenuIcon = lazy(() => import('@mui/icons-material/Menu'));
 const Home = lazy(() => import('@mui/icons-material/Home'));
 const AutoAwesome = lazy(() => import('@mui/icons-material/AutoAwesome'));
 const RocketLaunch = lazy(() => import('@mui/icons-material/RocketLaunch'));
@@ -54,13 +54,6 @@ const Animation = lazy(() => import('@mui/icons-material/Animation'));
 const BlockTwoTone = lazy(() => import('@mui/icons-material/BlockTwoTone'));
 const Logout = lazy(() => import('@mui/icons-material/Logout'));
 const Help = lazy(() => import('@mui/icons-material/Help'));
-
-// Komponent do opakowywania lazy-loaded ikon
-const LazyIcon = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={<Box sx={{ width: 24, height: 24 }} />}>
-    {children}
-  </Suspense>
-);
 
 interface JwtPayload {
   role: string;
@@ -113,6 +106,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [open, setOpen] = useState(!isMobile);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { themeMode, setThemeMode } = useThemeMode();
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [activeItem, setActiveItem] = useState<string>('');
@@ -212,8 +206,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     setActiveItem(path);
   }, []);
 
-  const toggleDrawer = () => {
-    setOpen((prevOpen) => !prevOpen);
+  const handleDrawerToggle = () => {
+    if (isMobile) {
+      setMobileOpen(!mobileOpen);
+    } else {
+      setOpen(!open);
+    }
   };
 
   // Jeśli token jest nieważny, nie renderuj komponentu
@@ -262,7 +260,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     
     // Zamykamy sidebar na urządzeniach mobilnych po kliknięciu w element menu
     if (isMobile) {
-      setOpen(false);
+      setMobileOpen(false);
     }
   };
 
@@ -489,11 +487,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={toggleDrawer}
+            onClick={handleDrawerToggle}
             sx={{ mr: 2 }}
           >
             <LazyIcon>
-              <Icons.Menu />
+              <MenuIcon />
             </LazyIcon>
           </IconButton>
 
@@ -551,7 +549,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </IconButton>
             </Tooltip>
 
-            <MuiMenu
+            <Menu
               anchorEl={userMenuAnchor}
               open={Boolean(userMenuAnchor)}
               onClose={handleUserMenuClose}
@@ -755,22 +753,33 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <ListItemText primary="Wyloguj się" />
                 </MenuItem>
               </Box>
-            </MuiMenu>
+            </Menu>
           </Box>
         </Toolbar>
       </AppBar>
 
       <Drawer
-        variant={isMobile ? "temporary" : "persistent"}
-        anchor="left"
-        open={open}
-        onClose={() => isMobile && setOpen(false)}
+        variant={isMobile ? 'temporary' : 'permanent'}
+        open={isMobile ? mobileOpen : open}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
         sx={{
           ...styles.navigation,
+          display: isMobile ? 'block' : 'block',
           '& .MuiDrawer-paper': {
-            boxShadow: isMobile ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.1)',
-            borderRight: isMobile ? 'none' : '1px solid rgba(0, 0, 0, 0.12)',
-          }
+            width: 240,
+            boxSizing: 'border-box',
+            transition: 'width 0.3s ease-in-out',
+            ...(isMobile && {
+              width: '100%',
+            }),
+            ...(!open && !isMobile && {
+              width: 0,
+              overflow: 'hidden',
+            }),
+          },
         }}
       >
         {drawer}
@@ -782,15 +791,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           ...styles.mainContent,
           marginLeft: open && !isMobile ? '240px' : '0px',
           width: open && !isMobile ? 'calc(100% - 240px)' : '100%',
-          maxWidth: '100vw',
-          overflowX: 'hidden',
-          '& > *': {
-            maxWidth: '100%',
-            overflowX: 'hidden'
-          }
+          transition: 'margin-left 0.3s ease-in-out, width 0.3s ease-in-out',
         }}
       >
-        {children}
+        <Suspense fallback={<div>Ładowanie...</div>}>
+          {children}
+        </Suspense>
         {showQuestTransition && (
           <QuestBoardTransition onAnimationComplete={handleTransitionComplete} />
         )}

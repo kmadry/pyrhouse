@@ -76,7 +76,11 @@ const LocationsPage: React.FC = () => {
       if (editingLocation) {
         await updateLocation(editingLocation.id, formData);
       } else {
-        await createLocation(formData);
+        await createLocation({
+          name: formData.name,
+          lat: 0,
+          lng: 0
+        });
       }
       handleCloseDialog();
       refetch();

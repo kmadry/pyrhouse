@@ -24,6 +24,7 @@ import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
+import PersonIcon from '@mui/icons-material/Person';
 
 // Icons
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
@@ -613,6 +614,28 @@ const TransferDetailsPage: React.FC = () => {
         ) : (
           <Typography>Brak zasobów w tej dostawie.</Typography>
         )}
+      </Paper>
+
+      <Paper sx={{ mt: 4, p: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <PersonIcon sx={{ mr: 1, color: 'primary.main' }} />
+          <Typography variant="h6">Uczestnicy</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {transfer.users && transfer.users.length > 0 ? (
+            transfer.users.map((user: any) => (
+              <Chip
+                key={user.id}
+                label={user.username}
+                icon={<PersonIcon />}
+                color="primary"
+                variant="outlined"
+              />
+            ))
+          ) : (
+            <Typography color="text.secondary">Brak przypisanych użytkowników.</Typography>
+          )}
+        </Box>
       </Paper>
 
       {restoreDialogOpen && selectedItem && (
