@@ -1,5 +1,5 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
@@ -36,6 +36,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import NavigationIcon from '@mui/icons-material/Navigation';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // Services and hooks
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../../services/transferService';
@@ -59,6 +60,7 @@ const statusTranslations: { [key: string]: string } = {
 
 const TransferDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { userRole } = useAuth();
   const [transfer, setTransfer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -361,10 +363,35 @@ const TransferDetailsPage: React.FC = () => {
   }
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Status Quest'a
-      </Typography>
+    <Container maxWidth="lg" sx={{ py: 1 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: 2,
+        mb: 3 
+      }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/transfers')}
+          size="small"
+          sx={{
+            minWidth: 'auto',
+            px: 1.5,
+            py: 0.75,
+            color: 'text.secondary',
+            '&:hover': {
+              color: 'primary.main',
+              backgroundColor: 'transparent'
+            }
+          }}
+        >
+          Powrót
+        </Button>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 'medium' }}>
+          Status Quest'a #{id}
+        </Typography>
+      </Box>
+
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box>
           <Stepper activeStep={currentStep}>

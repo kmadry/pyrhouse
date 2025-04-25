@@ -318,17 +318,34 @@ const UserDetailsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center',
+        gap: 2,
+        mb: 3 
+      }}>
         {canGoBack && (
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate('/users')}
-            variant="outlined"
-            color="primary"
+            size="small"
+            sx={{
+              minWidth: 'auto',
+              px: 1.5,
+              py: 0.75,
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+                backgroundColor: 'transparent'
+              }
+            }}
           >
-            Powrót do listy użytkowników
+            Powrót
           </Button>
         )}
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 'medium' }}>
+          Profil użytkownika
+        </Typography>
       </Box>
 
       <Grid container spacing={3}>

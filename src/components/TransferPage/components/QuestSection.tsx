@@ -21,6 +21,17 @@ interface QuestSectionProps {
 export const QuestSection: React.FC<QuestSectionProps> = ({ questData }) => {
   if (!questData) return null;
 
+  const chipStyle = {
+    backgroundColor: '#E6CB99',
+    color: '#54291E',
+    '& .MuiChip-icon': {
+      color: '#54291E'
+    },
+    '& .MuiChip-label': {
+      color: '#54291E'
+    }
+  };
+
   return (
     <Paper 
       elevation={3} 
@@ -31,14 +42,15 @@ export const QuestSection: React.FC<QuestSectionProps> = ({ questData }) => {
         border: '1px solid #E6CB99',
         '& .MuiPaper-root': {
           transition: 'none',
-        },
-        '&:hover': {
-          backgroundColor: '#FFF8E7',
         }
       }}
     >
-      <Box sx={{ mb: 1, color: '#54291E', fontFamily: '"Cinzel", serif' }}>
-        <Typography variant="h6">
+      <Box sx={{ mb: 1 }}>
+        <Typography variant="h6" sx={{ 
+          color: '#54291E',
+          fontFamily: '"Cinzel", serif',
+          fontWeight: 500
+        }}>
           Aktywny Quest
         </Typography>
       </Box>
@@ -48,24 +60,24 @@ export const QuestSection: React.FC<QuestSectionProps> = ({ questData }) => {
           size="small"
           icon={<Person />}
           label={`Odbiorca: ${questData.recipient}`}
-          sx={{ backgroundColor: '#E6CB99' }}
+          sx={chipStyle}
         />
         <Chip
           size="small"
           icon={<Event />}
           label={`Termin: ${new Date(questData.deliveryDate).toLocaleDateString()}`}
-          sx={{ backgroundColor: '#E6CB99' }}
+          sx={chipStyle}
         />
         <Chip
           size="small"
           icon={<LocationOn />}
           label={`${questData.location} - ${questData.pavilion}`}
-          sx={{ backgroundColor: '#E6CB99' }}
+          sx={chipStyle}
         />
       </Box>
 
-      <Box sx={{ color: '#54291E', mb: 0.5 }}>
-        <Typography variant="body2">
+      <Box sx={{ mt: 2, mb: 0.5 }}>
+        <Typography variant="body2" sx={{ color: '#54291E' }}>
           Wymagane przedmioty:
         </Typography>
       </Box>
@@ -75,12 +87,7 @@ export const QuestSection: React.FC<QuestSectionProps> = ({ questData }) => {
             size="small"
             key={index}
             label={`${item.quantity}x ${item.item_name}${item.notes ? ` (${item.notes})` : ''}`}
-            sx={{ 
-              backgroundColor: '#E6CB99',
-              '& .MuiChip-label': {
-                color: '#54291E'
-              }
-            }}
+            sx={chipStyle}
           />
         ))}
       </Box>

@@ -35,9 +35,11 @@ import { ErrorMessage } from '../ui/ErrorMessage';
 import { deleteLocation, updateLocation, createLocation } from '../../services/locationService';
 import { Location } from '../../models/Location';
 import * as Icons from '@mui/icons-material';
+import { useAuth } from '../../hooks/useAuth';
 
 const LocationsPage: React.FC = () => {
   const { locations, error, refetch, loading } = useLocations();
+  const { userRole } = useAuth();
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
@@ -47,6 +49,10 @@ const LocationsPage: React.FC = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const hasAdminAccess = () => {
+    return userRole === 'admin' || userRole === 'moderator';
+  };
 
   useEffect(() => {
     refetch();
@@ -137,7 +143,7 @@ const LocationsPage: React.FC = () => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-            {['ID', 'Nazwa', 'Akcje'].map((field) => (
+            {['ID', 'Nazwa', hasAdminAccess() ? 'Akcje' : ''].map((field) => (
               <TableCell 
                 key={field} 
                 sx={{ 
@@ -174,31 +180,33 @@ const LocationsPage: React.FC = () => {
                   {location.name}
                 </Typography>
               </TableCell>
-              <TableCell>
-                <Box 
-                  sx={{ 
-                    display: 'flex', 
-                    gap: 1,
-                    justifyContent: 'flex-end'
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleOpenDialog(location)}
-                    size="small"
+              {hasAdminAccess() && (
+                <TableCell>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      gap: 1,
+                      justifyContent: 'flex-end'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(location.id)}
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenDialog(location)}
+                      size="small"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(location.id)}
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -243,30 +251,32 @@ const LocationsPage: React.FC = () => {
                 </Box>
               </Box>
 
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  gap: 1,
-                  justifyContent: 'flex-end',
-                  mt: 2
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <IconButton
-                  color="primary"
-                  onClick={() => handleOpenDialog(location)}
-                  size="small"
+              {hasAdminAccess() && (
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    gap: 1,
+                    justifyContent: 'flex-end',
+                    mt: 2
+                  }}
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <EditIcon />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  onClick={() => handleDelete(location.id)}
-                  size="small"
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleOpenDialog(location)}
+                    size="small"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDelete(location.id)}
+                    size="small"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -314,18 +324,20 @@ const LocationsPage: React.FC = () => {
         >
           Lokalizacje
         </Typography>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          sx={{
-            borderRadius: 1,
-            px: 3
-          }}
-        >
-          Dodaj lokalizację
-        </Button>
+        {hasAdminAccess() && (
+          <Button 
+            variant="contained" 
+            color="primary" 
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+            sx={{
+              borderRadius: 1,
+              px: 3
+            }}
+          >
+            Dodaj lokalizację
+          </Button>
+        )}
       </Box>
 
       <Box sx={{ 
