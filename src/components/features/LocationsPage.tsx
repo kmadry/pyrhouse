@@ -77,10 +77,24 @@ const LocationsPage: React.FC = () => {
     try {
       setDialogError(null);
       if (editingLocation) {
-        await updateLocation(editingLocation.id, {
-          name: formData.name,
-          details: formData.details.trim() || null
-        });
+        const updateData: Partial<Location> = {};
+        
+        // Dodaj do updateData tylko te pola, które się zmieniły
+        if (formData.name !== editingLocation.name) {
+          updateData.name = formData.name;
+        }
+        
+        // Porównaj details z uwzględnieniem null i pustego stringa
+        const currentDetails = formData.details.trim() || null;
+        const originalDetails = editingLocation.details || null;
+        if (currentDetails !== originalDetails) {
+          updateData.details = currentDetails;
+        }
+
+        // Wykonaj aktualizację tylko jeśli są jakieś zmiany
+        if (Object.keys(updateData).length > 0) {
+          await updateLocation(editingLocation.id, updateData);
+        }
       } else {
         await createLocation({
           name: formData.name,

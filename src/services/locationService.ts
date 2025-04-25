@@ -75,13 +75,21 @@ export const deleteLocation = async (id: number): Promise<void> => {
 
 export const updateLocation = async (id: number, data: Partial<Location>): Promise<Location> => {
   const token = localStorage.getItem('token');
+  
+  // Przygotuj obiekt z tylko tymi polami, które zostały przekazane
+  const updateData: Partial<Location> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.details !== undefined) updateData.details = data.details;
+  if (data.lat !== undefined) updateData.lat = data.lat;
+  if (data.lng !== undefined) updateData.lng = data.lng;
+
   const response = await fetch(getApiUrl(`/locations/${id}`), {
-    method: 'PUT',
+    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(updateData),
   });
   
   if (!response.ok) {
