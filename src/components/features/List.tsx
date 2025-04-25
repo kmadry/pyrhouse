@@ -25,10 +25,10 @@ import {
 } from '@mui/material';
 import { CheckCircle, ErrorOutline, LocalShipping, Home } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useLocations } from '../hooks/useLocations';
-import { useCategories } from '../hooks/useCategories';
-import { ErrorMessage } from './ErrorMessage';
-import { getApiUrl } from '../config/api';
+import { useLocations } from '../../hooks/useLocations';
+import { useCategories } from '../../hooks/useCategories';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { getApiUrl } from '../../config/api';
 import * as Icons from '@mui/icons-material';
 
 interface Location {

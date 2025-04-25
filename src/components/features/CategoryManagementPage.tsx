@@ -33,8 +33,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { useCategories } from '../hooks/useCategories';
-import { ErrorMessage } from './ErrorMessage';
+import { useCategories } from '../../hooks/useCategories';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import * as Icons from '@mui/icons-material';
 
 const CategoryManagementPage: React.FC = () => {

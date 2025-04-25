@@ -27,8 +27,8 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
-import { getApiUrl } from '../config/api';
-import { ErrorMessage } from './ErrorMessage';
+import { getApiUrl } from '../../config/api';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';

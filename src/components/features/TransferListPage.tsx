@@ -21,8 +21,8 @@ import {
   Divider,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useTransfers } from '../hooks/useTransfers';
-import { ErrorMessage } from './ErrorMessage';
+import { useTransfers } from '../../hooks/useTransfers';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';

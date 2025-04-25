@@ -32,11 +32,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import AddIcon from '@mui/icons-material/Add';
-import { useLocations } from '../hooks/useLocations';
-import { useStocks } from '../hooks/useStocks';
-import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../services/transferService';
-import { getUsersAPI } from '../services/userService';
-import { ErrorMessage } from './ErrorMessage';
+import { useLocations } from '../../hooks/useLocations';
+import { useStocks } from '../../hooks/useStocks';
+import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../../services/transferService';
+import { getUsersAPI } from '../../services/userService';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LocationOn, Event, Person, Inventory, Close, Check } from '@mui/icons-material';
 

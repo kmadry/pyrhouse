@@ -9,7 +9,7 @@ import { useLocations } from '../../hooks/useLocations';
 import { useStocks } from '../../hooks/useStocks';
 import { createTransferAPI } from '../../services/transferService';
 import { getUsersAPI } from '../../services/userService';
-import { ErrorMessage } from '../ErrorMessage';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TransferForm from './components/TransferForm';
 import { ConfirmationDialog } from './components/ConfirmationDialog';

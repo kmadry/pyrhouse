@@ -34,7 +34,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { ErrorMessage } from './ErrorMessage';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import PersonIcon from '@mui/icons-material/Person';
@@ -45,7 +45,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import StarIcon from '@mui/icons-material/Star';
 import LockIcon from '@mui/icons-material/Lock';
 import { jwtDecode } from 'jwt-decode';
-import { getApiUrl } from '../config/api';
+import { getApiUrl } from '../../config/api';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {

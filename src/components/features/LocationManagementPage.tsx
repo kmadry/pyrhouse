@@ -26,8 +26,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import AddIcon from '@mui/icons-material/Add';
-import { ErrorMessage } from './ErrorMessage';
-import { getApiUrl } from '../config/api';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { getApiUrl } from '../../config/api';
 import * as Icons from '@mui/icons-material';
 
 const LocationManagementPage: React.FC = () => {

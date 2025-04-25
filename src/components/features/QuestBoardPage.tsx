@@ -13,11 +13,11 @@ import {
 } from '@mui/material';
 import { AccessTime, LocationOn, AddCircleOutline } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
-import { useStorage } from '../hooks/useStorage';
-import { getApiUrl } from '../config/api';
-import { ErrorMessage } from './ErrorMessage';
+import { useStorage } from '../../hooks/useStorage';
+import { getApiUrl } from '../../config/api';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 import QuestLoadingBar from './QuestLoadingBar';
 
 interface Quest {

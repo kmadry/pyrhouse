@@ -26,9 +26,9 @@ import {
   Divider,
   Chip,
 } from '@mui/material';
-import { ErrorMessage } from './ErrorMessage';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { useNavigate } from 'react-router-dom';
-import { getApiUrl } from '../config/api';
+import { getApiUrl } from '../../config/api';
 import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';

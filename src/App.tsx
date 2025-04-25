@@ -1,28 +1,28 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
-import LoginForm from './components/LoginForm';
-import Home from './components/Home';
-import List from './components/List';
-import PrivateRoute from './components/Authorisation';
-import Layout from './components/Layout';
-import TransferPage from './components/TransferPage';
-import AddItemPage from './components/AddItemPage';
+import LoginForm from './components/features/LoginForm';
+import Home from './components/features/Home';
+import List from './components/features/List';
+import PrivateRoute from './components/features/Authorisation';
+import Layout from './components/layout/Layout';
+import TransferPage from './components/features/TransferPage';
+import AddItemPage from './components/features/AddItemPage';
 import { ThemeProvider } from './theme/ThemeContext';
-import LoadingSkeleton from './components/LoadingSkeleton';
-import QuestLoadingBar from './components/QuestLoadingBar';
+import LoadingSkeleton from './components/ui/LoadingSkeleton';
+import QuestLoadingBar from './components/features/QuestLoadingBar';
 
 // Lazy loaded components
-const UserManagementPage = lazy(() => import('./components/UserManagementPage'));
-const UserDetailsPage = lazy(() => import('./components/UserDetailsPage'));
-const CategoryManagementPage = lazy(() => import('./components/CategoryManagementPage'));
-const TransfersListPage = lazy(() => import('./components/TransferListPage'));
-const TransferDetailsPage = lazy(() => import('./components/TransferDetailsPage'));
-const QuestBoard = lazy(() => import('./components/QuestBoardPage'));
-const EquipmentDetails = lazy(() => import('./components/EquipmentDetails'));
-const LocationsPage = lazy(() => import('./components/LocationsPage'));
-const LocationDetailsPage = lazy(() => import('./components/LocationDetailsPage'));
-const TutorialPage = lazy(() => import('./components/TutorialPage'));
+const UserManagementPage = lazy(() => import('./components/features/UserManagementPage'));
+const UserDetailsPage = lazy(() => import('./components/features/UserDetailsPage'));
+const CategoryManagementPage = lazy(() => import('./components/features/CategoryManagementPage'));
+const TransfersListPage = lazy(() => import('./components/features/TransferListPage'));
+const TransferDetailsPage = lazy(() => import('./components/features/TransferDetailsPage'));
+const QuestBoard = lazy(() => import('./components/features/QuestBoardPage'));
+const EquipmentDetails = lazy(() => import('./components/features/EquipmentDetails'));
+const LocationsPage = lazy(() => import('./components/features/LocationsPage'));
+const LocationDetailsPage = lazy(() => import('./components/features/LocationDetailsPage'));
+const TutorialPage = lazy(() => import('./components/features/TutorialPage'));
 
 // Konfiguracja flag React Router v7
 const routerFutureConfig = {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, IconButton, Tooltip, Alert } from '@mui/material';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
-import { locationService } from '../services/locationService';
+import { locationService } from '../../services/locationService';
 
 interface MapComponentProps {
   transfer: any;

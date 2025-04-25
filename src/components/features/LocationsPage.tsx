@@ -30,10 +30,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
-import { useLocations } from '../hooks/useLocations';
-import { ErrorMessage } from './ErrorMessage';
-import { deleteLocation, updateLocation, createLocation } from '../services/locationService';
-import { Location } from '../models/Location';
+import { useLocations } from '../../hooks/useLocations';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { deleteLocation, updateLocation, createLocation } from '../../services/locationService';
+import { Location } from '../../models/Location';
 import * as Icons from '@mui/icons-material';
 
 const LocationsPage: React.FC = () => {

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import { vi } from 'vitest';
-import TransferPage from '../TransferPage';
+import TransferPage from '../TransferPage/TransferPage';
 import { useForm, FormProvider } from 'react-hook-form';
 import { validatePyrCodeAPI, searchPyrCodesAPI } from '../../services/transferService';
 import { ReactNode } from 'react';

@@ -20,10 +20,10 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import { ErrorMessage } from './ErrorMessage';
-import { useLocations } from '../hooks/useLocations';
-import { TransferModal } from './TransferPage/components/TransferModal';
-import { getLocationDetails } from '../services/locationService';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { useLocations } from '../../hooks/useLocations';
+import { TransferModal } from '../TransferPage/components/TransferModal';
+import { getLocationDetails } from '../../services/locationService';
 import { useTheme, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import InfoIcon from '@mui/icons-material/Info';

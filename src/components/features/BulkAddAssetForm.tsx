@@ -17,8 +17,8 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import { bulkAddAssetsAPI } from '../services/assetService';
-import { BarcodeGenerator } from './BarcodeGenerator';
+import { bulkAddAssetsAPI } from '../../services/assetService';
+import { BarcodeGenerator } from '../common/BarcodeGenerator';
 
 interface AssetEntry {
   id: string;

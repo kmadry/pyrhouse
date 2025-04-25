@@ -29,13 +29,13 @@ import {
   Navigation,
 } from '@mui/icons-material';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { ErrorMessage } from './ErrorMessage';
-import { deleteAsset } from '../services/assetService';
-import { BarcodeGenerator } from './BarcodeGenerator';
-import { useLocations } from '../hooks/useLocations';
-import { getApiUrl } from '../config/api';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { deleteAsset } from '../../services/assetService';
+import { BarcodeGenerator } from '../common/BarcodeGenerator';
+import { useLocations } from '../../hooks/useLocations';
+import { getApiUrl } from '../../config/api';
 import { useTheme } from '@mui/material/styles';
-import { locationService } from '../services/locationService';
+import { locationService } from '../../services/locationService';
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 
 interface AssetLog {
