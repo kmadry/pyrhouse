@@ -41,7 +41,7 @@ const LocationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-  const [formData, setFormData] = useState({ name: '' });
+  const [formData, setFormData] = useState({ name: '', details: '' });
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -55,10 +55,13 @@ const LocationsPage: React.FC = () => {
   const handleOpenDialog = (location?: Location) => {
     if (location) {
       setEditingLocation(location);
-      setFormData({ name: location.name });
+      setFormData({ 
+        name: location.name,
+        details: location.details || ''
+      });
     } else {
       setEditingLocation(null);
-      setFormData({ name: '' });
+      setFormData({ name: '', details: '' });
     }
     setOpenDialog(true);
   };
@@ -66,7 +69,7 @@ const LocationsPage: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingLocation(null);
-    setFormData({ name: '' });
+    setFormData({ name: '', details: '' });
     setDialogError(null);
   };
 
@@ -74,10 +77,14 @@ const LocationsPage: React.FC = () => {
     try {
       setDialogError(null);
       if (editingLocation) {
-        await updateLocation(editingLocation.id, formData);
+        await updateLocation(editingLocation.id, {
+          name: formData.name,
+          details: formData.details.trim() || null
+        });
       } else {
         await createLocation({
           name: formData.name,
+          details: formData.details.trim() || null,
           lat: 0,
           lng: 0
         });
@@ -385,47 +392,57 @@ const LocationsPage: React.FC = () => {
         isMobile ? renderMobileCards() : renderTable()
       )}
 
-      <Dialog 
-        open={openDialog} 
+      <Dialog
+        open={openDialog}
         onClose={handleCloseDialog}
         PaperProps={{
           sx: {
             borderRadius: 2,
-            minWidth: { xs: '90%', sm: 400 }
+            maxWidth: '500px',
+            width: '100%'
           }
         }}
       >
         <DialogTitle>
           {editingLocation ? 'Edytuj lokalizację' : 'Dodaj nową lokalizację'}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              autoFocus
+              label="Nazwa lokalizacji"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              fullWidth
+              required
+              size="small"
+            />
+            <TextField
+              label="Szczegóły (opcjonalne)"
+              value={formData.details}
+              onChange={(e) => setFormData(prev => ({ ...prev, details: e.target.value }))}
+              fullWidth
+              multiline
+              rows={3}
+              size="small"
+              placeholder="Dodaj dodatkowe informacje o lokalizacji..."
+            />
+          </Box>
           {dialogError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mt: 2 }}>
               {dialogError}
             </Alert>
           )}
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Nazwa lokalizacji"
-            fullWidth
-            value={formData.name}
-            onChange={(e) => setFormData({ name: e.target.value })}
-            sx={{ mt: 1 }}
-          />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button 
-            onClick={handleCloseDialog}
-            sx={{ borderRadius: 1 }}
-          >
+          <Button onClick={handleCloseDialog} variant="outlined" size="small">
             Anuluj
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            variant="contained" 
-            color="primary"
-            sx={{ borderRadius: 1 }}
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={!formData.name.trim()}
+            size="small"
           >
             {editingLocation ? 'Zapisz' : 'Dodaj'}
           </Button>

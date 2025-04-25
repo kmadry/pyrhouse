@@ -541,8 +541,19 @@ const TransferPage: React.FC = () => {
                   Wybierz lokalizację docelową
                 </MenuItem>
                 {locations.map((location: any) => (
-                  <MenuItem key={location.id} value={location.id}>
+                  <MenuItem 
+                    key={location.id} 
+                    value={location.id}
+                    disabled={location.id === fromLocation}
+                    sx={location.id === fromLocation ? {
+                      opacity: 0.5,
+                      '&:hover': {
+                        cursor: 'not-allowed'
+                      }
+                    } : {}}
+                  >
                     {location.name}
+                    {location.id === fromLocation && " (lokalizacja źródłowa)"}
                   </MenuItem>
                 ))}
               </Select>

@@ -313,7 +313,15 @@ const EquipmentDetails: React.FC = () => {
       </Typography>
 
       {/* Quick Stats Section */}
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 4 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        gap: 1, 
+        flexWrap: 'wrap', 
+        mb: 4,
+        '& .MuiChip-root': {
+          mb: { xs: 1, sm: 0 }
+        }
+      }}>
         <Chip
           icon={<CheckCircle />}
           label={`${type.charAt(0).toUpperCase() + type.slice(1)}`}
@@ -340,7 +348,7 @@ const EquipmentDetails: React.FC = () => {
       <Box 
         sx={{ 
           mb: 4, 
-          p: { xs: 2, sm: 3 }, 
+          p: { xs: 1.5, sm: 3 }, 
           bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : 'white', 
           borderRadius: 2, 
           boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
@@ -348,15 +356,17 @@ const EquipmentDetails: React.FC = () => {
           borderColor: 'divider'
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
           {/* Nagłówek sekcji */}
           <Box sx={{ 
             display: 'flex', 
-            alignItems: 'center', 
+            // alignItems: 'center', 
             gap: 2,
             pb: 2,
             borderBottom: '1px solid',
-            borderColor: 'divider'
+            borderColor: 'divider',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' }
           }}>
             <Box sx={{ 
               p: 1, 
@@ -378,11 +388,11 @@ const EquipmentDetails: React.FC = () => {
           <Box sx={{ 
             display: 'grid', 
             gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-            gap: 3 
+            gap: { xs: 2, sm: 3 } 
           }}>
             {/* Lewa kolumna */}
             <Box sx={{ 
-              p: 2,
+              p: { xs: 1.5, sm: 2 },
               bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
               borderRadius: 1,
               border: '1px solid',
@@ -418,7 +428,7 @@ const EquipmentDetails: React.FC = () => {
 
             {/* Prawa kolumna */}
             <Box sx={{ 
-              p: 2,
+              p: { xs: 1.5, sm: 2 },
               bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
               borderRadius: 1,
               border: '1px solid',
@@ -459,22 +469,27 @@ const EquipmentDetails: React.FC = () => {
 
           {/* Status i dodatkowe informacje */}
           <Box sx={{ 
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 2,
+            display: 'grid',
+            gridTemplateColumns: { 
+              xs: '1fr', 
+              sm: 'repeat(2, 1fr)', 
+              md: 'repeat(2, 1fr)',
+              lg: 'repeat(3, 1fr)'
+            },
+            gap: { xs: 2, sm: 2 },
             mt: 1
           }}>
             {type === 'asset' && (
               <Box sx={{ 
-                flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
                 borderRadius: 1,
                 border: '1px solid',
-                borderColor: 'divider'
+                borderColor: 'divider',
+                gridColumn: { xs: '1 / -1', sm: 'auto', lg: 'auto' }
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body2" color="text.secondary">
@@ -491,15 +506,15 @@ const EquipmentDetails: React.FC = () => {
             )}
             {type === 'asset' && details.pyrcode && (
               <Box sx={{ 
-                flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
                 borderRadius: 1,
                 border: '1px solid',
-                borderColor: 'divider'
+                borderColor: 'divider',
+                gridColumn: { xs: '1 / -1', sm: 'auto', lg: 'auto' }
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body2" color="text.secondary">
@@ -516,19 +531,58 @@ const EquipmentDetails: React.FC = () => {
                 </Button>
               </Box>
             )}
+            {type === 'asset' && (
+              <Box sx={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: { xs: 1.5, sm: 2 },
+                bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                gridColumn: { xs: '1 / -1', sm: 'auto', lg: 'auto' }
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Usuń zasób
+                  </Typography>
+                </Box>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setShowDeleteConfirmation(true)}
+                  disabled={isDeleting}
+                  sx={{ minWidth: 130 }}
+                >
+                  {isDeleting ? 'Usuwanie...' : 'Usuń'}
+                </Button>
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>
 
       {/* History Logs Section */}
       <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          <History sx={{ verticalAlign: 'bottom', marginRight: 1 }} />
+        <Typography variant="h6" gutterBottom sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1
+        }}>
+          <History sx={{ verticalAlign: 'bottom' }} />
           Historia
         </Typography>
         <Divider sx={{ my: 2 }} />
         {logs.length > 0 ? (
-          <List>
+          <List sx={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2
+          }}>
             {sortedLogs.map((log) => {
               const locationInfo = getLocationInfo(log);
               return (
@@ -643,21 +697,6 @@ const EquipmentDetails: React.FC = () => {
           <Typography>Brak historii dla tego elementu.</Typography>
         )}
       </Box>
-
-      {/* Delete Button Section - tylko dla zasobów typu 'asset' */}
-      {type === 'asset' && (
-        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-          <Button
-            variant="contained"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={() => setShowDeleteConfirmation(true)}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Usuwanie...' : 'Usuń zasób'}
-          </Button>
-        </Box>
-      )}
 
       {/* Delete Confirmation Modal */}
       <Dialog
