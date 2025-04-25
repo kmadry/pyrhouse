@@ -26,7 +26,7 @@ import './TransferForm.css';
 import { TransferFormData } from '../../../types/transfer.types';
 import { Location } from '../../../models/Location';
 
-const LocationPicker = lazy(() => import('../../../components/LocationPicker'));
+const LocationPicker = lazy(() => import('../../common/LocationPicker'));
 
 interface User {
   id: number;

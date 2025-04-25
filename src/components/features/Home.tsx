@@ -24,10 +24,10 @@ import {
   ListAlt,
   AddTask
 } from '@mui/icons-material';
-import { useTransfers } from '../hooks/useTransfers';
-import { ErrorMessage } from './ErrorMessage';
+import { useTransfers } from '../../hooks/useTransfers';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { styled } from '@mui/material/styles';
-import { getApiUrl } from '../config/api';
+import { getApiUrl } from '../../config/api';
 import { jwtDecode } from 'jwt-decode';
 import { alpha } from '@mui/material/styles';
 

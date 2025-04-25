@@ -8,9 +8,9 @@ import {
   CircularProgress,
   Dialog,
 } from '@mui/material';
-import { ErrorMessage } from './ErrorMessage';
-import { BarcodeGenerator } from './BarcodeGenerator';
-import { getApiUrl } from '../config/api';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { BarcodeGenerator } from '../common/BarcodeGenerator';
+import { getApiUrl } from '../../config/api';
 
 // Origin options array
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];

@@ -80,6 +80,20 @@ export const TransferModal: React.FC<TransferModalProps> = ({
       setLoading(true);
       setError(null);
 
+      // Walidacja ilości przedmiotów
+      for (const stockId of selectedStocks) {
+        const stockItem = stockItems.find(item => item.id === stockId);
+        const requestedQuantity = stockQuantities[stockId] || 1;
+        
+        if (!stockItem) {
+          throw new Error('Nie znaleziono wybranego przedmiotu');
+        }
+        
+        if (requestedQuantity > stockItem.quantity) {
+          throw new Error(`Nie można przenieść ${requestedQuantity} sztuk przedmiotu ${stockItem.category.name}. Dostępna ilość: ${stockItem.quantity}`);
+        }
+      }
+
       const payload = {
         from_location_id: fromLocationId,
         location_id: Number(toLocationId),
@@ -186,6 +200,9 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                       }}
                       sx={{ width: 100 }}
                     />
+                    <Typography variant="body2" color="text.secondary">
+                      (dostępne: {stockItem?.quantity || 0})
+                    </Typography>
                   </Box>
                 );
               })}

@@ -159,6 +159,9 @@ export const useCategories = () => {
         throw new Error('Failed to delete category');
       }
 
+      // Inwalidacja cache'u
+      localStorage.removeItem(CACHE_KEY);
+      
       setCategories((prev) => prev.filter((category) => category.id !== id));
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');

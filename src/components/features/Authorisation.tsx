@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTokenValidation } from '../hooks/useTokenValidation';
+import { useTokenValidation } from '../../hooks/useTokenValidation';
 import { jwtDecode } from 'jwt-decode';
-import { useStorage } from '../hooks/useStorage';
+import { useStorage } from '../../hooks/useStorage';
 
 interface JwtPayload {
   role: string;

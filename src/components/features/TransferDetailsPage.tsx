@@ -38,16 +38,16 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import NavigationIcon from '@mui/icons-material/Navigation';
 
 // Services and hooks
-import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../services/transferService';
-import { ErrorMessage } from './ErrorMessage';
-import { useLocations } from '../hooks/useLocations';
-import { MapPosition, locationService } from '../services/locationService';
-import { useAuth } from '../hooks/useAuth';
+import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../../services/transferService';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { useLocations } from '../../hooks/useLocations';
+import { MapPosition, locationService } from '../../services/locationService';
+import { useAuth } from '../../hooks/useAuth';
 
 // Lazy loaded components
-const MapComponent = lazy(() => import('./MapComponent'));
-const LocationPicker = lazy(() => import('./LocationPicker'));
-const RestoreDialog = lazy(() => import('./RestoreDialog'));
+const MapComponent = lazy(() => import('../common/MapComponent'));
+const LocationPicker = lazy(() => import('../common/LocationPicker'));
+const RestoreDialog = lazy(() => import('../common/RestoreDialog'));
 
 const statusTranslations: { [key: string]: string } = {
   'created': 'Utworzony',

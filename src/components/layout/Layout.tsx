@@ -16,21 +16,21 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import styles from './Layout.styles';
-import pyrkonLogo from '../assets/images/p-logo.svg';
-import { useThemeMode } from '../theme/ThemeContext';
+import pyrkonLogo from '../../assets/images/p-logo.svg';
+import { useThemeMode } from '../../theme/ThemeContext';
 import { jwtDecode } from 'jwt-decode';
-import { useTokenValidation } from '../hooks/useTokenValidation';
-import { useStorage } from '../hooks/useStorage';
-import { useAnimationPreference } from '../hooks/useAnimationPreference';
-import QuestBoardTransition from './animations/QuestBoardTransition';
-import { LocationTransition } from './animations/LocationTransition';
+import { useTokenValidation } from '../../hooks/useTokenValidation';
+import { useStorage } from '../../hooks/useStorage';
+import { useAnimationPreference } from '../../hooks/useAnimationPreference';
+import QuestBoardTransition from '../animations/QuestBoardTransition';
+import { LocationTransition } from '../animations/LocationTransition';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Tooltip from '@mui/material/Tooltip';
 import Switch from '@mui/material/Switch';
 
 // Dynamiczne importy dla mniej krytycznych komponentów
-const LazyIcon = lazy(() => import('./LazyIcon'));
+const LazyIcon = lazy(() => import('../ui/LazyIcon'));
 
 // Lazy loading dla ikon
 const Home = lazy(() => import('@mui/icons-material/Home'));

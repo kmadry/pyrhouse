@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
-import { MapPosition, locationService } from '../services/locationService';
+import { MapPosition, locationService } from '../../services/locationService';
 import { MyLocation, Save } from '@mui/icons-material';
 
 interface LocationPickerProps {

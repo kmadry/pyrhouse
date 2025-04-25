@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, Select, MenuItem, TextField, CircularProgress, InputLabel, FormControl } from '@mui/material';
-import { ErrorMessage } from './ErrorMessage'; // Import ErrorMessage component
-import { getApiUrl } from '../config/api';
+import { ErrorMessage } from '../ui/ErrorMessage';
+import { getApiUrl } from '../../config/api';
 
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
 

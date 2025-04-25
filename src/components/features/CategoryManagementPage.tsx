@@ -28,13 +28,14 @@ import {
   Divider,
   Chip,
   IconButton,
+  Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import { useCategories } from '../hooks/useCategories';
-import { ErrorMessage } from './ErrorMessage';
+import { useCategories } from '../../hooks/useCategories';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import * as Icons from '@mui/icons-material';
 
 const CategoryManagementPage: React.FC = () => {
@@ -52,6 +53,8 @@ const CategoryManagementPage: React.FC = () => {
   // State for delete confirmation modal
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
@@ -91,6 +94,18 @@ const CategoryManagementPage: React.FC = () => {
     }
   };
 
+  const getErrorMessage = (error: string): string => {
+    const errorMessages: { [key: string]: string } = {
+      'Failed to delete asset category': 'Nie można usunąć kategorii, ponieważ jest używana',
+      'Failed to delete category': 'Nie udało się usunąć kategorii',
+      'Category not found': 'Kategoria nie została znaleziona',
+      'Unauthorized access': 'Brak uprawnień do usunięcia kategorii',
+      'Server error occurred': 'Wystąpił błąd serwera',
+    };
+
+    return errorMessages[error] || 'Wystąpił nieoczekiwany błąd podczas usuwania kategorii';
+  };
+
   const handleOpenDeleteModal = (categoryId: number) => {
     setCategoryToDelete(categoryId);
     setDeleteModalOpen(true);
@@ -99,15 +114,32 @@ const CategoryManagementPage: React.FC = () => {
   const handleCloseDeleteModal = () => {
     setDeleteModalOpen(false);
     setCategoryToDelete(null);
+    setDeleteError(null);
   };
 
   const handleConfirmDelete = async () => {
     if (categoryToDelete) {
       try {
+        setDeleteError(null);
+        setGlobalError(null);
         await deleteCategory(categoryToDelete);
         handleCloseDeleteModal();
-      } catch (err) {
-        console.error('Błąd podczas usuwania kategorii:', err);
+      } catch (err: any) {
+        let errorMessage = 'Wystąpił nieoczekiwany błąd';
+        
+        if (err.message === 'Failed to delete category') {
+          errorMessage = getErrorMessage('Failed to delete category');
+        } else if (err.message) {
+          try {
+            const errorData = JSON.parse(err.message);
+            errorMessage = getErrorMessage(errorData.error);
+          } catch {
+            errorMessage = getErrorMessage(err.message);
+          }
+        }
+        
+        setGlobalError(errorMessage);
+        handleCloseDeleteModal();
       }
     }
   };
@@ -263,14 +295,6 @@ const CategoryManagementPage: React.FC = () => {
     </Grid>
   );
 
-  if (error) {
-    return (
-      <Box sx={{ p: 2 }}>
-        <ErrorMessage message="Błąd podczas ładowania kategorii" details={error} />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ 
       margin: '0 auto', 
@@ -280,6 +304,29 @@ const CategoryManagementPage: React.FC = () => {
       borderRadius: 2,
       boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
+      {(error || globalError) && (
+        <Alert 
+          severity="error" 
+          onClose={() => setGlobalError(null)}
+          sx={{ 
+            mb: 3,
+            borderRadius: 1,
+            '& .MuiAlert-message': {
+              width: '100%'
+            }
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="subtitle1" fontWeight="500">
+              Wystąpił błąd
+            </Typography>
+            <Typography variant="body2">
+              {globalError || error}
+            </Typography>
+          </Box>
+        </Alert>
+      )}
+
       <Box sx={{ 
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' },
@@ -495,32 +542,49 @@ const CategoryManagementPage: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 2,
-            minWidth: { xs: '90%', sm: 400 }
+            maxWidth: '500px',
+            width: '100%'
           }
         }}
       >
-        <DialogTitle>
-          Potwierdź usunięcie
-        </DialogTitle>
+        <DialogTitle>Potwierdź usunięcie</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Czy na pewno chcesz usunąć tę kategorię? Tej operacji nie można cofnąć.
+            Czy na pewno chcesz usunąć tę kategorię?
           </DialogContentText>
+          {deleteError && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mt: 2,
+                borderRadius: 1,
+                '& .MuiAlert-message': {
+                  width: '100%'
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Typography variant="subtitle2" fontWeight="500">
+                  Nie można usunąć kategorii
+                </Typography>
+                <Typography variant="body2">
+                  {deleteError}
+                </Typography>
+              </Box>
+            </Alert>
+          )}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button 
-            onClick={handleCloseDeleteModal}
-            sx={{ borderRadius: 1 }}
-          >
+        <DialogActions>
+          <Button onClick={handleCloseDeleteModal} variant="outlined">
             Anuluj
           </Button>
           <Button 
             onClick={handleConfirmDelete} 
-            color="error" 
-            variant="contained"
-            sx={{ borderRadius: 1 }}
+            variant="contained" 
+            color="error"
+            disabled={loading}
           >
-            Usuń
+            {loading ? <CircularProgress size={20} /> : 'Usuń'}
           </Button>
         </DialogActions>
       </Dialog>

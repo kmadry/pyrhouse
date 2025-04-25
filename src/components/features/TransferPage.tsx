@@ -32,11 +32,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import AddIcon from '@mui/icons-material/Add';
-import { useLocations } from '../hooks/useLocations';
-import { useStocks } from '../hooks/useStocks';
-import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../services/transferService';
-import { getUsersAPI } from '../services/userService';
-import { ErrorMessage } from './ErrorMessage';
+import { useLocations } from '../../hooks/useLocations';
+import { useStocks } from '../../hooks/useStocks';
+import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../../services/transferService';
+import { getUsersAPI } from '../../services/userService';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LocationOn, Event, Person, Inventory, Close, Check } from '@mui/icons-material';
 
@@ -541,8 +541,19 @@ const TransferPage: React.FC = () => {
                   Wybierz lokalizację docelową
                 </MenuItem>
                 {locations.map((location: any) => (
-                  <MenuItem key={location.id} value={location.id}>
+                  <MenuItem 
+                    key={location.id} 
+                    value={location.id}
+                    disabled={location.id === fromLocation}
+                    sx={location.id === fromLocation ? {
+                      opacity: 0.5,
+                      '&:hover': {
+                        cursor: 'not-allowed'
+                      }
+                    } : {}}
+                  >
                     {location.name}
+                    {location.id === fromLocation && " (lokalizacja źródłowa)"}
                   </MenuItem>
                 ))}
               </Select>
