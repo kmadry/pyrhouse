@@ -143,7 +143,7 @@ const LocationsPage: React.FC = () => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-            {['ID', 'Nazwa', hasAdminAccess() ? 'Akcje' : ''].map((field) => (
+            {['ID', 'Nazwa', 'Szczegóły', hasAdminAccess() ? 'Akcje' : ''].map((field) => (
               <TableCell 
                 key={field} 
                 sx={{ 
@@ -178,6 +178,15 @@ const LocationsPage: React.FC = () => {
               <TableCell>
                 <Typography component="div">
                   {location.name}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography component="div" color="text.secondary">
+                  {location.details ? (
+                    location.details.length > 48 
+                      ? `${location.details.substring(0, 48)}...` 
+                      : location.details
+                  ) : '-'}
                 </Typography>
               </TableCell>
               {hasAdminAccess() && (
@@ -248,6 +257,16 @@ const LocationsPage: React.FC = () => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">Nazwa:</Typography>
                   <Typography variant="body2">{location.name}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Szczegóły:</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {location.details ? (
+                      location.details.length > 48 
+                        ? `${location.details.substring(0, 48)}...` 
+                        : location.details
+                    ) : '-'}
+                  </Typography>
                 </Box>
               </Box>
 
