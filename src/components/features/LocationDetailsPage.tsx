@@ -159,6 +159,34 @@ const LocationDetailsPage: React.FC = () => {
     }
   };
 
+  // Dodajemy funkcję tłumaczącą statusy
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'in_stock':
+      case 'available':
+        return 'Na Stanie';
+      case 'in_transit':
+        return 'W trasie';
+      case 'located':
+        return 'W lokacji';
+      default:
+        return status;
+    }
+  };
+
+  // Dodajemy funkcję zwracającą kolor dla statusu
+  const getStatusColor = (status: string): 'success' | 'warning' | 'default' => {
+    switch (status) {
+      case 'in_stock':
+      case 'available':
+        return 'success';
+      case 'in_transit':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
   // Dodajemy nową funkcję do filtrowania elementów
   const filterItems = (items: any[], query: string) => {
     if (!query) return items;
@@ -279,12 +307,12 @@ const LocationDetailsPage: React.FC = () => {
                     <>
                       <TableCell>
                         <Typography component="div">
-                          {(item as Asset).category.name}
+                          {(item as Asset).category.label}
                         </Typography>
                       </TableCell>
                       <TableCell>
                         <Typography component="div">
-                          {(item as Asset).status}
+                          {getStatusLabel((item as Asset).status)}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -297,7 +325,7 @@ const LocationDetailsPage: React.FC = () => {
                     <>
                       <TableCell>
                         <Typography component="div">
-                          {(item as StockItem).category.name}
+                          {(item as StockItem).category.label}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -372,8 +400,8 @@ const LocationDetailsPage: React.FC = () => {
                 <Typography variant="body2" color="text.secondary">
                   Status: <Chip 
                     size="small" 
-                    label={(item as Asset).status === 'in_stock' ? 'W magazynie' : 'W transporcie'}
-                    color={(item as Asset).status === 'in_stock' ? 'success' : 'warning'}
+                    label={getStatusLabel((item as Asset).status)}
+                    color={getStatusColor((item as Asset).status)}
                   />
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -426,11 +454,7 @@ const LocationDetailsPage: React.FC = () => {
       {/* Nagłówek strony */}
       <Box 
         sx={{ 
-          mb: 4,
-          pt: 3,
-          pb: 2,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
+          mb: 2,
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
@@ -450,48 +474,6 @@ const LocationDetailsPage: React.FC = () => {
           >
             {locationName}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            #{id}
-          </Typography>
-        </Box>
-        
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            gap: 2,
-            width: { xs: '100%', md: 'auto' }
-          }}
-        >
-          <TextField
-            placeholder="Szukaj..."
-            variant="outlined"
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ 
-              flexGrow: { xs: 1, md: 0 },
-              minWidth: { md: 250 }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={() => fetchLocationDetails()}
-            startIcon={<RefreshIcon />}
-            sx={{ 
-              whiteSpace: 'nowrap',
-              display: { xs: 'none', sm: 'flex' }
-            }}
-          >
-            Odśwież
-          </Button>
         </Box>
       </Box>
 
@@ -678,6 +660,47 @@ const LocationDetailsPage: React.FC = () => {
                 sx={{ ml: 1 }}
               />
             </Typography>
+            
+            {/* Wyszukiwarka i odświeżanie */}
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                gap: 2,
+                mb: 2,
+                mt: 2
+              }}
+            >
+              <TextField
+                placeholder="Szukaj..."
+                variant="outlined"
+                size="small"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ 
+                  flexGrow: 1,
+                  maxWidth: 300
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => fetchLocationDetails()}
+                startIcon={<RefreshIcon />}
+                sx={{ 
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Odśwież
+              </Button>
+            </Box>
+
             {isMobile ? (
               filterItems(locationDetails.assets, searchQuery).map(asset => renderMobileCard(asset, 'asset'))
             ) : (
