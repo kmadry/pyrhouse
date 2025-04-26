@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -29,6 +29,7 @@ import {
   Chip,
   IconButton,
   Alert,
+  Snackbar,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -39,7 +40,7 @@ import { ErrorMessage } from '../ui/ErrorMessage';
 import * as Icons from '@mui/icons-material';
 
 const CategoryManagementPage: React.FC = () => {
-  const { categories, loading, error, addCategory, deleteCategory } = useCategories();
+  const { categories, loading, error, addCategory, deleteCategory, setError } = useCategories();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -53,8 +54,8 @@ const CategoryManagementPage: React.FC = () => {
   // State for delete confirmation modal
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
@@ -94,18 +95,6 @@ const CategoryManagementPage: React.FC = () => {
     }
   };
 
-  const getErrorMessage = (error: string): string => {
-    const errorMessages: { [key: string]: string } = {
-      'Failed to delete asset category': 'Nie można usunąć kategorii, ponieważ jest używana',
-      'Failed to delete category': 'Nie udało się usunąć kategorii',
-      'Category not found': 'Kategoria nie została znaleziona',
-      'Unauthorized access': 'Brak uprawnień do usunięcia kategorii',
-      'Server error occurred': 'Wystąpił błąd serwera',
-    };
-
-    return errorMessages[error] || 'Wystąpił nieoczekiwany błąd podczas usuwania kategorii';
-  };
-
   const handleOpenDeleteModal = (categoryId: number) => {
     setCategoryToDelete(categoryId);
     setDeleteModalOpen(true);
@@ -114,31 +103,15 @@ const CategoryManagementPage: React.FC = () => {
   const handleCloseDeleteModal = () => {
     setDeleteModalOpen(false);
     setCategoryToDelete(null);
-    setDeleteError(null);
   };
 
   const handleConfirmDelete = async () => {
     if (categoryToDelete) {
       try {
-        setDeleteError(null);
-        setGlobalError(null);
         await deleteCategory(categoryToDelete);
+        setSuccessMessage('Kategoria została usunięta pomyślnie!');
         handleCloseDeleteModal();
       } catch (err: any) {
-        let errorMessage = 'Wystąpił nieoczekiwany błąd';
-        
-        if (err.message === 'Failed to delete category') {
-          errorMessage = getErrorMessage('Failed to delete category');
-        } else if (err.message) {
-          try {
-            const errorData = JSON.parse(err.message);
-            errorMessage = getErrorMessage(errorData.error);
-          } catch {
-            errorMessage = getErrorMessage(err.message);
-          }
-        }
-        
-        setGlobalError(errorMessage);
         handleCloseDeleteModal();
       }
     }
@@ -295,6 +268,28 @@ const CategoryManagementPage: React.FC = () => {
     </Grid>
   );
 
+  const handleCloseErrorAlert = () => {
+    if (typeof setError === 'function') setError(null);
+  };
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        if (typeof setError === 'function') setError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, setError]);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   return (
     <Box sx={{ 
       margin: '0 auto', 
@@ -304,28 +299,51 @@ const CategoryManagementPage: React.FC = () => {
       borderRadius: 2,
       boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
-      {(error || globalError) && (
+      <Snackbar
+        open={!!error}
+        autoHideDuration={null}
+        onClose={handleCloseErrorAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
         <Alert 
           severity="error" 
-          onClose={() => setGlobalError(null)}
-          sx={{ 
-            mb: 3,
-            borderRadius: 1,
-            '& .MuiAlert-message': {
-              width: '100%'
-            }
-          }}
+          onClose={handleCloseErrorAlert}
+          sx={{ borderRadius: 1, minWidth: 320 }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography variant="subtitle1" fontWeight="500">
               Wystąpił błąd
             </Typography>
-            <Typography variant="body2">
-              {globalError || error}
+            {error && error.split('\n').map((line, idx) => (
+              <Typography variant={idx === 0 ? 'body1' : 'body2'} key={idx} color={idx === 0 ? undefined : 'text.secondary'}>
+                {line}
+              </Typography>
+            ))}
+          </Box>
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          severity="success" 
+          onClose={() => setSuccessMessage(null)}
+          sx={{ borderRadius: 1, minWidth: 320 }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="subtitle1" fontWeight="500">
+              Sukces
+            </Typography>
+            <Typography variant="body1">
+              {successMessage}
             </Typography>
           </Box>
         </Alert>
-      )}
+      </Snackbar>
 
       <Box sx={{ 
         display: 'flex', 
@@ -552,27 +570,6 @@ const CategoryManagementPage: React.FC = () => {
           <DialogContentText>
             Czy na pewno chcesz usunąć tę kategorię?
           </DialogContentText>
-          {deleteError && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mt: 2,
-                borderRadius: 1,
-                '& .MuiAlert-message': {
-                  width: '100%'
-                }
-              }}
-            >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <Typography variant="subtitle2" fontWeight="500">
-                  Nie można usunąć kategorii
-                </Typography>
-                <Typography variant="body2">
-                  {deleteError}
-                </Typography>
-              </Box>
-            </Alert>
-          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteModal} variant="outlined">

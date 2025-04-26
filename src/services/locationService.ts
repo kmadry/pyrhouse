@@ -67,9 +67,24 @@ export const deleteLocation = async (id: number): Promise<void> => {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
-  
   if (!response.ok) {
-    throw new Error('Nie udało się usunąć lokalizacji');
+    let errorMessage = 'Nie udało się usunąć lokalizacji';
+    let errorDetails = '';
+    let errorResponse;
+    try {
+      errorResponse = await response.json();
+    } catch (e) {}
+    if (response.status === 409) {
+      errorMessage = 'Nie można usunąć lokalizacji, ponieważ jest powiązana z zasobami lub innymi danymi.';
+      if (errorResponse?.details) {
+        errorDetails = errorResponse.details;
+      }
+    } else if (response.status === 500) {
+      errorMessage = 'Wystąpił błąd serwera podczas usuwania lokalizacji.';
+    } else if (errorResponse?.error) {
+      errorMessage = errorResponse.error;
+    }
+    throw { message: errorMessage, details: errorDetails };
   }
 };
 

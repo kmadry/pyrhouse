@@ -25,6 +25,7 @@ import {
   useTheme,
   Divider,
   Chip,
+  Snackbar,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -46,6 +47,9 @@ const LocationsPage: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', details: '' });
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteErrorDetails, setDeleteErrorDetails] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -120,12 +124,30 @@ const LocationsPage: React.FC = () => {
     if (window.confirm('Czy na pewno chcesz usunąć tę lokalizację?')) {
       try {
         await deleteLocation(id);
+        setSuccessMessage('Lokalizacja została usunięta pomyślnie!');
+        setDeleteError(null);
+        setDeleteErrorDetails(null);
         refetch();
       } catch (err: any) {
-        console.error('Błąd podczas usuwania:', err.message);
+        if (err && typeof err === 'object' && 'message' in err) {
+          setDeleteError(err.message);
+          setDeleteErrorDetails(err.details || null);
+        } else {
+          setDeleteError(err.message || 'Wystąpił nieoczekiwany błąd podczas usuwania lokalizacji.');
+          setDeleteErrorDetails(null);
+        }
       }
     }
   };
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -493,6 +515,51 @@ const LocationsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!deleteError}
+        autoHideDuration={null}
+        onClose={() => setDeleteError(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          severity="error" 
+          onClose={() => setDeleteError(null)}
+          sx={{ borderRadius: 1, minWidth: 320 }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="subtitle1" fontWeight="500">
+              Wystąpił błąd
+            </Typography>
+            <Typography variant="body1">{deleteError}</Typography>
+            {deleteErrorDetails && (
+              <Typography variant="body2" color="text.secondary">{deleteErrorDetails}</Typography>
+            )}
+          </Box>
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          severity="success" 
+          onClose={() => setSuccessMessage(null)}
+          sx={{ borderRadius: 1, minWidth: 320 }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography variant="subtitle1" fontWeight="500">
+              Sukces
+            </Typography>
+            <Typography variant="body1">
+              {successMessage}
+            </Typography>
+          </Box>
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

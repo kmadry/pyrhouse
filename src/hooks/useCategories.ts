@@ -156,19 +156,41 @@ export const useCategories = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to delete category');
+        let errorMessage = 'Nie udało się usunąć kategorii.';
+        let errorDetails = '';
+        let errorResponse;
+        try {
+          errorResponse = await response.json();
+        } catch (e) {}
+        if (response.status === 409) {
+          errorMessage = 'Nie można usunąć kategorii, ponieważ jest już powiązana ze sprzętem.';
+          if (errorResponse?.details) {
+            errorDetails = errorResponse.details;
+          }
+        } else if (response.status === 500) {
+          errorMessage = 'Wystąpił błąd serwera podczas usuwania kategorii.';
+        } else if (errorResponse?.error) {
+          errorMessage = errorResponse.error;
+        }
+        // Zwracamy obiekt z message i details (jeśli są)
+        throw { message: errorMessage, details: errorDetails };
       }
 
       // Inwalidacja cache'u
       localStorage.removeItem(CACHE_KEY);
-      
       setCategories((prev) => prev.filter((category) => category.id !== id));
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+      // Obsługa obiektu błędu z message i details
+      if (err && typeof err === 'object' && 'message' in err) {
+        setError(err.message + (err.details ? `\n${err.details}` : ''));
+      } else {
+        setError(err.message || 'Wystąpił nieoczekiwany błąd podczas usuwania kategorii.');
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { categories, loading, error, addCategory, deleteCategory, createCategory, updateCategory, refreshCategories: fetchCategories };
+  return { categories, loading, error, addCategory, deleteCategory, createCategory, updateCategory, refreshCategories: fetchCategories, setError };
 };
