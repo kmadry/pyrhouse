@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   Box,
   Button,
@@ -29,11 +29,11 @@ import {
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../../config/api';
-import AddIcon from '@mui/icons-material/Add';
-import PersonIcon from '@mui/icons-material/Person';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import SecurityIcon from '@mui/icons-material/Security';
-import SearchIcon from '@mui/icons-material/Search';
+const AddIcon = lazy(() => import('@mui/icons-material/Add'));
+const PersonIcon = lazy(() => import('@mui/icons-material/Person'));
+const AdminPanelSettingsIcon = lazy(() => import('@mui/icons-material/AdminPanelSettings'));
+const SecurityIcon = lazy(() => import('@mui/icons-material/Security'));
+const SearchIcon = lazy(() => import('@mui/icons-material/Search'));
 
 const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -306,7 +306,7 @@ const UserManagementPage: React.FC = () => {
         <Button 
           variant="contained" 
           color="primary" 
-          startIcon={<AddIcon />}
+          startIcon={<Suspense fallback={null}><AddIcon /></Suspense>}
           onClick={handleOpenAddUserModal}
           sx={{
             borderRadius: 1,
@@ -343,7 +343,7 @@ const UserManagementPage: React.FC = () => {
               }
             },
             startAdornment: (
-              <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+              <Suspense fallback={null}><SearchIcon sx={{ color: 'text.secondary', mr: 1 }} /></Suspense>
             )
           }}
         />

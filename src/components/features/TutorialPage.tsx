@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, lazy, Suspense } from 'react';
 import {
   Box,
   Container,
@@ -16,41 +16,41 @@ import {
   Stack,
   Chip
 } from '@mui/material';
-import {
-  Search,
-  AddTask,
-  Inventory,
-  ListAlt,
-  RocketLaunch,
-  ArrowForward,
-  ArrowBack,
-  Close,
-  Check,
-  LocationOn,
-  MyLocation,
-  Map,
-  AccountCircle,
-  Home,
-  Navigation,
-  History,
-  Update,
-  Info,
-  GpsFixed
-} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+
+// Dynamiczne importy ikon MUI
+const Search = lazy(() => import('@mui/icons-material/Search'));
+const RocketLaunch = lazy(() => import('@mui/icons-material/RocketLaunch'));
+const MyLocation = lazy(() => import('@mui/icons-material/MyLocation'));
+const Info = lazy(() => import('@mui/icons-material/Info'));
+const MapIcon = lazy(() => import('@mui/icons-material/Map'));
+const Navigation = lazy(() => import('@mui/icons-material/Navigation'));
+const GpsFixed = lazy(() => import('@mui/icons-material/GpsFixed'));
+const HistoryIcon = lazy(() => import('@mui/icons-material/History'));
+const HomeIcon = lazy(() => import('@mui/icons-material/Home'));
+const AccountCircle = lazy(() => import('@mui/icons-material/AccountCircle'));
+const Update = lazy(() => import('@mui/icons-material/Update'));
+const LocationOn = lazy(() => import('@mui/icons-material/LocationOn'));
+const AddTask = lazy(() => import('@mui/icons-material/AddTask'));
+const Inventory = lazy(() => import('@mui/icons-material/Inventory'));
+const ListAlt = lazy(() => import('@mui/icons-material/ListAlt'));
+const ArrowBack = lazy(() => import('@mui/icons-material/ArrowBack'));
+const Check = lazy(() => import('@mui/icons-material/Check'));
+const ArrowForward = lazy(() => import('@mui/icons-material/ArrowForward'));
+const Close = lazy(() => import('@mui/icons-material/Close'));
 
 // Przenosimy dane kroków poza komponent, aby nie były odtwarzane przy każdym renderowaniu
 const TUTORIAL_STEPS = [
   {
     label: 'Wyszukiwanie sprzętu',
     description: 'Użyj pola wyszukiwania na stronie głównej, aby znaleźć sprzęt po kodzie PYR. Wpisz kod lub jego fragment, a system podpowie Ci dostępne opcje.',
-    icon: <Search />,
+    icon: <Suspense fallback={null}><Search /></Suspense>,
     action: '/home',
   },
   {
     label: 'Tworzenie questów-dostaw',
     description: 'Utwórz nową dostawę, aby zorganizować transport sprzętu między lokalizacjami. Możesz dodać wiele przedmiotów i określić kto bierze udział w dostawie. Pamiętaj o wybraniu lokalizacji docelowej i uczestników questa.',
-    icon: <RocketLaunch />,
+    icon: <Suspense fallback={null}><RocketLaunch /></Suspense>,
     action: '/transfers/create',
   },
   {
@@ -65,7 +65,7 @@ const TUTORIAL_STEPS = [
           {/* Sekcja Aktualizacji Lokalizacji */}
           <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-              <MyLocation color="primary" />
+              <Suspense fallback={null}><MyLocation /></Suspense>
               <Typography variant="subtitle2" fontWeight="600">
                 Aktualizacja Lokalizacji
               </Typography>
@@ -86,7 +86,7 @@ const TUTORIAL_STEPS = [
               }}
             >
               <Stack direction="row" spacing={1} alignItems="flex-start">
-                <Info color="info" sx={{ mt: 0.3 }} />
+                <Suspense fallback={null}><Info /></Suspense>
                 <Typography variant="body2">
                   System może poprosić o dostęp do Twojej lokalizacji - pomoże to w dokładniejszym określeniu pozycji sprzętu. Nie martw się, nie zbieramy ani nie przechowujemy tych danych.
                 </Typography>
@@ -94,19 +94,19 @@ const TUTORIAL_STEPS = [
             </Paper>
             <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
               <Chip 
-                icon={<Map fontSize="small" />} 
+                icon={<Suspense fallback={null}><MapIcon /></Suspense>} 
                 label="Mapa" 
                 size="small" 
                 variant="outlined" 
               />
               <Chip 
-                icon={<Navigation fontSize="small" />} 
+                icon={<Suspense fallback={null}><Navigation /></Suspense>} 
                 label="GPS" 
                 size="small" 
                 variant="outlined" 
               />
               <Chip 
-                icon={<GpsFixed fontSize="small" />} 
+                icon={<Suspense fallback={null}><GpsFixed /></Suspense>} 
                 label="Lokalizacja" 
                 size="small" 
                 variant="outlined" 
@@ -117,7 +117,7 @@ const TUTORIAL_STEPS = [
           {/* Sekcja Śledzenia Dostaw */}
           <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-              <History color="primary" />
+              <Suspense fallback={null}><HistoryIcon /></Suspense>
               <Typography variant="subtitle2" fontWeight="600">
                 Śledzenie Dostaw
               </Typography>
@@ -127,13 +127,13 @@ const TUTORIAL_STEPS = [
             </Typography>
             <Stack spacing={1} sx={{ mt: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Home fontSize="small" color="action" />
+                <Suspense fallback={null}><HomeIcon /></Suspense>
                 <Typography variant="body2">
                   Strona główna - szybki podgląd bieżących questów
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <AccountCircle fontSize="small" color="action" />
+                <Suspense fallback={null}><AccountCircle /></Suspense>
                 <Typography variant="body2">
                   "Mój profil" w górnym pasku - pełna lista Twoich questów
                 </Typography>
@@ -144,7 +144,7 @@ const TUTORIAL_STEPS = [
           {/* Sekcja Historii */}
           <Paper elevation={0} sx={{ p: 2, bgcolor: 'background.default' }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-              <Update color="primary" />
+              <Suspense fallback={null}><Update /></Suspense>
               <Typography variant="subtitle2" fontWeight="600">
                 Historia i Status
               </Typography>
@@ -156,25 +156,25 @@ const TUTORIAL_STEPS = [
         </Stack>
       </Box>
     ),
-    icon: <LocationOn />,
+    icon: <Suspense fallback={null}><LocationOn /></Suspense>,
     action: '/transfers',
   },
   {
     label: 'Dodawanie nowego sprzętu',
     description: 'Dodaj nowy sprzęt do systemu skanując jego numer seryjny oraz określając jego kategorię oraz pochodzenie. System automatycznie generuje PYRcode. Możesz dodać wiele przedmiotów naraz.',
-    icon: <AddTask />,
+    icon: <Suspense fallback={null}><AddTask /></Suspense>,
     action: '/add-item',
   },
   {
     label: 'Zarządzanie magazynem',
     description: 'Przeglądaj stan magazynowy, sprawdzaj dostępność sprzętu i zarządzaj jego lokalizacjami. Możesz filtrować sprzęt po kategorii i lokalizacji.',
-    icon: <Inventory />,
+    icon: <Suspense fallback={null}><Inventory /></Suspense>,
     action: '/list',
   },
   {
     label: 'Przeglądanie questów',
     description: 'Sprawdź wszystkie aktywne i zakończone dostawy, ich status i szczegóły. W szczegółach questa zobaczysz historię lokalizacji sprzętu, co pomoże Ci śledzić przebieg dostawy.',
-    icon: <ListAlt />,
+    icon: <Suspense fallback={null}><ListAlt /></Suspense>,
     action: '/transfers',
   },
 ];
@@ -192,7 +192,7 @@ const StepNavigation: React.FC<StepNavigationProps> = ({ activeStep, totalSteps,
     <Button
       disabled={activeStep === 0}
       onClick={onBack}
-      startIcon={<ArrowBack />}
+      startIcon={<Suspense fallback={null}><ArrowBack /></Suspense>}
     >
       Wstecz
     </Button>
@@ -200,7 +200,7 @@ const StepNavigation: React.FC<StepNavigationProps> = ({ activeStep, totalSteps,
       variant="contained"
       onClick={onNext}
       disabled={activeStep === totalSteps - 1}
-      endIcon={activeStep === totalSteps - 1 ? <Check /> : <ArrowForward />}
+      endIcon={activeStep === totalSteps - 1 ? <Suspense fallback={null}><Check /></Suspense> : <Suspense fallback={null}><ArrowForward /></Suspense>}
     >
       {activeStep === totalSteps - 1 ? 'Zakończ' : 'Dalej'}
     </Button>
@@ -248,7 +248,7 @@ const TutorialPage: React.FC = () => {
             variant="outlined"
             color="primary"
             onClick={handleSkip}
-            startIcon={<Close />}
+            startIcon={<Suspense fallback={null}><Close /></Suspense>}
           >
             Zamknij przewodnik
           </Button>
@@ -288,7 +288,7 @@ const TutorialPage: React.FC = () => {
                           <Button
                             variant="contained"
                             onClick={() => navigate(step.action)}
-                            endIcon={<ArrowForward />}
+                            endIcon={<Suspense fallback={null}><ArrowForward /></Suspense>}
                             fullWidth
                             sx={{ 
                               py: 1,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import {
   Table,
   TableBody,
@@ -23,13 +23,11 @@ import {
   useTheme,
   Divider,
 } from '@mui/material';
-import { CheckCircle, ErrorOutline, LocalShipping, Home } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../../hooks/useLocations';
 import { useCategories } from '../../hooks/useCategories';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import { getApiUrl } from '../../config/api';
-import * as Icons from '@mui/icons-material';
 
 interface Location {
   id: number;
@@ -57,6 +55,17 @@ interface QuickFilter {
   name: string;
   icon: string;
 }
+
+const CheckCircle = lazy(() => import('@mui/icons-material/CheckCircle'));
+const ErrorOutline = lazy(() => import('@mui/icons-material/ErrorOutline'));
+const LocalShipping = lazy(() => import('@mui/icons-material/LocalShipping'));
+const Home = lazy(() => import('@mui/icons-material/Home'));
+const Inventory2 = lazy(() => import('@mui/icons-material/Inventory2'));
+const ClearAll = lazy(() => import('@mui/icons-material/ClearAll'));
+const Warehouse = lazy(() => import('@mui/icons-material/Warehouse'));
+const Search = lazy(() => import('@mui/icons-material/Search'));
+const LocationOn = lazy(() => import('@mui/icons-material/LocationOn'));
+const Category = lazy(() => import('@mui/icons-material/Category'));
 
 const EquipmentList: React.FC = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -180,14 +189,14 @@ const EquipmentList: React.FC = () => {
     switch (status) {
       case 'in_stock':
       case 'available':
-        return <Home />;
+        return <Suspense fallback={null}><Home /></Suspense>;
       case 'delivered':
       case 'located':
-        return <CheckCircle sx={{ color: 'green' }} />;
+        return <Suspense fallback={null}><CheckCircle /></Suspense>;
       case 'in_transit':
-        return <LocalShipping sx={{ color: 'orange' }} />;
+        return <Suspense fallback={null}><LocalShipping /></Suspense>;
       default:
-        return <ErrorOutline sx={{ color: 'red' }} />;
+        return <Suspense fallback={null}><ErrorOutline /></Suspense>;
     }
   };
 
@@ -219,7 +228,7 @@ const EquipmentList: React.FC = () => {
               gap: 1
             }}
           >
-            <Icons.Inventory2 />
+            <Suspense fallback={null}><Inventory2 /></Suspense>
             {item.quantity ?? '-'}
           </Typography>
         </Box>
@@ -460,7 +469,7 @@ const EquipmentList: React.FC = () => {
         <Button
           variant="outlined"
           size="small"
-          startIcon={<Icons.ClearAll />}
+          startIcon={<Suspense fallback={null}><ClearAll /></Suspense>}
           onClick={() => {
             setFilter('');
             setSelectedLocations([]);
@@ -525,7 +534,7 @@ const EquipmentList: React.FC = () => {
               <Chip
                 key={filter.id}
                 label={filter.name}
-                icon={<Icons.Warehouse />}
+                icon={<Suspense fallback={null}><Warehouse /></Suspense>}
                 color={selectedLocations.some((loc) => loc.id === filter.id) ? 'primary' : 'default'}
                 onClick={() =>
                   selectedLocations.some((loc) => loc.id === filter.id)
@@ -574,7 +583,7 @@ const EquipmentList: React.FC = () => {
                 }
               },
               startAdornment: (
-                <Icons.Search sx={{ color: 'text.secondary', mr: 1 }} />
+                <Suspense fallback={null}><Search /></Suspense>
               )
             }}
           />
@@ -609,8 +618,7 @@ const EquipmentList: React.FC = () => {
                   },
                   startAdornment: (
                     <>
-                      <Icons.LocationOn sx={{ color: 'text.secondary', mr: 1 }} />
-                      {params.InputProps.startAdornment}
+                      <Suspense fallback={null}><LocationOn /></Suspense>
                     </>
                   ),
                   endAdornment: (
@@ -625,7 +633,7 @@ const EquipmentList: React.FC = () => {
             renderOption={(props, option: Location) => (
               <li {...props} key={option.id}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Icons.LocationOn sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  <Suspense fallback={null}><LocationOn /></Suspense>
                   <Typography component="span">{option.name}</Typography>
                 </Box>
               </li>
@@ -695,7 +703,7 @@ const EquipmentList: React.FC = () => {
                   ...params.InputProps,
                   sx: { borderRadius: 1 },
                   startAdornment: (
-                    <Icons.Category sx={{ color: 'text.secondary', mr: 1 }} />
+                    <Suspense fallback={null}><Category /></Suspense>
                   ),
                   endAdornment: (
                     <>

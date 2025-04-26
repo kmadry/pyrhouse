@@ -24,19 +24,6 @@ import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
-import PersonIcon from '@mui/icons-material/Person';
-
-// Icons
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import UTurnLeftIcon from '@mui/icons-material/UTurnLeft';
-import ErrorIcon from '@mui/icons-material/Error';
-import RestoreIcon from '@mui/icons-material/Restore';
-import CancelIcon from '@mui/icons-material/Cancel';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import NavigationIcon from '@mui/icons-material/Navigation';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // Services and hooks
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../../services/transferService';
@@ -57,6 +44,18 @@ const statusTranslations: { [key: string]: string } = {
   'cancelled': 'Anulowany',
   'completed': 'Dostarczony'
 };
+
+const PersonIcon = lazy(() => import('@mui/icons-material/Person'));
+const LocalShippingIcon = lazy(() => import('@mui/icons-material/LocalShipping'));
+const CheckCircleIcon = lazy(() => import('@mui/icons-material/CheckCircle'));
+const UTurnLeftIcon = lazy(() => import('@mui/icons-material/UTurnLeft'));
+const ErrorIcon = lazy(() => import('@mui/icons-material/Error'));
+const RestoreIcon = lazy(() => import('@mui/icons-material/Restore'));
+const CancelIcon = lazy(() => import('@mui/icons-material/Cancel'));
+const MyLocationIcon = lazy(() => import('@mui/icons-material/MyLocation'));
+const LocationOnIcon = lazy(() => import('@mui/icons-material/LocationOn'));
+const NavigationIcon = lazy(() => import('@mui/icons-material/Navigation'));
+const ArrowBackIcon = lazy(() => import('@mui/icons-material/ArrowBack'));
 
 const TransferDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -206,15 +205,15 @@ const TransferDetailsPage: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return <LocalShippingIcon sx={{ color: 'orange', ml: 2 }} />;
+        return <Suspense fallback={null}><LocalShippingIcon /></Suspense>;
       case 'delivered':
       case 'available':
       case 'located':
-        return <CheckCircleIcon sx={{ color: 'green', ml: 2 }} />;
+        return <Suspense fallback={null}><CheckCircleIcon /></Suspense>;
       case 'returned':
-        return <UTurnLeftIcon sx={{ color: 'orange', ml: 2 }} />;
+        return <Suspense fallback={null}><UTurnLeftIcon /></Suspense>;
       default:
-        return <ErrorIcon sx={{ color: 'red', ml: 2 }} />;
+        return <Suspense fallback={null}><ErrorIcon /></Suspense>;
     }
   };
 
@@ -371,7 +370,7 @@ const TransferDetailsPage: React.FC = () => {
         mb: 3 
       }}>
         <Button
-          startIcon={<ArrowBackIcon />}
+          startIcon={<Suspense fallback={null}><ArrowBackIcon /></Suspense>}
           onClick={() => navigate('/transfers')}
           size="small"
           sx={{
@@ -414,7 +413,7 @@ const TransferDetailsPage: React.FC = () => {
                 color="success"
                 onClick={handleConfirmTransfer}
                 disabled={loading}
-                startIcon={<CheckCircleIcon />}
+                startIcon={<Suspense fallback={null}><CheckCircleIcon /></Suspense>}
                 sx={{ 
                   py: 1, 
                   px: 2,
@@ -434,7 +433,7 @@ const TransferDetailsPage: React.FC = () => {
                 color="error"
                 onClick={() => setCancelDialogOpen(true)}
                 disabled={loading}
-                startIcon={<CancelIcon />}
+                startIcon={<Suspense fallback={null}><CancelIcon /></Suspense>}
                 sx={{ 
                   py: 1, 
                   px: 2,
@@ -457,7 +456,7 @@ const TransferDetailsPage: React.FC = () => {
       <Paper sx={{ mt: 4, p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LocalShippingIcon color="primary" />
+            <Suspense fallback={null}><LocalShippingIcon color="primary" /></Suspense>
             Informacje
           </Typography>
           {(transfer.status === 'in_transit' || transfer.status === 'completed') && (
@@ -468,7 +467,7 @@ const TransferDetailsPage: React.FC = () => {
                   color="primary"
                   onClick={() => setLocationDialogOpen(true)}
                   disabled={loading}
-                  startIcon={<MyLocationIcon />}
+                  startIcon={<Suspense fallback={null}><MyLocationIcon /></Suspense>}
                   sx={{ 
                     py: 0.75,
                     px: 1.5,
@@ -489,7 +488,7 @@ const TransferDetailsPage: React.FC = () => {
                 color="primary"
                 onClick={handleNavigateToLocation}
                 disabled={!transfer?.delivery_location?.lat || !transfer?.delivery_location?.lng}
-                startIcon={<NavigationIcon />}
+                startIcon={<Suspense fallback={null}><NavigationIcon /></Suspense>}
                 sx={{ 
                   py: 0.75,
                   px: 1.5,
@@ -509,7 +508,7 @@ const TransferDetailsPage: React.FC = () => {
               Lokalizacja źródłowa
             </Typography>
             <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <LocationOnIcon fontSize="small" color="action" />
+              <Suspense fallback={null}><LocationOnIcon fontSize="small" color="action" /></Suspense>
               {transfer.from_location?.name}
             </Typography>
           </Box>
@@ -518,7 +517,7 @@ const TransferDetailsPage: React.FC = () => {
               Lokalizacja docelowa
             </Typography>
             <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <LocationOnIcon fontSize="small" color="action" />
+              <Suspense fallback={null}><LocationOnIcon fontSize="small" color="action" /></Suspense>
               {transfer.to_location?.name}
             </Typography>
           </Box>
@@ -554,7 +553,7 @@ const TransferDetailsPage: React.FC = () => {
               <Chip
                 key={user.id}
                 label={user.username}
-                icon={<PersonIcon />}
+                icon={<Suspense fallback={null}><PersonIcon /></Suspense>}
                 color="primary"
                 variant="outlined"
               />
@@ -598,7 +597,7 @@ const TransferDetailsPage: React.FC = () => {
                         aria-label="restore"
                         onClick={() => handleRestoreClick(asset.id, 'asset')}
                       >
-                        <RestoreIcon />
+                        <Suspense fallback={null}><RestoreIcon /></Suspense>
                       </IconButton>
                     </Tooltip>
                   )
@@ -639,7 +638,7 @@ const TransferDetailsPage: React.FC = () => {
                         aria-label="restore"
                         onClick={() => handleRestoreClick(stock.id, 'stock', stock.category.id)}
                       >
-                        <RestoreIcon />
+                        <Suspense fallback={null}><RestoreIcon /></Suspense>
                       </IconButton>
                     </Tooltip>
                   )
@@ -731,7 +730,7 @@ const TransferDetailsPage: React.FC = () => {
       >
         <DialogTitle sx={{ pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <MyLocationIcon color="primary" />
+            <Suspense fallback={null}><MyLocationIcon color="primary" /></Suspense>
             <Typography variant="h6">Aktualizuj lokalizację transferu</Typography>
           </Box>
         </DialogTitle>

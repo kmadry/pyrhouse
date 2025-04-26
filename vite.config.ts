@@ -47,11 +47,17 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-mui': ['@mui/material', '@mui/icons-material'],
-          'vendor-utils': ['date-fns', 'react-hook-form', 'axios'],
-        }
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@mui')) return 'vendor-mui';
+            if (id.includes('react')) return 'vendor-react';
+            if (id.includes('date-fns') || id.includes('react-hook-form') || id.includes('axios')) return 'vendor-utils';
+          }
+          if (id.includes('src/components/features/')) {
+            const dirs = id.split('src/components/features/')[1].split('/');
+            return `feature-${dirs[0]}`;
+          }
+        },
       }
     },
     cssCodeSplit: true,

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import {
   Box,
   Button,
@@ -15,8 +15,6 @@ import {
   DialogContent,
   Grid,
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import { bulkAddAssetsAPI } from '../../services/assetService';
 import { BarcodeGenerator } from '../common/BarcodeGenerator';
 
@@ -55,6 +53,9 @@ const ORIGIN_OPTIONS = [
   { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Inne' },
 ];
+
+const DeleteIcon = lazy(() => import('@mui/icons-material/Delete'));
+const AddIcon = lazy(() => import('@mui/icons-material/Add'));
 
 export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }) => {
   // Filtrowanie kategorii tylko dla typu "asset"
@@ -285,7 +286,9 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
                     disabled={assets.length === 1}
                     size="small"
                   >
-                    <DeleteIcon />
+                    <Suspense fallback={null}>
+                      <DeleteIcon />
+                    </Suspense>
                   </IconButton>
                 </td>
               </tr>
@@ -297,7 +300,7 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
       <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
         <Button
           variant="outlined"
-          startIcon={<AddIcon />}
+          startIcon={<Suspense fallback={null}><AddIcon /></Suspense>}
           onClick={handleAddRow}
         >
           Dodaj wiersz

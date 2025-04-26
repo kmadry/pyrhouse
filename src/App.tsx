@@ -2,8 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import { lazy, Suspense } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import LoginForm from './components/features/LoginForm';
-import Home from './components/features/Home';
-import List from './components/features/List';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import PrivateRoute from './components/features/Authorisation';
 import Layout from './components/layout/Layout';
 import TransferPage from './components/features/TransferPage';
@@ -23,6 +22,8 @@ const EquipmentDetails = lazy(() => import('./components/features/EquipmentDetai
 const LocationsPage = lazy(() => import('./components/features/LocationsPage'));
 const LocationDetailsPage = lazy(() => import('./components/features/LocationDetailsPage'));
 const TutorialPage = lazy(() => import('./components/features/TutorialPage'));
+const Home = lazy(() => import('./components/features/Home'));
+const List = lazy(() => import('./components/features/List'));
 
 // Konfiguracja flag React Router v7
 const routerFutureConfig = {
@@ -43,10 +44,34 @@ function App() {
           <Route path="/login" element={<LoginForm />} />
           <Route path="/" element={<PrivateRoute><Layout><Outlet /></Layout></PrivateRoute>}>
             <Route index element={<Navigate to="/home" replace />} />
-            <Route path="home" element={<Home />} />
-            <Route path="list" element={<List />} />
-            <Route path="add-item" element={<AddItemPage />} />
-            <Route path="transfers/create" element={<TransferPage />} />
+            <Route path="home" element={
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSkeleton />}>
+                  <Home />
+                </Suspense>
+              </ErrorBoundary>
+            } />
+            <Route path="list" element={
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSkeleton />}>
+                  <List />
+                </Suspense>
+              </ErrorBoundary>
+            } />
+            <Route path="add-item" element={
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSkeleton />}>
+                  <AddItemPage />
+                </Suspense>
+              </ErrorBoundary>
+            } />
+            <Route path="transfers/create" element={
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSkeleton />}>
+                  <TransferPage />
+                </Suspense>
+              </ErrorBoundary>
+            } />
             
             {/* Lazy loaded routes */}
             <Route path="users" element={

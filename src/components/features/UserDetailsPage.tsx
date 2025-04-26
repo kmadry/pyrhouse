@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -35,15 +35,6 @@ import {
   ListItemText,
 } from '@mui/material';
 import { ErrorMessage } from '../ui/ErrorMessage';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import PersonIcon from '@mui/icons-material/Person';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import BadgeIcon from '@mui/icons-material/Badge';
-import EmailIcon from '@mui/icons-material/Email';
-import StarIcon from '@mui/icons-material/Star';
-import LockIcon from '@mui/icons-material/Lock';
 import { jwtDecode } from 'jwt-decode';
 import { getApiUrl } from '../../config/api';
 import { format } from 'date-fns';
@@ -67,6 +58,16 @@ interface Transfer {
   TransferDate: string;
   Status: 'in_transit' | 'completed' | 'cancelled';
 }
+
+const ArrowBackIcon = lazy(() => import('@mui/icons-material/ArrowBack'));
+const EditIcon = lazy(() => import('@mui/icons-material/Edit'));
+const PersonIcon = lazy(() => import('@mui/icons-material/Person'));
+const CalendarTodayIcon = lazy(() => import('@mui/icons-material/CalendarToday'));
+const AccessTimeIcon = lazy(() => import('@mui/icons-material/AccessTime'));
+const BadgeIcon = lazy(() => import('@mui/icons-material/Badge'));
+const EmailIcon = lazy(() => import('@mui/icons-material/Email'));
+const StarIcon = lazy(() => import('@mui/icons-material/Star'));
+const LockIcon = lazy(() => import('@mui/icons-material/Lock'));
 
 const UserDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -329,23 +330,9 @@ const UserDetailsPage: React.FC = () => {
         mb: 3 
       }}>
         {canGoBack && (
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/users')}
-            size="small"
-            sx={{
-              minWidth: 'auto',
-              px: 1.5,
-              py: 0.75,
-              color: 'text.secondary',
-              '&:hover': {
-                color: 'primary.main',
-                backgroundColor: 'transparent'
-              }
-            }}
-          >
-            Powrót
-          </Button>
+          <Suspense fallback={null}>
+            <ArrowBackIcon />
+          </Suspense>
         )}
         <Typography variant="h5" component="h1" sx={{ fontWeight: 'medium' }}>
           Profil użytkownika
@@ -366,7 +353,7 @@ const UserDetailsPage: React.FC = () => {
                   fontSize: '3rem'
                 }}
               >
-                {user.fullname ? user.fullname.charAt(0).toUpperCase() : <PersonIcon fontSize="large" />}
+                {user.fullname ? user.fullname.charAt(0).toUpperCase() : <Suspense fallback={null}><PersonIcon /></Suspense>}
               </Avatar>
               
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -377,19 +364,23 @@ const UserDetailsPage: React.FC = () => {
                 label={user.role.toUpperCase()} 
                 color={getRoleColor(user.role)} 
                 sx={{ mb: 2 }}
-                icon={<BadgeIcon />}
+                icon={<Suspense fallback={null}><BadgeIcon /></Suspense>}
               />
               
               <Divider sx={{ width: '100%', my: 2 }} />
               
               <Box sx={{ width: '100%', mt: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                  <Suspense fallback={null}>
+                    <EmailIcon />
+                  </Suspense>
                   <Typography variant="body1">{user.username}</Typography>
                 </Box>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <CalendarTodayIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                  <Suspense fallback={null}>
+                    <CalendarTodayIcon />
+                  </Suspense>
                   <Typography variant="body2" color="text.secondary">
                     Dołączył: {new Date(user.createdAt).toLocaleDateString('pl-PL')}
                   </Typography>
@@ -397,7 +388,9 @@ const UserDetailsPage: React.FC = () => {
                 
                 {user.lastLogin && (
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <AccessTimeIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                    <Suspense fallback={null}>
+                      <AccessTimeIcon />
+                    </Suspense>
                     <Typography variant="body2" color="text.secondary">
                       Ostatnie logowanie: {new Date(user.lastLogin).toLocaleString('pl-PL')}
                     </Typography>
@@ -407,7 +400,9 @@ const UserDetailsPage: React.FC = () => {
                 {/* Wyświetl punkty tylko dla administratorów */}
                 {isAdmin() && (
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                    <StarIcon sx={{ mr: 1, color: 'warning.main' }} />
+                    <Suspense fallback={null}>
+                      <StarIcon />
+                    </Suspense>
                     <Typography variant="body1" fontWeight="bold">
                       Punkty: {user.points || 0}
                     </Typography>
@@ -419,7 +414,7 @@ const UserDetailsPage: React.FC = () => {
                   <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
                     <Button
                       variant="outlined"
-                      startIcon={<LockIcon />}
+                      startIcon={<Suspense fallback={null}><LockIcon /></Suspense>}
                       onClick={handlePasswordDialogOpen}
                       color="primary"
                     >
@@ -440,14 +435,9 @@ const UserDetailsPage: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   Szczegółowe informacje
                 </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={handleEditClick}
-                  disabled={isEditing}
-                >
-                  Edytuj
-                </Button>
+                <Suspense fallback={null}>
+                  <EditIcon />
+                </Suspense>
               </Box>
 
               {isEditing ? (

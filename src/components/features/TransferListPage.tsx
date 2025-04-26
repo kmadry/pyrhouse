@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useState, useCallback, lazy } from 'react';
 import {
   Box,
   Typography,
@@ -23,12 +23,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../../hooks/useTransfers';
 import { ErrorMessage } from '../ui/ErrorMessage';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
-import CancelIcon from '@mui/icons-material/Cancel';
-import AddIcon from '@mui/icons-material/Add';
 import debounce from 'lodash/debounce';
+
+const LocalShippingIcon = lazy(() => import('@mui/icons-material/LocalShipping'));
+const CheckCircleIcon = lazy(() => import('@mui/icons-material/CheckCircle'));
+const HourglassEmptyIcon = lazy(() => import('@mui/icons-material/HourglassEmpty'));
+const CancelIcon = lazy(() => import('@mui/icons-material/Cancel'));
+const AddIcon = lazy(() => import('@mui/icons-material/Add'));
 
 const TransfersListPage: React.FC = () => {
   const { transfers, loading, error, refreshTransfers } = useTransfers();
@@ -74,13 +75,13 @@ const TransfersListPage: React.FC = () => {
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return <Chip icon={<LocalShippingIcon />} label="W trasie" color="warning" />;
+        return <Chip icon={<Suspense fallback={null}><LocalShippingIcon /></Suspense>} label="W trasie" color="warning" />;
       case 'completed':
-        return <Chip icon={<CheckCircleIcon />} label="Dostarczony" color="success" />;
+        return <Chip icon={<Suspense fallback={null}><CheckCircleIcon /></Suspense>} label="Dostarczony" color="success" />;
       case 'created':
-        return <Chip icon={<HourglassEmptyIcon />} label="Utworzony" color="default" />;
+        return <Chip icon={<Suspense fallback={null}><HourglassEmptyIcon /></Suspense>} label="Utworzony" color="default" />;
       case 'cancelled':
-        return <Chip icon={<CancelIcon />} label="Anulowany" color="error" />;
+        return <Chip icon={<Suspense fallback={null}><CancelIcon /></Suspense>} label="Anulowany" color="error" />;
       default:
         return <Chip label="Unknown" />;
     }
@@ -237,7 +238,7 @@ const TransfersListPage: React.FC = () => {
         <Button
           variant="contained"
           color="primary"
-          startIcon={<AddIcon />}
+          startIcon={<Suspense fallback={null}><AddIcon /></Suspense>}
           onClick={() => navigate('/transfers/create')}
           sx={{
             borderRadius: 1,

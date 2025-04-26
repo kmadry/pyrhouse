@@ -452,8 +452,8 @@ const CategoryManagementPage: React.FC = () => {
             <MenuItem value="" disabled>
               Wybierz typ
             </MenuItem>
-            <MenuItem value="stock">Stock</MenuItem>
-            <MenuItem value="asset">Asset</MenuItem>
+            <MenuItem value="stock">Sprzęt (pyr_code)</MenuItem>
+            <MenuItem value="asset">Zasoby (magazyn)</MenuItem>
           </Select>
 
           <Button

@@ -498,9 +498,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             onClick={handleDrawerToggle}
             sx={{ mr: 2 }}
           >
-            <LazyIcon>
+            <Suspense fallback={null}>
               <MenuIcon />
-            </LazyIcon>
+            </Suspense>
           </IconButton>
 
           <Box

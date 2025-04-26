@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   Container,
   Typography,
@@ -28,17 +28,23 @@ import {
   ListItemText,
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import AddIcon from '@mui/icons-material/Add';
+import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocations } from '../../hooks/useLocations';
 import { useStocks } from '../../hooks/useStocks';
 import { validatePyrCodeAPI, createTransferAPI, searchPyrCodesAPI } from '../../services/transferService';
 import { getUsersAPI } from '../../services/userService';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LocationOn, Event, Person, Inventory, Close, Check } from '@mui/icons-material';
+
+const DeleteIcon = lazy(() => import('@mui/icons-material/Delete'));
+const CheckCircleIcon = lazy(() => import('@mui/icons-material/CheckCircle'));
+const ErrorIcon = lazy(() => import('@mui/icons-material/Error'));
+const AddIcon = lazy(() => import('@mui/icons-material/Add'));
+const LocationOn = lazy(() => import('@mui/icons-material/LocationOn'));
+const Event = lazy(() => import('@mui/icons-material/Event'));
+const Person = lazy(() => import('@mui/icons-material/Person'));
+const Inventory = lazy(() => import('@mui/icons-material/Inventory'));
+const Close = lazy(() => import('@mui/icons-material/Close'));
+const Check = lazy(() => import('@mui/icons-material/Check'));
 
 interface User {
   id: number;
@@ -434,19 +440,19 @@ const TransferPage: React.FC = () => {
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             <Chip
               size="small"
-              icon={<Person />}
+              icon={<Suspense fallback={null}><Person /></Suspense>}
               label={`Odbiorca: ${questData.recipient}`}
               sx={{ backgroundColor: '#E6CB99' }}
             />
             <Chip
               size="small"
-              icon={<Event />}
+              icon={<Suspense fallback={null}><Event /></Suspense>}
               label={`Termin: ${new Date(questData.deliveryDate).toLocaleDateString()}`}
               sx={{ backgroundColor: '#E6CB99' }}
             />
             <Chip
               size="small"
-              icon={<LocationOn />}
+              icon={<Suspense fallback={null}><LocationOn /></Suspense>}
               label={`${questData.location} - ${questData.pavilion}`}
               sx={{ backgroundColor: '#E6CB99' }}
             />
@@ -832,20 +838,20 @@ const TransferPage: React.FC = () => {
                   <TableCell>
                     {items[index].status === 'success' && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <CheckCircleIcon color="success" />
+                        <Suspense fallback={null}><CheckCircleIcon color="success" /></Suspense>
                         <Typography variant="body2" color="success.main">Dostępny</Typography>
                       </Box>
                     )}
                     {items[index].status === 'failure' && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <ErrorIcon color="error" />
+                        <Suspense fallback={null}><ErrorIcon color="error" /></Suspense>
                         <Typography variant="body2" color="error">Nie znaleziono</Typography>
                       </Box>
                     )}
                   </TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleRemoveRow(index)}>
-                      <DeleteIcon data-testid="DeleteIcon" />
+                      <Suspense fallback={null}><DeleteIcon /></Suspense>
                     </IconButton>
                   </TableCell>
                 </TableRow>
@@ -863,7 +869,7 @@ const TransferPage: React.FC = () => {
           <Button
             variant="outlined"
             color="secondary"
-            startIcon={<AddIcon />}
+            startIcon={<Suspense fallback={null}><AddIcon /></Suspense>}
             onClick={handleAddRow}
             fullWidth={false}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
@@ -927,7 +933,7 @@ const TransferPage: React.FC = () => {
                 }
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <LocationOn sx={{ mr: 1, color: 'primary.main' }} />
+                  <Suspense fallback={null}><LocationOn sx={{ mr: 1, color: 'primary.main' }} /></Suspense>
                   <Typography variant="subtitle1">Lokalizacje</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 2 }}>
@@ -955,7 +961,7 @@ const TransferPage: React.FC = () => {
                   }
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Person sx={{ mr: 1, color: 'primary.main' }} />
+                    <Suspense fallback={null}><Person sx={{ mr: 1, color: 'primary.main' }} /></Suspense>
                     <Typography variant="subtitle1">Uczestnicy questa</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -983,7 +989,7 @@ const TransferPage: React.FC = () => {
                 }
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Inventory sx={{ mr: 1, color: 'primary.main' }} />
+                  <Suspense fallback={null}><Inventory sx={{ mr: 1, color: 'primary.main' }} /></Suspense>
                   <Typography variant="subtitle1">Elementy do transferu</Typography>
                 </Box>
                 <List disablePadding>
@@ -1037,7 +1043,7 @@ const TransferPage: React.FC = () => {
           <Button 
             onClick={() => setShowConfirmation(false)}
             variant="outlined"
-            startIcon={<Close />}
+            startIcon={<Suspense fallback={null}><Close /></Suspense>}
           >
             Anuluj
           </Button>
@@ -1046,7 +1052,7 @@ const TransferPage: React.FC = () => {
             variant="contained"
             color="primary"
             disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : <Check />}
+            startIcon={loading ? <CircularProgress size={20} /> : <Suspense fallback={null}><Check /></Suspense>}
           >
             {loading ? 'Tworzenie...' : 'Rozpocznij quest'}
           </Button>
