@@ -183,20 +183,19 @@ const EquipmentList: React.FC = () => {
       // setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc')
     // };
 
-  const getStatusIcon = (status: string, type: string) => {
+  const getStatusIcon = (status: string, type: string, color?: 'primary' | 'inherit') => {
     if (type === 'stock') return null;
-    
     switch (status) {
       case 'in_stock':
       case 'available':
-        return <Suspense fallback={null}><Home /></Suspense>;
+        return <Suspense fallback={null}><Home color={color} /></Suspense>;
       case 'delivered':
       case 'located':
-        return <Suspense fallback={null}><CheckCircle /></Suspense>;
+        return <Suspense fallback={null}><CheckCircle color={'success'} /></Suspense>;
       case 'in_transit':
-        return <Suspense fallback={null}><LocalShipping /></Suspense>;
+        return <Suspense fallback={null}><LocalShipping color={color || 'primary'} /></Suspense>;
       default:
-        return <Suspense fallback={null}><ErrorOutline /></Suspense>;
+        return <Suspense fallback={null}><ErrorOutline color={'error'} /></Suspense>;
     }
   };
 
@@ -222,13 +221,13 @@ const EquipmentList: React.FC = () => {
             component="div" 
             fontWeight="bold"
             sx={{ 
-              color: item.quantity && item.quantity > 0 ? 'success.main' : 'text.secondary',
+              color: item.state === 'in_transit' ? 'primary.main' : (item.quantity && item.quantity > 0 ? 'success.main' : 'text.secondary'),
               display: 'flex',
               alignItems: 'center',
               gap: 1
             }}
           >
-            <Suspense fallback={null}><Inventory2 /></Suspense>
+            <Suspense fallback={null}><Inventory2 sx={{ color: item.state === 'in_transit' ? 'primary.main' : undefined }} /></Suspense>
             {item.quantity ?? '-'}
           </Typography>
         </Box>
@@ -237,8 +236,8 @@ const EquipmentList: React.FC = () => {
     
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {getStatusIcon(item.state, item.type)}
-        <Typography component="div">
+        {getStatusIcon(item.state, item.type, item.state === 'in_transit' ? 'primary' : 'inherit')}
+        <Typography component="div" sx={{ color: item.state === 'in_transit' ? 'primary.main' : 'inherit' }}>
           {getStatusLabel(item.state)}
         </Typography>
       </Box>
