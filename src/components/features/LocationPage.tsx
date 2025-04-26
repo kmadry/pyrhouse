@@ -21,8 +21,6 @@ import {
   Divider,
   Breadcrumbs,
   Link,
-  Alert,
-  Snackbar,
   IconButton,
   Tooltip,
 } from '@mui/material';
@@ -40,6 +38,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 interface Location {
   id: number;
@@ -69,11 +69,7 @@ const LocationPage: React.FC = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -114,11 +110,7 @@ const LocationPage: React.FC = () => {
 
       const locationData = await locationResponse.json();
       setLocation(locationData);
-      setSnackbar({
-        open: true,
-        message: `Pobrano dane lokalizacji: ${locationData.name}`,
-        severity: 'success'
-      });
+      showSnackbar('success', `Pobrano dane lokalizacji: ${locationData.name}`);
 
       // Pobieranie assetów lokalizacji
       const assetsResponse = await fetch(getApiUrl(`/locations/${id}/assets`), {
@@ -146,11 +138,7 @@ const LocationPage: React.FC = () => {
       setAssets(assetsData);
     } catch (err: any) {
       setError(err.message || 'Wystąpił nieoczekiwany błąd');
-      setSnackbar({
-        open: true,
-        message: err.message || 'Wystąpił nieoczekiwany błąd',
-        severity: 'error'
-      });
+      showSnackbar('error', err.message || 'Wystąpił nieoczekiwany błąd');
     } finally {
       setLoading(false);
     }
@@ -158,11 +146,7 @@ const LocationPage: React.FC = () => {
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
-    setSnackbar({
-      open: true,
-      message: 'Odświeżanie danych...',
-      severity: 'info'
-    });
+    showSnackbar('success', 'Odświeżanie danych...');
   };
 
   const getStatusChip = (status: string) => {
@@ -611,20 +595,15 @@ const LocationPage: React.FC = () => {
       {isMobile ? renderMobileCards() : renderTable()}
 
       {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
     </Box>
   );
 };

@@ -55,6 +55,8 @@ import {
   LocalShipping,
   LocationOn,
 } from '@mui/icons-material';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 interface Transfer {
   ID: number;
@@ -75,19 +77,14 @@ const UserDetailsPage: React.FC = () => {
   
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<any>(null);
-  const [updateError, setUpdateError] = useState<string | null>(null);
-  const [updateSuccess, setUpdateSuccess] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ newPassword: '', confirmPassword: '' });
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [isPasswordUpdating, setIsPasswordUpdating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [transfersError, setTransfersError] = useState<string | null>(null);
   const [transfersLoading, setTransfersLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
 
@@ -107,7 +104,7 @@ const UserDetailsPage: React.FC = () => {
         setUser(data);
         setEditedUser(data);
       } catch (err: any) {
-        setError(err.message || 'Wystąpił nieoczekiwany błąd');
+        showSnackbar('error', 'Błąd podczas ładowania danych użytkownika', err.message || 'Wystąpił nieoczekiwany błąd');
       } finally {
         setLoading(false);
       }
@@ -121,7 +118,6 @@ const UserDetailsPage: React.FC = () => {
       if (!id) return;
       
       setTransfersLoading(true);
-      setTransfersError(null);
       
       try {
         const token = localStorage.getItem('token');
@@ -143,7 +139,7 @@ const UserDetailsPage: React.FC = () => {
 
         if (!response.ok) {
           if (response.status === 400 || response.status === 401) {
-            setTransfersError('Nie udało się pobrać transferów. Spróbuj odświeżyć stronę.');
+            showSnackbar('error', 'Nie udało się pobrać transferów. Spróbuj odświeżyć stronę.', 'Nie udało się pobrać transferów. Spróbuj odświeżyć stronę.');
             setTransfers([]);
             return;
           }
@@ -153,7 +149,7 @@ const UserDetailsPage: React.FC = () => {
         const data = await response.json();
         setTransfers(data);
       } catch (err) {
-        setTransfersError(err instanceof Error ? err.message : 'Wystąpił nieznany błąd');
+        showSnackbar('error', 'Błąd podczas pobierania transferów', err instanceof Error ? err.message : 'Wystąpił nieznany błąd');
         setTransfers([]);
       } finally {
         setTransfersLoading(false);
@@ -203,7 +199,6 @@ const UserDetailsPage: React.FC = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditedUser(user);
-    setUpdateError(null);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,9 +211,27 @@ const UserDetailsPage: React.FC = () => {
     setEditedUser((prev: any) => ({ ...prev, [name]: value }));
   };
 
+  // Zwraca tylko te pola, które zostały zmienione względem oryginału
+  const getChangedFields = (original: any, edited: any) => {
+    const diff: any = {};
+    Object.keys(edited).forEach((key) => {
+      if (edited[key] !== original[key]) {
+        diff[key] = edited[key];
+      }
+    });
+    return diff;
+  };
+
   const handleUpdateUser = async () => {
     setIsUpdating(true);
     try {
+      const changedFields = getChangedFields(user, editedUser);
+      if (Object.keys(changedFields).length === 0) {
+        showSnackbar('info', 'Nie wprowadzono żadnych zmian.');
+        setIsUpdating(false);
+        setIsEditing(false);
+        return;
+      }
       const token = localStorage.getItem('token');
       const response = await fetch(getApiUrl(`/users/${id}`), {
         method: 'PATCH',
@@ -226,7 +239,7 @@ const UserDetailsPage: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(editedUser),
+        body: JSON.stringify(changedFields),
       });
 
       if (!response.ok) {
@@ -236,9 +249,9 @@ const UserDetailsPage: React.FC = () => {
       const updatedUser = await response.json();
       setUser(updatedUser);
       setIsEditing(false);
-      setUpdateSuccess(true);
+      showSnackbar('success', 'Dane użytkownika zostały zaktualizowane pomyślnie!');
     } catch (err: any) {
-      setUpdateError(err.message || 'Wystąpił nieoczekiwany błąd');
+      showSnackbar('error', 'Nie udało się zaktualizować danych użytkownika', err.message || 'Wystąpił nieoczekiwany błąd');
     } finally {
       setIsUpdating(false);
     }
@@ -251,7 +264,6 @@ const UserDetailsPage: React.FC = () => {
   const handlePasswordDialogClose = () => {
     setIsPasswordDialogOpen(false);
     setPasswordData({ newPassword: '', confirmPassword: '' });
-    setPasswordError(null);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -261,7 +273,7 @@ const UserDetailsPage: React.FC = () => {
 
   const handlePasswordUpdate = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('Hasła nie są identyczne');
+      showSnackbar('error', 'Hasła nie są identyczne', 'Hasła nie są identyczne');
       return;
     }
 
@@ -282,9 +294,9 @@ const UserDetailsPage: React.FC = () => {
       }
 
       handlePasswordDialogClose();
-      setPasswordSuccess(true);
+      showSnackbar('success', 'Hasło zostało zmienione pomyślnie!', 'Hasło zostało zmienione pomyślnie!');
     } catch (err: any) {
-      setPasswordError(err.message || 'Wystąpił nieoczekiwany błąd');
+      showSnackbar('error', 'Nie udało się zmienić hasła', err.message || 'Wystąpił nieoczekiwany błąd');
     } finally {
       setIsPasswordUpdating(false);
     }
@@ -294,14 +306,6 @@ const UserDetailsPage: React.FC = () => {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <ErrorMessage message="Błąd podczas ładowania danych użytkownika" details={error} />
       </Box>
     );
   }
@@ -479,12 +483,6 @@ const UserDetailsPage: React.FC = () => {
                     </Select>
                   </FormControl>
 
-                  {updateError && (
-                    <Alert severity="error" sx={{ mt: 2 }}>
-                      {updateError}
-                    </Alert>
-                  )}
-
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 2 }}>
                     <Button variant="outlined" onClick={handleCancelEdit}>
                       Anuluj
@@ -546,78 +544,6 @@ const UserDetailsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      <Snackbar
-        open={updateSuccess}
-        autoHideDuration={3000}
-        onClose={() => setUpdateSuccess(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={() => setUpdateSuccess(false)} severity="success" sx={{ width: '100%' }}>
-          Dane użytkownika zostały zaktualizowane pomyślnie!
-        </Alert>
-      </Snackbar>
-
-      {/* Dialog zmiany hasła */}
-      <Dialog open={isPasswordDialogOpen} onClose={handlePasswordDialogClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Zmiana hasła</DialogTitle>
-        <DialogContent>
-          {passwordError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {passwordError}
-            </Alert>
-          )}
-          
-          <Box sx={{ pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Nowe hasło"
-              name="newPassword"
-              type="password"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-              margin="normal"
-              required
-            />
-            
-            <TextField
-              fullWidth
-              label="Potwierdź nowe hasło"
-              name="confirmPassword"
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={handlePasswordChange}
-              margin="normal"
-              required
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handlePasswordDialogClose} disabled={isPasswordUpdating}>
-            Anuluj
-          </Button>
-          <Button 
-            onClick={handlePasswordUpdate} 
-            variant="contained" 
-            color="primary"
-            disabled={isPasswordUpdating}
-          >
-            {isPasswordUpdating ? <CircularProgress size={24} /> : 'Zmień hasło'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Komunikat sukcesu dla zmiany hasła */}
-      <Snackbar
-        open={passwordSuccess}
-        autoHideDuration={3000}
-        onClose={() => setPasswordSuccess(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={() => setPasswordSuccess(false)} severity="success" sx={{ width: '100%' }}>
-          Hasło zostało zmienione pomyślnie!
-        </Alert>
-      </Snackbar>
-
       <Card sx={{ mt: 4 }}>
         <CardHeader 
           title="Questy użytkownika"
@@ -669,8 +595,6 @@ const UserDetailsPage: React.FC = () => {
             <Box display="flex" justifyContent="center" p={3}>
               <CircularProgress />
             </Box>
-          ) : transfersError ? (
-            <Alert severity="error">{transfersError}</Alert>
           ) : transfers.length === 0 ? (
             <Alert severity="info">
               Brak transferów o wybranym statusie
@@ -764,6 +688,57 @@ const UserDetailsPage: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isPasswordDialogOpen} onClose={handlePasswordDialogClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Zmiana hasła</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <TextField
+              fullWidth
+              label="Nowe hasło"
+              name="newPassword"
+              type="password"
+              value={passwordData.newPassword}
+              onChange={handlePasswordChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Potwierdź nowe hasło"
+              name="confirmPassword"
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={handlePasswordChange}
+              margin="normal"
+              required
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handlePasswordDialogClose} disabled={isPasswordUpdating}>
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handlePasswordUpdate} 
+            variant="contained" 
+            color="primary"
+            disabled={isPasswordUpdating}
+          >
+            {isPasswordUpdating ? <CircularProgress size={24} /> : 'Zmień hasło'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
     </Box>
   );
 };

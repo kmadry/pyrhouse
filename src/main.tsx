@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import './config/console'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {
@@ -11,12 +12,10 @@ if (!rootElement) {
 
 const root = createRoot(rootElement)
 
-try {
-  root.render(
-    <StrictMode>
+root.render(
+  <StrictMode>
+    <ErrorBoundary>
       <App />
-    </StrictMode>,
-  )
-} catch (error) {
-  console.error('Error rendering the app:', error)
-}
+    </ErrorBoundary>
+  </StrictMode>
+)
