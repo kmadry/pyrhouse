@@ -28,8 +28,6 @@ import {
   Divider,
   Chip,
   IconButton,
-  Alert,
-  Snackbar,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -38,6 +36,8 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useCategories } from '../../hooks/useCategories';
 import { ErrorMessage } from '../ui/ErrorMessage';
 import * as Icons from '@mui/icons-material';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 const CategoryManagementPage: React.FC = () => {
   const { categories, loading, error, addCategory, deleteCategory, setError } = useCategories();
@@ -55,7 +55,7 @@ const CategoryManagementPage: React.FC = () => {
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
@@ -109,9 +109,14 @@ const CategoryManagementPage: React.FC = () => {
     if (categoryToDelete) {
       try {
         await deleteCategory(categoryToDelete);
-        setSuccessMessage('Kategoria została usunięta pomyślnie!');
+        showSnackbar('success', 'Kategoria została usunięta pomyślnie!', undefined, 3000);
         handleCloseDeleteModal();
       } catch (err: any) {
+        if (err && typeof err === 'object' && 'message' in err) {
+          showSnackbar('error', err.message, err.details, null);
+        } else {
+          showSnackbar('error', err.message || 'Wystąpił nieoczekiwany błąd podczas usuwania kategorii.', undefined, null);
+        }
         handleCloseDeleteModal();
       }
     }
@@ -268,10 +273,6 @@ const CategoryManagementPage: React.FC = () => {
     </Grid>
   );
 
-  const handleCloseErrorAlert = () => {
-    if (typeof setError === 'function') setError(null);
-  };
-
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -280,15 +281,6 @@ const CategoryManagementPage: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [error, setError]);
-
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
 
   return (
     <Box sx={{ 
@@ -299,51 +291,15 @@ const CategoryManagementPage: React.FC = () => {
       borderRadius: 2,
       boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
-      <Snackbar
-        open={!!error}
-        autoHideDuration={null}
-        onClose={handleCloseErrorAlert}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert 
-          severity="error" 
-          onClose={handleCloseErrorAlert}
-          sx={{ borderRadius: 1, minWidth: 320 }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="subtitle1" fontWeight="500">
-              Wystąpił błąd
-            </Typography>
-            {error && error.split('\n').map((line, idx) => (
-              <Typography variant={idx === 0 ? 'body1' : 'body2'} key={idx} color={idx === 0 ? undefined : 'text.secondary'}>
-                {line}
-              </Typography>
-            ))}
-          </Box>
-        </Alert>
-      </Snackbar>
-
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={3000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert 
-          severity="success" 
-          onClose={() => setSuccessMessage(null)}
-          sx={{ borderRadius: 1, minWidth: 320 }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="subtitle1" fontWeight="500">
-              Sukces
-            </Typography>
-            <Typography variant="body1">
-              {successMessage}
-            </Typography>
-          </Box>
-        </Alert>
-      </Snackbar>
+      />
 
       <Box sx={{ 
         display: 'flex', 

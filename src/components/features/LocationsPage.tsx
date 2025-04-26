@@ -25,7 +25,6 @@ import {
   useTheme,
   Divider,
   Chip,
-  Snackbar,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -37,6 +36,8 @@ import { deleteLocation, updateLocation, createLocation } from '../../services/l
 import { Location } from '../../models/Location';
 import * as Icons from '@mui/icons-material';
 import { useAuth } from '../../hooks/useAuth';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 const LocationsPage: React.FC = () => {
   const { locations, error, refetch, loading } = useLocations();
@@ -47,9 +48,9 @@ const LocationsPage: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', details: '' });
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [deleteErrorDetails, setDeleteErrorDetails] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [locationToDelete, setLocationToDelete] = useState<number | null>(null);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -120,34 +121,33 @@ const LocationsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Czy na pewno chcesz usunąć tę lokalizację?')) {
+  const handleOpenDeleteModal = (id: number) => {
+    setLocationToDelete(id);
+    setDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setLocationToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (locationToDelete) {
       try {
-        await deleteLocation(id);
-        setSuccessMessage('Lokalizacja została usunięta pomyślnie!');
-        setDeleteError(null);
-        setDeleteErrorDetails(null);
+        await deleteLocation(locationToDelete);
+        showSnackbar('success', 'Lokalizacja została usunięta pomyślnie!', undefined, 3000);
         refetch();
       } catch (err: any) {
         if (err && typeof err === 'object' && 'message' in err) {
-          setDeleteError(err.message);
-          setDeleteErrorDetails(err.details || null);
+          showSnackbar('error', err.message, err.details, null);
         } else {
-          setDeleteError(err.message || 'Wystąpił nieoczekiwany błąd podczas usuwania lokalizacji.');
-          setDeleteErrorDetails(null);
+          showSnackbar('error', err.message || 'Wystąpił nieoczekiwany błąd podczas usuwania lokalizacji.', undefined, null);
         }
+      } finally {
+        handleCloseDeleteModal();
       }
     }
   };
-
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
 
   const filteredLocations = locations.filter(location =>
     location.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -230,7 +230,7 @@ const LocationsPage: React.FC = () => {
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => handleDelete(location.id)}
+                      onClick={() => handleOpenDeleteModal(location.id)}
                       size="small"
                     >
                       <DeleteIcon />
@@ -311,7 +311,7 @@ const LocationsPage: React.FC = () => {
                   </IconButton>
                   <IconButton
                     color="error"
-                    onClick={() => handleDelete(location.id)}
+                    onClick={() => handleOpenDeleteModal(location.id)}
                     size="small"
                   >
                     <DeleteIcon />
@@ -516,50 +516,44 @@ const LocationsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={!!deleteError}
-        autoHideDuration={null}
-        onClose={() => setDeleteError(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      <Dialog
+        open={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxWidth: '500px',
+            width: '100%'
+          }
+        }}
       >
-        <Alert 
-          severity="error" 
-          onClose={() => setDeleteError(null)}
-          sx={{ borderRadius: 1, minWidth: 320 }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="subtitle1" fontWeight="500">
-              Wystąpił błąd
-            </Typography>
-            <Typography variant="body1">{deleteError}</Typography>
-            {deleteErrorDetails && (
-              <Typography variant="body2" color="text.secondary">{deleteErrorDetails}</Typography>
-            )}
-          </Box>
-        </Alert>
-      </Snackbar>
+        <DialogTitle>Potwierdź usunięcie</DialogTitle>
+        <DialogContent>
+          <Typography>Czy na pewno chcesz usunąć tę lokalizację?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDeleteModal} variant="outlined">
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleConfirmDelete} 
+            variant="contained" 
+            color="error"
+          >
+            Usuń
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={3000}
-        onClose={() => setSuccessMessage(null)}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert 
-          severity="success" 
-          onClose={() => setSuccessMessage(null)}
-          sx={{ borderRadius: 1, minWidth: 320 }}
-        >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography variant="subtitle1" fontWeight="500">
-              Sukces
-            </Typography>
-            <Typography variant="body1">
-              {successMessage}
-            </Typography>
-          </Box>
-        </Alert>
-      </Snackbar>
+      />
     </Box>
   );
 };
