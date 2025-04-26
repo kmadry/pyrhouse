@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 export const TOKEN_KEY = 'token';
 export const THEME_MODE_KEY = 'themeMode';
+export const USERNAME_KEY = 'username';
 
 export const useStorage = () => {
   const getItem = useCallback((key: string) => {
@@ -47,6 +48,18 @@ export const useStorage = () => {
     setItem(THEME_MODE_KEY, mode);
   }, [setItem]);
 
+  const getUsername = useCallback(() => {
+    return getItem(USERNAME_KEY);
+  }, [getItem]);
+
+  const setUsername = useCallback((username: string) => {
+    setItem(USERNAME_KEY, username);
+  }, [setItem]);
+
+  const removeUsername = useCallback(() => {
+    removeItem(USERNAME_KEY);
+  }, [removeItem]);
+
   return {
     getItem,
     setItem,
@@ -56,5 +69,8 @@ export const useStorage = () => {
     removeToken,
     getThemeMode,
     setThemeMode,
+    getUsername,
+    setUsername,
+    removeUsername,
   };
 }; 

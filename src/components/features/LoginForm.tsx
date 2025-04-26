@@ -31,6 +31,7 @@ import pyrkonLogo from '../../assets/images/p-logo.svg';
 import { hyperJumpAnimation, starStreakAnimation } from '../../animations/keyframes';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { jwtDecode } from 'jwt-decode';
 
 // Mapowanie komunikatów błędów na polskie tłumaczenia
 const errorMessages: Record<string, string> = {
@@ -52,7 +53,7 @@ const LoginForm: React.FC = () => {
   const [isHyperJumping, setIsHyperJumping] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
-  const { setToken } = useStorage();
+  const { setToken, setUsername: setStoredUsername } = useStorage();
   const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
@@ -108,6 +109,16 @@ const LoginForm: React.FC = () => {
       if (response.ok) {
         const data: { token: string } = await response.json();
         setToken(data.token);
+        // Dekoduj JWT i zapisz username do storage
+        try {
+          const decoded: any = jwtDecode(data.token);
+          if (decoded && decoded.username) {
+            setStoredUsername(decoded.username);
+          }
+        } catch (err) {
+          // Jeśli nie uda się zdekodować, nie zapisuj username
+          console.error('Błąd dekodowania JWT:', err);
+        }
         if (prefersAnimations) {
           setIsHyperJumping(true);
           setTimeout(() => {

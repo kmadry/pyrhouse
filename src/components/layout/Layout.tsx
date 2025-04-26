@@ -120,7 +120,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [showQuestTransition, setShowQuestTransition] = useState(false);
   const [showLocationTransition, setShowLocationTransition] = useState(false);
   const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
-  const { getToken, removeToken } = useStorage();
+  const { getToken, removeToken, getUsername } = useStorage();
+  const [username, setUsername] = useState<string>('');
 
   const handleLogout = useCallback(() => {
     removeToken();
@@ -152,6 +153,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       handleLogout();
     }
   }, [isTokenValid, handleLogout, getToken]);
+
+  useEffect(() => {
+    const storedUsername = getUsername();
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, [getUsername]);
 
   // Obsługa resize i scroll
   useEffect(() => {
@@ -540,7 +548,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <Icons.Person />
                   </LazyIcon>
                   <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                    {userId ? 'Użytkownik' : ''}
+                    {userId ? (username || 'Użytkownik') : ''}
                   </Typography>
                   <LazyIcon>
                     <Icons.ExpandMore sx={{ fontSize: 20 }} />
@@ -577,7 +585,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </LazyIcon>
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {userId ? 'Użytkownik' : ''}
+                      {userId ? (username || 'Użytkownik') : ''}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {userRole === 'admin' ? 'Administrator' : userRole === 'moderator' ? 'Moderator' : 'Użytkownik'}
