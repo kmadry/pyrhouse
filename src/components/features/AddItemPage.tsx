@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Typography, Tabs, Tab, Box, Button } from '@mui/material';
 import { AddAssetForm } from './AddAssetForm';
 import { AddStockForm } from './AddStockForm';
 import { BulkAddAssetForm } from './BulkAddAssetForm';
-import { ErrorMessage } from '../ui/ErrorMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { useCategories } from '../../hooks/useCategories';
 
 const AddItemPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0); // 0 = "Wartościowe", 1 = "Zasoby"
   const [isBulkMode, setIsBulkMode] = useState(false);
   const { categories, error, loading } = useCategories();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+
+  // Wyświetl snackbar tylko raz, gdy pojawi się error
+  useEffect(() => {
+    if (error) {
+      showSnackbar('error', error, undefined, null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   return (
     <Container>
@@ -22,7 +32,15 @@ const AddItemPage: React.FC = () => {
         <Tab label="Zasoby (Magazyn)" />
       </Tabs>
 
-      {error && <ErrorMessage message={error} />}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
 
       {currentTab === 0 && (
         <Box>

@@ -8,9 +8,10 @@ import {
   CircularProgress,
   Dialog,
 } from '@mui/material';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { BarcodeGenerator } from '../common/BarcodeGenerator';
 import { getApiUrl } from '../../config/api';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 // Origin options array
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
@@ -40,26 +41,23 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
   const [origin, setOrigin] = useState('probis');
   const [customOrigin, setCustomOrigin] = useState('');
   const [categoryID, setCategoryID] = useState('');
-  const [error, setError] = useState('');
-  const [errorDetails, setErrorDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [createdAsset, setCreatedAsset] = useState<Asset | null>(null);
   const [showBarcode, setShowBarcode] = useState(false);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   // Filter categories to only include type "asset"
   const assetCategories = categories.filter((category) => category.type === 'asset');
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError('');
-    setErrorDetails('');
     setSubmitting(true);
     setCreatedAsset(null);
     setShowBarcode(false);
 
     // Validate custom origin
     if ((origin === 'personal' || origin === 'other') && !customOrigin.trim()) {
-      setError('Wymagane dodatkowe informacje dla personal/other');
+      showSnackbar('error', 'Wymagane dodatkowe informacje dla personal/other');
       setSubmitting(false);
       return;
     }
@@ -86,8 +84,7 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
 
       if (!response.ok) {
         const errorResponse = await response.json();
-        setError(`HTTP ${response.status}: Nie udało się dodać sprzętu`);
-        setErrorDetails(`Details: ${errorResponse.error || 'Brak szczegółów'}`);
+        showSnackbar('error', `HTTP ${response.status}: Nie udało się dodać sprzętu`, errorResponse.error, null);
         return;
       }
 
@@ -101,8 +98,7 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
       setOrigin('probis');
       setCustomOrigin('');
     } catch (err: any) {
-      setError('Wystąpił nieoczekiwany błąd');
-      setErrorDetails(err.message || 'Brak szczegółów');
+      showSnackbar('error', 'Wystąpił nieoczekiwany błąd', err.message || 'Brak szczegółów', null);
     } finally {
       setSubmitting(false);
     }
@@ -111,7 +107,15 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       {/* Display Error Message */}
-      {error && <ErrorMessage message={error} details={errorDetails} />}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
 
       {/* Serial Input */}
       <TextField

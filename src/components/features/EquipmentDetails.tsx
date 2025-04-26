@@ -445,12 +445,22 @@ const EquipmentDetails: React.FC = () => {
                 </Box>
                 {type === 'asset' && (
                   <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                      PYR Code
-                    </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {details.pyrcode || 'N/A'}
-                    </Typography>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                        PYR Code
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {details.pyrcode || 'N/A'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                        Numer seryjny
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {details.serial || 'N/A'}
+                      </Typography>
+                    </Box>
                   </Box>
                 )}
                 {type === 'stock' && (

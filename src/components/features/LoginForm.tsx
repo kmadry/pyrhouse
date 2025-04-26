@@ -29,6 +29,8 @@ import { useStorage } from '../../hooks/useStorage';
 import { useAnimationPreference } from '../../hooks/useAnimationPreference';
 import pyrkonLogo from '../../assets/images/p-logo.svg';
 import { hyperJumpAnimation, starStreakAnimation } from '../../animations/keyframes';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 // Mapowanie komunikatów błędów na polskie tłumaczenia
 const errorMessages: Record<string, string> = {
@@ -44,7 +46,6 @@ const errorMessages: Record<string, string> = {
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [capsLockOn, setCapsLockOn] = useState<boolean>(false);
@@ -53,6 +54,7 @@ const LoginForm: React.FC = () => {
   const theme = useTheme();
   const { setToken } = useStorage();
   const { prefersAnimations, toggleAnimations, isSystemReducedMotion } = useAnimationPreference();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   // Automatyczne skupienie na polu username
   useEffect(() => {
@@ -92,7 +94,6 @@ const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
     
     try {
@@ -116,20 +117,14 @@ const LoginForm: React.FC = () => {
           navigate('/home');
         }
       } else {
-        if (response.status === 401) {
-          const errorData = await response.json();
-          const errorMessage = errorData.error || 'Invalid username or password';
-          setError(translateError(errorMessage));
-        } else {
-          const errorData = await response.json();
-          const errorMessage = errorData.error || 'Unknown error';
-          setError(translateError(errorMessage));
-        }
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Unknown error';
+        showSnackbar('error', translateError(errorMessage), undefined, null);
         setIsLoading(false);
       }
     } catch (error) {
       console.error('Error:', error);
-      setError(translateError('Network error'));
+      showSnackbar('error', translateError('Network error'), undefined, null);
       setIsLoading(false);
     }
   };
@@ -254,21 +249,6 @@ const LoginForm: React.FC = () => {
                 Zaloguj się, aby kontynuować
               </Typography>
             </Box>
-
-            {error && (
-              <Alert 
-                severity="error" 
-                sx={{ 
-                  mb: 3, 
-                  borderRadius: 1,
-                  '& .MuiAlert-icon': {
-                    fontSize: '1.2rem',
-                  }
-                }}
-              >
-                {error}
-              </Alert>
-            )}
 
             {capsLockOn && (
               <Alert 
@@ -429,6 +409,16 @@ const LoginForm: React.FC = () => {
                 © {new Date().getFullYear()} PyrHouse - System zarządzania sprzętem
               </Typography>
             </Box>
+
+            <AppSnackbar
+              open={snackbar.open}
+              type={snackbar.type}
+              message={snackbar.message}
+              details={snackbar.details}
+              onClose={closeSnackbar}
+              autoHideDuration={snackbar.autoHideDuration}
+              anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            />
           </Paper>
         </Container>
       </Fade>
