@@ -26,7 +26,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../../hooks/useLocations';
 import { useCategories } from '../../hooks/useCategories';
-import { ErrorMessage } from '../ui/ErrorMessage';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
 import { getApiUrl } from '../../config/api';
 
 interface Location {
@@ -74,14 +75,12 @@ const EquipmentList: React.FC = () => {
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryType, setCategoryType] = useState<'asset' | 'stock' | ''>('');
-  // const [setSortField] = useState<string>('id');
-  // const [setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
   const { locations, loading: locationsLoading, refetch: fetchLocations } = useLocations();
   const { categories, loading: categoriesLoading } = useCategories();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -95,12 +94,19 @@ const EquipmentList: React.FC = () => {
       setLoading(true);
       setEquipment([]); // Clear the state before fetching new data
 
-      const response = await fetch(getApiUrl('/items'));
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl('/items'), {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (response.status === 400 || response.status === 404) {
         setEquipment([]);
         setFilteredEquipment([]);
-        setError('');
+        const data = await response.json();
+        showSnackbar('error', data.error || 'Wystąpił błąd podczas pobierania sprzętu');
         return;
       }
 
@@ -123,9 +129,8 @@ const EquipmentList: React.FC = () => {
 
       setEquipment(transformedData);
       setFilteredEquipment(transformedData); // Initially show all data
-      setError('');
     } catch (err: any) {
-      setError(err.message);
+      showSnackbar('error', err.message || 'Wystąpił błąd podczas pobierania sprzętu');
     } finally {
       setLoading(false);
     }
@@ -441,6 +446,15 @@ const EquipmentList: React.FC = () => {
       borderRadius: 2,
       boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       <Box sx={{ 
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' },
@@ -739,12 +753,6 @@ const EquipmentList: React.FC = () => {
           </Select>
         </Box>
       </Box>
-
-      {error && (
-        <Box sx={{ mb: 3 }}>
-          <ErrorMessage message={error} />
-        </Box>
-      )}
 
       {loading ? (
         <Box sx={{ 

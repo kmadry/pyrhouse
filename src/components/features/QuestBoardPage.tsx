@@ -15,10 +15,11 @@ import { AccessTime, LocationOn, AddCircleOutline } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useStorage } from '../../hooks/useStorage';
 import { getApiUrl } from '../../config/api';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import QuestLoadingBar from './QuestLoadingBar';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 interface Quest {
   recipient: string;
@@ -192,6 +193,7 @@ const QuestBoardPage: React.FC = () => {
   const [showAdminInfo, setShowAdminInfo] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   // Funkcja sprawdzająca, czy użytkownik ma uprawnienia administratora
   const hasAdminAccess = () => {
@@ -220,6 +222,12 @@ const QuestBoardPage: React.FC = () => {
   useEffect(() => {
     fetchQuests();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (error) {
+      showSnackbar('error', error);
+    }
+  }, [error]);
 
   const fetchQuests = async () => {
     try {
@@ -310,7 +318,19 @@ const QuestBoardPage: React.FC = () => {
   }
 
   if (error) {
-    return <ErrorMessage message={error} />;
+    return (
+      <Box sx={{ p: 2 }}>
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
+      </Box>
+    );
   }
 
   return (

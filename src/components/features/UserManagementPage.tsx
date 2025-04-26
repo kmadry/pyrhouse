@@ -26,9 +26,10 @@ import {
   Divider,
   Chip,
 } from '@mui/material';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../../config/api';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
 const AddIcon = lazy(() => import('@mui/icons-material/Add'));
 const PersonIcon = lazy(() => import('@mui/icons-material/Person'));
 const AdminPanelSettingsIcon = lazy(() => import('@mui/icons-material/AdminPanelSettings'));
@@ -50,6 +51,7 @@ const UserManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   useEffect(() => {
     fetchUsers();
@@ -69,6 +71,7 @@ const UserManagementPage: React.FC = () => {
       setUsers(data);
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
+      showSnackbar('error', 'Wystąpił błąd', err.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -113,6 +116,7 @@ const UserManagementPage: React.FC = () => {
       fetchUsers(); // Refresh the user list
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
+      showSnackbar('error', 'Wystąpił błąd', err.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
@@ -266,7 +270,15 @@ const UserManagementPage: React.FC = () => {
   if (error) {
     return (
       <Box sx={{ p: 2 }}>
-        <ErrorMessage message="Błąd podczas ładowania użytkowników" details={error} />
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Box>
     );
   }
@@ -410,7 +422,15 @@ const UserManagementPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           {error && (
-            <ErrorMessage message={error} />
+            <AppSnackbar
+              open={snackbar.open}
+              type={snackbar.type}
+              message={snackbar.message}
+              details={snackbar.details}
+              onClose={closeSnackbar}
+              autoHideDuration={snackbar.autoHideDuration}
+              anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            />
           )}
 
           <TextField
@@ -464,6 +484,16 @@ const UserManagementPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
     </Box>
   );
 };

@@ -34,7 +34,6 @@ import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useCategories } from '../../hooks/useCategories';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import * as Icons from '@mui/icons-material';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
@@ -47,7 +46,6 @@ const CategoryManagementPage: React.FC = () => {
   // State for managing add modal
   const [isAddModalOpen, setAddModalOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', label: '', type: '', pyr_id: '' });
-  const [formError, setFormError] = useState('');
   const [showAdditionalOptions, setShowAdditionalOptions] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -59,7 +57,6 @@ const CategoryManagementPage: React.FC = () => {
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
-    setFormError('');
     setNewCategory({ name: '', label: '', type: '', pyr_id: '' });
     setShowAdditionalOptions(false);
   };
@@ -70,7 +67,7 @@ const CategoryManagementPage: React.FC = () => {
 
   const handleAddCategory = async () => {
     if (!newCategory.label || !newCategory.type) {
-      setFormError('Label i Typ są wymagane.');
+      showSnackbar('error', 'Label i Typ są wymagane.');
       return;
     }
 
@@ -91,7 +88,7 @@ const CategoryManagementPage: React.FC = () => {
       await addCategory(payload);
       handleCloseAddModal();
     } catch (err: any) {
-      setFormError(err.message);
+      showSnackbar('error', err.message);
     }
   };
 
@@ -430,9 +427,7 @@ const CategoryManagementPage: React.FC = () => {
           Dodaj Kategorię
         </DialogTitle>
         <DialogContent>
-          {formError && (
-            <ErrorMessage message={formError} />
-          )}
+          {/* Komunikaty o błędach obsługuje snackbar */}
 
           <TextField
             label="Label"

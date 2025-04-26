@@ -9,7 +9,6 @@ import {
   MenuItem,
   IconButton,
   Typography,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -17,6 +16,8 @@ import {
 } from '@mui/material';
 import { bulkAddAssetsAPI } from '../../services/assetService';
 import { BarcodeGenerator } from '../common/BarcodeGenerator';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 interface AssetEntry {
   id: string;
@@ -67,12 +68,11 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
   const [categoryId, setCategoryId] = useState<number>(0);
   const [origin, setOrigin] = useState<string>('');
   const [customOrigin, setCustomOrigin] = useState<string>('');
-  const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>('');
   const [createdAssets, setCreatedAssets] = useState<CreatedAsset[]>([]);
   const [showBarcodes, setShowBarcodes] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   useEffect(() => {
     inputRefs.current = inputRefs.current.slice(0, assets.length);
@@ -105,8 +105,6 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
     setCategoryId(0);
     setOrigin('');
     setCustomOrigin('');
-    setError('');
-    setSuccessMessage('');
     setCreatedAssets([]);
     setShowBarcodes(false);
     setIsSubmitting(false);
@@ -114,25 +112,23 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError('');
-    setSuccessMessage('');
     setIsSubmitting(true);
 
     // Validate inputs
     if (!categoryId) {
-      setError('Wybierz kategorię');
+      showSnackbar('error', 'Wybierz kategorię');
       setIsSubmitting(false);
       return;
     }
 
     if (!origin) {
-      setError('Wybierz pochodzenie');
+      showSnackbar('error', 'Wybierz pochodzenie');
       setIsSubmitting(false);
       return;
     }
 
     if (origin === 'other' && !customOrigin) {
-      setError('Podaj pochodzenie');
+      showSnackbar('error', 'Podaj pochodzenie');
       setIsSubmitting(false);
       return;
     }
@@ -140,7 +136,7 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
     // Filter out empty serial numbers
     const validAssets = assets.filter(asset => asset.serial.trim() !== '');
     if (validAssets.length === 0) {
-      setError('Dodaj co najmniej jeden numer seryjny');
+      showSnackbar('error', 'Dodaj co najmniej jeden numer seryjny');
       setIsSubmitting(false);
       return;
     }
@@ -167,14 +163,14 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
         setCustomOrigin('');
         
         // Zachowaj tylko komunikat sukcesu i otwórz modal z kodami
-        setSuccessMessage('Zasoby zostały dodane pomyślnie');
+        showSnackbar('success', 'Zasoby zostały dodane pomyślnie');
         setCreatedAssets(response.created);
         setShowBarcodes(true);
       } else {
-        setError('Niepoprawna odpowiedź z API');
+        showSnackbar('error', 'Niepoprawna odpowiedź z API');
       }
     } catch (err: any) {
-      setError(err.message || 'Wystąpił błąd podczas dodawania zasobów');
+      showSnackbar('error', err.message || 'Wystąpił błąd podczas dodawania zasobów');
     } finally {
       setIsSubmitting(false);
     }
@@ -202,16 +198,15 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {successMessage}
-        </Alert>
-      )}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>

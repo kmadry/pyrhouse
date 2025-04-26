@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { getApiUrl } from '../../config/api';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
@@ -359,7 +358,15 @@ const LocationPage: React.FC = () => {
             Powrót do listy lokalizacji
           </Button>
         </Box>
-        <ErrorMessage message="Wystąpił błąd" details={error} />
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Box>
     );
   }
@@ -376,7 +383,15 @@ const LocationPage: React.FC = () => {
             Powrót do listy lokalizacji
           </Button>
         </Box>
-        <ErrorMessage message="Nie znaleziono lokalizacji" />
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Box>
     );
   }

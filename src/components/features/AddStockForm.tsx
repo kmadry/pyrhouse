@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Button, Select, MenuItem, TextField, CircularProgress, InputLabel, FormControl } from '@mui/material';
-import { ErrorMessage } from '../ui/ErrorMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { getApiUrl } from '../../config/api';
 
 const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
@@ -11,19 +12,16 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
   const [quantity, setQuantity] = useState<number | string>('');
   const [origin, setOrigin] = useState('probis'); // Default value for origin
   const [customOrigin, setCustomOrigin] = useState(''); // For personal/other origin
-  const [error, setError] = useState('');
-  const [errorDetails, setErrorDetails] = useState(''); // Additional error details
   const [submitting, setSubmitting] = useState(false);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError('');
-    setErrorDetails('');
     setSubmitting(true);
 
     // Validate custom origin if required
     if ((origin === 'personal' || origin === 'other') && !customOrigin.trim()) {
-      setError('Wymagane dodatkowe informacje dla personal/other');
+      showSnackbar('error', 'Wymagane dodatkowe informacje dla personal/other');
       setSubmitting(false);
       return;
     }
@@ -32,6 +30,17 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
     let finalOrigin = origin;
     if (origin === 'personal') finalOrigin = `personal-${customOrigin}`;
     else if (origin === 'other') finalOrigin = `other-${customOrigin}`;
+
+    if (!stockCategoryID) {
+      showSnackbar('error', 'Wybierz kategorię');
+      setSubmitting(false);
+      return;
+    }
+    if (!quantity || Number(quantity) <= 0) {
+      showSnackbar('error', 'Podaj poprawną ilość');
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -50,8 +59,7 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
 
       if (!response.ok) {
         const errorResponse = await response.json();
-        setError(`HTTP ${response.status}: Nie udało się dodać stanu magazynowego`);
-        setErrorDetails(`Details: ${errorResponse.error || 'Brak szczegółów'}`);
+        showSnackbar('error', 'Nie udało się dodać stanu magazynowego', errorResponse.error || 'Brak szczegółów');
         return;
       }
 
@@ -64,8 +72,7 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
       // setOrigin('probis'); // Reset to default origin
       setCustomOrigin(''); // Clear custom origin
     } catch (err: any) {
-      setError('Wystąpił nieoczekiwany błąd');
-      setErrorDetails(err.message || 'Brak szczegółów');
+      showSnackbar('error', 'Wystąpił błąd podczas dodawania zasobu', err.message);
     } finally {
       setSubmitting(false);
     }
@@ -73,8 +80,15 @@ export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = (
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-      {/* Display error message */}
-      {error && <ErrorMessage message={error} details={errorDetails} />}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
 
       {/* Category Select */}
       <FormControl fullWidth required sx={{ mb: 2 }}>

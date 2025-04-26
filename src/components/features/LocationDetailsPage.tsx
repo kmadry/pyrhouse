@@ -20,7 +20,6 @@ import {
   InputAdornment,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocations } from '../../hooks/useLocations';
 import { TransferModal } from '../TransferPage/components/TransferModal';
 import { getLocationDetails } from '../../services/locationService';
@@ -29,6 +28,8 @@ import AddIcon from '@mui/icons-material/Add';
 import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
 
 interface Asset {
   id: number;
@@ -85,23 +86,22 @@ const LocationDetailsPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchQuery, setSearchQuery] = useState('');
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const fetchLocationDetails = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
       console.log('Rozpoczynam pobieranie szczegółów lokalizacji dla ID:', id);
       const data = await getLocationDetails(Number(id));
       console.log('Pobrano dane lokalizacji:', data);
-      setLocationDetails({
-        assets: data.assets,
-        stock_items: data.stock_items,
-      });
+      setLocationDetails(data);
       setLocationName(data.name);
       setLocationDetailsText(data.details || 'Brak szczegółów');
     } catch (err: any) {
       console.error('Błąd podczas pobierania szczegółów lokalizacji:', err);
-      setError(err.message || 'Wystąpił nieoczekiwany błąd podczas pobierania danych lokalizacji');
+      setError(err.message || 'Błąd podczas ładowania danych');
+      showSnackbar('error', 'Błąd podczas ładowania danych', err.message);
     } finally {
       setLoading(false);
     }
@@ -444,13 +444,30 @@ const LocationDetailsPage: React.FC = () => {
             Spróbuj ponownie
           </Button>
         </Box>
-        <ErrorMessage message="Błąd podczas ładowania danych" details={error} />
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Container>
     );
   }
 
   return (
     <Container maxWidth="xl" sx={{ pb: { xs: 8, sm: 6 } }}>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       {/* Nagłówek strony */}
       <Box 
         sx={{ 

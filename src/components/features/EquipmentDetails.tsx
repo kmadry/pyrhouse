@@ -29,7 +29,6 @@ import {
   Navigation,
 } from '@mui/icons-material';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { deleteAsset } from '../../services/assetService';
 import { BarcodeGenerator } from '../common/BarcodeGenerator';
 import { useLocations } from '../../hooks/useLocations';
@@ -37,6 +36,8 @@ import { getApiUrl } from '../../config/api';
 import { useTheme } from '@mui/material/styles';
 import { locationService } from '../../services/locationService';
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
 
 interface AssetLog {
   id: number;
@@ -68,11 +69,11 @@ const EquipmentDetails: React.FC = () => {
   const navigate = useNavigate();
   const { locations } = useLocations();
   const theme = useTheme();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const [details, setDetails] = useState<any | null>(null);
   const [logs, setLogs] = useState<AssetLog[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
@@ -80,8 +81,15 @@ const EquipmentDetails: React.FC = () => {
   const fetchDetails = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
       const response = await fetch(
-        getApiUrl(`/items/${type}/${id}`)
+        getApiUrl(`/items/${type}/${id}`),
+        {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          },
+        }
       );
 
       if (!response.ok) {
@@ -92,7 +100,7 @@ const EquipmentDetails: React.FC = () => {
       setDetails(data[type]); // 'asset' or 'stock' key
       setLogs(data.assetLogs || []);
     } catch (err: any) {
-      setError(err.message);
+      showSnackbar('error', err.message || 'Wystąpił błąd podczas pobierania szczegółów sprzętu');
     } finally {
       setLoading(false);
     }
@@ -116,28 +124,25 @@ const EquipmentDetails: React.FC = () => {
       if (success) {
         navigate('/list'); // Przekieruj do listy sprzętu tylko po pomyślnym usunięciu
       } else {
-        setError('Nie udało się usunąć zasobu. Spróbuj ponownie później.');
-        // Automatycznie ukryj błąd po 5 sekundach
+        showSnackbar('error', 'Nie udało się usunąć zasobu. Spróbuj ponownie później.');
         setTimeout(() => {
-          setError('');
+          closeSnackbar();
         }, 5000);
       }
     } catch (err: any) {
-      // Wyświetl błąd z API, jeśli jest dostępny
       if (err.message && typeof err.message === 'object') {
         if (err.message.details) {
-          setError(err.message.details);
+          showSnackbar('error', err.message.details);
         } else if (err.message.message) {
-          setError(err.message.message);
+          showSnackbar('error', err.message.message);
         } else {
-          setError(JSON.stringify(err.message));
+          showSnackbar('error', JSON.stringify(err.message));
         }
       } else {
-        setError(err.message || 'Wystąpił błąd podczas usuwania zasobu');
+        showSnackbar('error', err.message || 'Wystąpił błąd podczas usuwania zasobu');
       }
-      // Automatycznie ukryj błąd po 5 sekundach
       setTimeout(() => {
-        setError('');
+        closeSnackbar();
       }, 5000);
     } finally {
       setIsDeleting(false);
@@ -292,21 +297,50 @@ const EquipmentDetails: React.FC = () => {
       <Box sx={{ textAlign: 'center', mt: 4 }}>
         <CircularProgress />
         <Typography>Loading details...</Typography>
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Box>
     );
   }
 
   if (!details) {
     return (
-      <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
-        Nie znaleziono szczegółów sprzętu.
-      </Typography>
+      <>
+        <Typography variant="h6" sx={{ textAlign: 'center', mt: 4 }}>
+          Nie znaleziono szczegółów sprzętu.
+        </Typography>
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
+      </>
     );
   }
 
   return (
     <Box sx={{ margin: '0 auto', padding: 4, maxWidth: '960px' }}>
-      {error && <ErrorMessage message={error} />}
+      {/* Snackbar for notifications */}
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       
       <Typography variant="h4" gutterBottom>
         Szczegóły sprzętu
@@ -718,7 +752,6 @@ const EquipmentDetails: React.FC = () => {
           <Typography>
             Czy na pewno chcesz usunąć ten zasób? Tej operacji nie można cofnąć.
           </Typography>
-          {error && <ErrorMessage message={error} />}
         </DialogContent>
         <DialogActions>
           <Button

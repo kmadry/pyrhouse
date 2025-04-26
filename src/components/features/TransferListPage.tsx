@@ -22,7 +22,8 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTransfers } from '../../hooks/useTransfers';
-import { ErrorMessage } from '../ui/ErrorMessage';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import debounce from 'lodash/debounce';
 
 const LocalShippingIcon = lazy(() => import('@mui/icons-material/LocalShipping'));
@@ -37,11 +38,18 @@ const TransfersListPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   // Pobierz dane tylko raz przy montowaniu komponentu
   useEffect(() => {
     refreshTransfers();
   }, []); // Usunięto zależność od refreshTransfers
+
+  useEffect(() => {
+    if (error) {
+      showSnackbar('error', error);
+    }
+  }, [error]);
 
   // Zoptymalizowane wyszukiwanie z debounce
   const debouncedSearch = useCallback(
@@ -212,6 +220,15 @@ const TransfersListPage: React.FC = () => {
       borderRadius: 2,
       boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       <Box sx={{ 
         display: 'flex', 
         flexDirection: { xs: 'column', sm: 'row' },
@@ -284,10 +301,6 @@ const TransfersListPage: React.FC = () => {
           <Typography variant="body1" color="text.secondary">
             Ładowanie questów...
           </Typography>
-        </Box>
-      ) : error ? (
-        <Box sx={{ mb: 3 }}>
-          <ErrorMessage message="Nie udało się załadować transferów" details={error} />
         </Box>
       ) : sortedTransfers.length === 0 ? (
         <Box sx={{ 

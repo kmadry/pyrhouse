@@ -31,7 +31,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../../hooks/useLocations';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { deleteLocation, updateLocation, createLocation } from '../../services/locationService';
 import { Location } from '../../models/Location';
 import * as Icons from '@mui/icons-material';
@@ -62,6 +61,12 @@ const LocationsPage: React.FC = () => {
   useEffect(() => {
     refetch();
   }, []);
+
+  useEffect(() => {
+    if (error) {
+      showSnackbar('error', error);
+    }
+  }, [error]);
 
   const handleOpenDialog = (location?: Location) => {
     if (location) {
@@ -328,7 +333,15 @@ const LocationsPage: React.FC = () => {
   if (error) {
     return (
       <Box sx={{ p: 2 }}>
-        <ErrorMessage message="Błąd podczas ładowania lokalizacji" details={error} />
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Box>
     );
   }

@@ -7,7 +7,6 @@ import {
   Typography, 
   Container, 
   useTheme, 
-  Alert, 
   Paper, 
   InputAdornment, 
   IconButton, 
@@ -49,7 +48,6 @@ const LoginForm: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [capsLockOn, setCapsLockOn] = useState<boolean>(false);
   const [isHyperJumping, setIsHyperJumping] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
@@ -69,13 +67,13 @@ const LoginForm: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent | React.KeyboardEvent) => {
       if (e.getModifierState && e.getModifierState('CapsLock')) {
-        setCapsLockOn(true);
+        showSnackbar('warning', 'Caps Lock jest włączony', 'Upewnij się, że Caps Lock jest wyłączony podczas logowania');
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent | React.KeyboardEvent) => {
       if (e.getModifierState && !e.getModifierState('CapsLock')) {
-        setCapsLockOn(false);
+        closeSnackbar();
       }
     };
 
@@ -260,21 +258,6 @@ const LoginForm: React.FC = () => {
                 Zaloguj się, aby kontynuować
               </Typography>
             </Box>
-
-            {capsLockOn && (
-              <Alert 
-                severity="warning" 
-                sx={{ 
-                  mb: 3, 
-                  borderRadius: 1,
-                  '& .MuiAlert-icon': {
-                    fontSize: '1.2rem',
-                  }
-                }}
-              >
-                Caps Lock jest włączony
-              </Alert>
-            )}
 
             <form onSubmit={handleSubmit}>
               <TextField

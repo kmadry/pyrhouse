@@ -34,7 +34,6 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { jwtDecode } from 'jwt-decode';
 import { getApiUrl } from '../../config/api';
 import { format } from 'date-fns';
@@ -317,6 +316,15 @@ const UserDetailsPage: React.FC = () => {
         <Typography variant="h6" color="error">
           Użytkownik nie został znaleziony
         </Typography>
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Box>
     );
   }

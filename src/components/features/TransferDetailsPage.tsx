@@ -27,10 +27,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 // Services and hooks
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../../services/transferService';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocations } from '../../hooks/useLocations';
 import { MapPosition, locationService } from '../../services/locationService';
 import { useAuth } from '../../hooks/useAuth';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 // Lazy loaded components
 const MapComponent = lazy(() => import('../common/MapComponent'));
@@ -73,6 +74,7 @@ const TransferDetailsPage: React.FC = () => {
   const [showLocationAlert, setShowLocationAlert] = useState<boolean>(false);
   const { locations, refetch: fetchLocations } = useLocations();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const numericId = Number(id);
 
@@ -120,6 +122,12 @@ const TransferDetailsPage: React.FC = () => {
   useEffect(() => {
     fetchLocations();
   }, [fetchLocations]);
+
+  useEffect(() => {
+    if (error) {
+      showSnackbar('error', error);
+    }
+  }, [error]);
 
   const handleConfirmTransfer = async () => {
     setLoading(true);
@@ -352,7 +360,15 @@ const TransferDetailsPage: React.FC = () => {
   if (!loading && error) {
     return (
       <Container>
-        <ErrorMessage message={error} />
+        <AppSnackbar
+          open={snackbar.open}
+          type={snackbar.type}
+          message={snackbar.message}
+          details={snackbar.details}
+          onClose={closeSnackbar}
+          autoHideDuration={snackbar.autoHideDuration}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
       </Container>
     );
   }
@@ -363,6 +379,15 @@ const TransferDetailsPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 1 }}>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 

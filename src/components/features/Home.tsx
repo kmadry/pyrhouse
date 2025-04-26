@@ -25,11 +25,12 @@ import {
   AddTask
 } from '@mui/icons-material';
 import { useTransfers } from '../../hooks/useTransfers';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { styled } from '@mui/material/styles';
 import { getApiUrl } from '../../config/api';
 import { jwtDecode } from 'jwt-decode';
 import { alpha } from '@mui/material/styles';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 // Interfejs dla zadania
 interface Quest {
@@ -221,6 +222,7 @@ const SearchButton = styled(Button)(({ theme }) => ({
 const HomePage: React.FC = () => {
   const { loading } = useTransfers();
   const navigate = useNavigate();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   const [pyrcode, setPyrcode] = useState<string>('');
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -365,6 +367,12 @@ const HomePage: React.FC = () => {
     setUserTransfers(sortedUrgentQuests.slice(0, 3));
   }, []);
 
+  useEffect(() => {
+    if (searchError) {
+      showSnackbar('error', searchError);
+    }
+  }, [searchError]);
+
   const handlePyrCodeSearch = async (value: string) => {
     if (!/^[a-zA-Z0-9-]*$/.test(value)) {
       return;
@@ -447,329 +455,339 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <SearchContainer elevation={0}>
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: 'center', 
-          gap: 2 
-        }}>
-          <Autocomplete
-            fullWidth
-            freeSolo
-            options={pyrCodeSuggestions}
-            getOptionLabel={(option) => 
-              typeof option === 'string' ? option : option.pyrcode
-            }
-            onChange={handleOptionSelected}
-            renderOption={(props, option) => {
-              const { key, ...otherProps } = props;
-              return (
-                <Box key={key} component="li" {...otherProps}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Typography variant="body1">{option.pyrcode}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {option.category.label} - {option.location.name}
-                    </Typography>
+    <Box>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <SearchContainer elevation={0}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: 'center', 
+            gap: 2 
+          }}>
+            <Autocomplete
+              fullWidth
+              freeSolo
+              options={pyrCodeSuggestions}
+              getOptionLabel={(option) => 
+                typeof option === 'string' ? option : option.pyrcode
+              }
+              onChange={handleOptionSelected}
+              renderOption={(props, option) => {
+                const { key, ...otherProps } = props;
+                return (
+                  <Box key={key} component="li" {...otherProps}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography variant="body1">{option.pyrcode}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {option.category.label} - {option.location.name}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              );
-            }}
-            loading={searchLoading}
-            onInputChange={(_, newValue) => {
-              setPyrcode(newValue);
-              handlePyrCodeSearch(newValue);
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                // label="Wyszukaj po Pyrcode"
-                variant="outlined"
-                placeholder="Wprowadź kod Pyrcode..."
-                onKeyDown={handleKeyDown}
-                InputProps={{
-                  ...params.InputProps,
-                  sx: {
-                    height: '40px',
-                    '& input': {
+                );
+              }}
+              loading={searchLoading}
+              onInputChange={(_, newValue) => {
+                setPyrcode(newValue);
+                handlePyrCodeSearch(newValue);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
+                  // label="Wyszukaj po Pyrcode"
+                  variant="outlined"
+                  placeholder="Wprowadź kod Pyrcode..."
+                  onKeyDown={handleKeyDown}
+                  InputProps={{
+                    ...params.InputProps,
+                    sx: {
                       height: '40px',
-                      padding: '0 14px',
+                      '& input': {
+                        height: '40px',
+                        padding: '0 14px',
+                      }
+                    },
+                    endAdornment: (
+                      <>
+                        {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#fff',
+                      '& fieldset': {
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: 'primary.main',
+                      },
+                      '& input': {
+                        color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit',
+                      },
                     }
-                  },
-                  endAdornment: (
-                    <>
-                      {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
+                  }}
+                />
+              )}
+            />
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <SearchButton
+                variant="contained"
+                color="primary"
+                startIcon={<Search />}
+                onClick={handleSearch}
+                disabled={loading}
+                sx={{
+                  borderRadius: 1,
                 }}
-                sx={{ 
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#fff',
-                    '& fieldset': {
-                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: 'primary.main',
-                    },
-                    '& input': {
-                      color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit',
-                    },
-                  }
-                }}
-              />
-            )}
-          />
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <SearchButton
-              variant="contained"
-              color="primary"
-              startIcon={<Search />}
-              onClick={handleSearch}
-              disabled={loading}
-              sx={{
-                borderRadius: 1,
-              }}
-            >
-              {loading ? <CircularProgress size={24} /> : 'Szukaj'}
-            </SearchButton>
+              >
+                {loading ? <CircularProgress size={24} /> : 'Szukaj'}
+              </SearchButton>
+            </Box>
           </Box>
-        </Box>
-        {searchError && <ErrorMessage message={searchError} />}
-      </SearchContainer>
+        </SearchContainer>
 
-      {/* Szybkie akcje */}
-      <Box sx={{ mb: 6 }}>
-        <Typography 
-          variant="h5" 
-          gutterBottom 
-          sx={{ 
-            mb: 3,
-            fontWeight: 600,
-            color: 'text.primary'
-          }}
-        >
-          Szybkie akcje
-        </Typography>
-
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={4} md={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                background: (theme) => theme.palette.mode === 'dark' 
-                  ? '#2d2d2d'
-                  : '#ffffff',
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: (theme) => theme.palette.mode === 'dark' 
-                    ? '0 8px 24px rgba(0,0,0,0.4)'
-                    : '0 8px 24px rgba(0,0,0,0.08)',
-                }
-              }}
-              onClick={() => navigate('/transfers/create')}
-            >
-              <RocketLaunch sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
-                Utwórz quest-dostawę
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4} md={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                background: (theme) => theme.palette.mode === 'dark' 
-                  ? '#2d2d2d'
-                  : '#ffffff',
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: (theme) => theme.palette.mode === 'dark' 
-                    ? '0 8px 24px rgba(0,0,0,0.4)'
-                    : '0 8px 24px rgba(0,0,0,0.08)',
-                }
-              }}
-              onClick={() => navigate('/add-item')}
-            >
-              <AddTask sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
-                Dodaj sprzęt
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4} md={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                background: (theme) => theme.palette.mode === 'dark' 
-                  ? '#2d2d2d'
-                  : '#ffffff',
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: (theme) => theme.palette.mode === 'dark' 
-                    ? '0 8px 24px rgba(0,0,0,0.4)'
-                    : '0 8px 24px rgba(0,0,0,0.08)',
-                }
-              }}
-              onClick={() => navigate('/list')}
-            >
-              <Inventory sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
-                Zarządzaj magazynem
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4} md={3}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 3,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                background: (theme) => theme.palette.mode === 'dark' 
-                  ? '#2d2d2d'
-                  : '#ffffff',
-                borderRadius: 2,
-                border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: (theme) => theme.palette.mode === 'dark' 
-                    ? '0 8px 24px rgba(0,0,0,0.4)'
-                    : '0 8px 24px rgba(0,0,0,0.08)',
-                }
-              }}
-              onClick={() => navigate('/transfers')}
-            >
-              <ListAlt sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
-                Przeglądaj questy-dostawy
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Pilne zadania */}
-      <Box sx={{ mb: 6 }}>
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: 3 
-        }}>
+        {/* Szybkie akcje */}
+        <Box sx={{ mb: 6 }}>
           <Typography 
             variant="h5" 
+            gutterBottom 
             sx={{ 
+              mb: 3,
               fontWeight: 600,
               color: 'text.primary'
             }}
           >
-            Moje Questy
+            Szybkie akcje
           </Typography>
-          <Button 
-            variant="outlined" 
-            color="primary" 
-            onClick={() => navigate('/quests')}
-            startIcon={<AccessTime />}
-            sx={{ 
-              borderRadius: 1,
-              textTransform: 'none'
-            }}
-          >
-            Zobacz wszystkie zadania
-          </Button>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={4} md={3}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: (theme) => theme.palette.mode === 'dark' 
+                    ? '#2d2d2d'
+                    : '#ffffff',
+                  borderRadius: 2,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  '&:hover': { 
+                    transform: 'translateY(-4px)',
+                    boxShadow: (theme) => theme.palette.mode === 'dark' 
+                      ? '0 8px 24px rgba(0,0,0,0.4)'
+                      : '0 8px 24px rgba(0,0,0,0.08)',
+                  }
+                }}
+                onClick={() => navigate('/transfers/create')}
+              >
+                <RocketLaunch sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                  Utwórz quest-dostawę
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={4} md={3}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: (theme) => theme.palette.mode === 'dark' 
+                    ? '#2d2d2d'
+                    : '#ffffff',
+                  borderRadius: 2,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  '&:hover': { 
+                    transform: 'translateY(-4px)',
+                    boxShadow: (theme) => theme.palette.mode === 'dark' 
+                      ? '0 8px 24px rgba(0,0,0,0.4)'
+                      : '0 8px 24px rgba(0,0,0,0.08)',
+                  }
+                }}
+                onClick={() => navigate('/add-item')}
+              >
+                <AddTask sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                  Dodaj sprzęt
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={4} md={3}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: (theme) => theme.palette.mode === 'dark' 
+                    ? '#2d2d2d'
+                    : '#ffffff',
+                  borderRadius: 2,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  '&:hover': { 
+                    transform: 'translateY(-4px)',
+                    boxShadow: (theme) => theme.palette.mode === 'dark' 
+                      ? '0 8px 24px rgba(0,0,0,0.4)'
+                      : '0 8px 24px rgba(0,0,0,0.08)',
+                  }
+                }}
+                onClick={() => navigate('/list')}
+              >
+                <Inventory sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                  Zarządzaj magazynem
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={4} md={3}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  background: (theme) => theme.palette.mode === 'dark' 
+                    ? '#2d2d2d'
+                    : '#ffffff',
+                  borderRadius: 2,
+                  border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  '&:hover': { 
+                    transform: 'translateY(-4px)',
+                    boxShadow: (theme) => theme.palette.mode === 'dark' 
+                      ? '0 8px 24px rgba(0,0,0,0.4)'
+                      : '0 8px 24px rgba(0,0,0,0.08)',
+                  }
+                }}
+                onClick={() => navigate('/transfers')}
+              >
+                <ListAlt sx={{ fontSize: 40, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" align="center" sx={{ fontWeight: 500 }}>
+                  Przeglądaj questy-dostawy
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
         </Box>
 
-        {userTransfersLoading ? (
-          <Box display="flex" justifyContent="center" p={3}>
-            <CircularProgress />
+        {/* Pilne zadania */}
+        <Box sx={{ mb: 6 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            mb: 3 
+          }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 600,
+                color: 'text.primary'
+              }}
+            >
+              Moje Questy
+            </Typography>
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              onClick={() => navigate('/quests')}
+              startIcon={<AccessTime />}
+              sx={{ 
+                borderRadius: 1,
+                textTransform: 'none'
+              }}
+            >
+              Zobacz wszystkie zadania
+            </Button>
           </Box>
-        ) : userTransfersError ? (
-          <Alert severity="error">{userTransfersError}</Alert>
-        ) : userTransfers.length === 0 ? (
-          <Alert severity="info">
-            Brak aktywnych questów
-          </Alert>
-        ) : (
-          <List sx={{ mt: 2 }}>
-            {userTransfers.map((transfer) => (
-              <QuestItem
-                key={transfer.ID}
-                onClick={() => navigate(`/transfers/${transfer.ID}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <QuestStatus label="W trakcie" />
-                <QuestTitle variant="h6">
-                  <LocalShipping sx={{ color: 'inherit', fontSize: '1.2rem' }} />
-                  Quest #{transfer.ID}
-                </QuestTitle>
-                
-                <QuestLocation>
-                  <LocationOn sx={{ fontSize: '1.1rem' }} />
-                  Z: {transfer.FromLocationName}
-                </QuestLocation>
-                
-                <QuestLocation>
-                  <LocationOn sx={{ fontSize: '1.1rem' }} />
-                  Do: {transfer.ToLocationName}
-                </QuestLocation>
-                
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <QuestDate>
-                    Rozpoczęto: {new Date(transfer.TransferDate).toLocaleString('pl-PL')}
-                  </QuestDate>
-                </Box>
-              </QuestItem>
-            ))}
-          </List>
-        )}
-      </Box>
+
+          {userTransfersLoading ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : userTransfersError ? (
+            <Alert severity="error">{userTransfersError}</Alert>
+          ) : userTransfers.length === 0 ? (
+            <Alert severity="info">
+              Brak aktywnych questów
+            </Alert>
+          ) : (
+            <List sx={{ mt: 2 }}>
+              {userTransfers.map((transfer) => (
+                <QuestItem
+                  key={transfer.ID}
+                  onClick={() => navigate(`/transfers/${transfer.ID}`)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <QuestStatus label="W trakcie" />
+                  <QuestTitle variant="h6">
+                    <LocalShipping sx={{ color: 'inherit', fontSize: '1.2rem' }} />
+                    Quest #{transfer.ID}
+                  </QuestTitle>
+                  
+                  <QuestLocation>
+                    <LocationOn sx={{ fontSize: '1.1rem' }} />
+                    Z: {transfer.FromLocationName}
+                  </QuestLocation>
+                  
+                  <QuestLocation>
+                    <LocationOn sx={{ fontSize: '1.1rem' }} />
+                    Do: {transfer.ToLocationName}
+                  </QuestLocation>
+                  
+                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <QuestDate>
+                      Rozpoczęto: {new Date(transfer.TransferDate).toLocaleString('pl-PL')}
+                    </QuestDate>
+                  </Box>
+                </QuestItem>
+              ))}
+            </List>
+          )}
+        </Box>
 
 
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

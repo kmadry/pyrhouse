@@ -3,7 +3,7 @@ import React from 'react';
 
 interface AppSnackbarProps {
   open: boolean;
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'warning';
   message: string;
   details?: string;
   onClose: () => void;

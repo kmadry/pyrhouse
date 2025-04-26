@@ -3,18 +3,20 @@ import {
   Container,
   Typography,
   Alert,
+  Box,
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { useLocations } from '../../hooks/useLocations';
 import { useStocks } from '../../hooks/useStocks';
 import { createTransferAPI } from '../../services/transferService';
 import { getUsersAPI } from '../../services/userService';
-import { ErrorMessage } from '../ui/ErrorMessage';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TransferForm from './components/TransferForm';
 import { ConfirmationDialog } from './components/ConfirmationDialog';
 import { QuestSection } from './components/QuestSection';
 import { TransferFormData } from '../../types/transfer.types';
+import { AppSnackbar } from '../ui/AppSnackbar';
+import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 interface User {
   id: number;
@@ -63,6 +65,7 @@ const TransferPage: React.FC = () => {
   const { stocks, loading: stocksLoading, error: stocksError } = useStocks();
   const navigate = useNavigate();
   const location = useLocation();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -79,6 +82,12 @@ const TransferPage: React.FC = () => {
 
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (locationsError) showSnackbar('error', 'Błąd podczas ładowania lokalizacji', locationsError);
+    if (stocksError) showSnackbar('error', 'Błąd podczas ładowania zasobów', stocksError);
+    if (usersError) showSnackbar('error', 'Błąd podczas ładowania użytkowników', usersError);
+  }, [locationsError, stocksError, usersError]);
 
   const handleFormSubmit = (formData: TransferFormData) => {
     setTransferData(formData);
@@ -184,42 +193,50 @@ const TransferPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 2 }}>
-      <QuestSection questData={location.state?.questData} />
-
-      <Typography variant="h5" gutterBottom>
-        Nowy transfer
-      </Typography>
-
-      {locationsError && <ErrorMessage message="Błąd podczas ładowania lokalizacji" details={locationsError} />}
-      {stocksError && <ErrorMessage message="Błąd podczas ładowania zasobów" details={stocksError} />}
-      {usersError && <ErrorMessage message="Błąd podczas ładowania użytkowników" details={usersError} />}
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {submitError}
-        </Alert>
-      )}
-
-      <TransferForm
-        onSubmit={handleFormSubmit}
-        onCancel={() => navigate('/transfers')}
-        locations={locations}
-        stocks={stocks}
-        loading={locationsLoading || stocksLoading}
-        error={submitError || undefined}
-        users={users}
-        usersLoading={usersLoading}
+    <Box>
+      <AppSnackbar
+        open={snackbar.open}
+        type={snackbar.type}
+        message={snackbar.message}
+        details={snackbar.details}
+        onClose={closeSnackbar}
+        autoHideDuration={snackbar.autoHideDuration}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
+      <Container maxWidth="lg" sx={{ py: 2 }}>
+        <QuestSection questData={location.state?.questData} />
 
-      <ConfirmationDialog
-        open={showConfirmation}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmSubmit}
-        formData={transferData}
-        locations={locations}
-        loading={isSubmitting}
-      />
-    </Container>
+        <Typography variant="h5" gutterBottom>
+          Nowy transfer
+        </Typography>
+
+        {submitError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {submitError}
+          </Alert>
+        )}
+
+        <TransferForm
+          onSubmit={handleFormSubmit}
+          onCancel={() => navigate('/transfers')}
+          locations={locations}
+          stocks={stocks}
+          loading={locationsLoading || stocksLoading}
+          error={submitError || undefined}
+          users={users}
+          usersLoading={usersLoading}
+        />
+
+        <ConfirmationDialog
+          open={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleConfirmSubmit}
+          formData={transferData}
+          locations={locations}
+          loading={isSubmitting}
+        />
+      </Container>
+    </Box>
   );
 };
 

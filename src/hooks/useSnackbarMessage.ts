@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export type SnackbarType = 'success' | 'error';
+export type SnackbarType = 'success' | 'error' | 'warning';
 
 export interface SnackbarState {
   open: boolean;
