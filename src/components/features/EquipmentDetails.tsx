@@ -12,7 +12,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  TextField
 } from '@mui/material';
 import {
   CheckCircle,
@@ -38,6 +39,7 @@ import { locationService } from '../../services/locationService';
 import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { AppSnackbar } from '../ui/AppSnackbar';
+import { useAuth } from '../../hooks/useAuth';
 
 interface AssetLog {
   id: number;
@@ -70,6 +72,7 @@ const EquipmentDetails: React.FC = () => {
   const { locations } = useLocations();
   const theme = useTheme();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+  const { userRole } = useAuth();
 
   const [details, setDetails] = useState<any | null>(null);
   const [logs, setLogs] = useState<AssetLog[]>([]);
@@ -77,6 +80,9 @@ const EquipmentDetails: React.FC = () => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showBarcode, setShowBarcode] = useState(false);
+  const [editQuantity, setEditQuantity] = useState<number | null>(null);
+  const [savingQuantity, setSavingQuantity] = useState(false);
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -109,6 +115,10 @@ const EquipmentDetails: React.FC = () => {
   useEffect(() => {
     fetchDetails();
   }, [id, type]);
+
+  useEffect(() => {
+    if (details && type === 'stock') setEditQuantity(details.quantity);
+  }, [details, type]);
 
   // Sortowanie logów według daty utworzenia (od najnowszych do najstarszych)
   const sortedLogs = [...logs].sort((a, b) => {
@@ -291,6 +301,32 @@ const EquipmentDetails: React.FC = () => {
       </>
     );
   };
+
+  const handleSaveQuantity = async () => {
+    if (editQuantity == null || editQuantity === details.quantity) return;
+    setSavingQuantity(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/stocks/${details.id}`), {
+        method: 'PATCH',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity: editQuantity }),
+      });
+      if (!response.ok) throw new Error('Nie udało się zaktualizować ilości');
+      showSnackbar('success', 'Ilość zaktualizowana');
+      fetchDetails();
+    } catch (err: any) {
+      showSnackbar('error', err.message || 'Błąd podczas aktualizacji ilości');
+    } finally {
+      setSavingQuantity(false);
+    }
+  };
+
+  // Dodaj funkcję sprawdzającą uprawnienia
+  const canEditQuantity = userRole === 'admin' || userRole === 'moderator';
 
   if (loading) {
     return (
@@ -497,14 +533,90 @@ const EquipmentDetails: React.FC = () => {
                     </Box>
                   </Box>
                 )}
-                {type === 'stock' && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                      Ilość
+                {type === 'stock' && details && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: { xs: 'stretch', sm: 'center' },
+                      gap: 2,
+                      mt: 2,
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="subtitle1" sx={{ minWidth: 80 }}>
+                      Ilość:
                     </Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {details.quantity || 'N/A'}
-                    </Typography>
+                    {canEditQuantity ? (
+                      isEditingQuantity ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setEditQuantity((prev) => (prev !== null ? prev - 1 : 0))}
+                            disabled={savingQuantity || (editQuantity !== null && editQuantity <= 0)}
+                          >
+                            -
+                          </Button>
+                          <TextField
+                            type="number"
+                            size="small"
+                            value={editQuantity ?? ''}
+                            onChange={e => setEditQuantity(Number(e.target.value))}
+                            inputProps={{ min: 0, style: { textAlign: 'center', width: 60 } }}
+                            disabled={savingQuantity}
+                          />
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setEditQuantity((prev) => (prev !== null ? prev + 1 : 1))}
+                            disabled={savingQuantity}
+                          >
+                            +
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="success"
+                            size="small"
+                            onClick={handleSaveQuantity}
+                            disabled={savingQuantity}
+                            sx={{ ml: 1 }}
+                          >
+                            Zapisz
+                          </Button>
+                          <Button
+                            variant="text"
+                            size="small"
+                            color="inherit"
+                            onClick={() => {
+                              setIsEditingQuantity(false);
+                              setEditQuantity(details.quantity);
+                            }}
+                            disabled={savingQuantity}
+                          >
+                            Anuluj
+                          </Button>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="body1" fontWeight="bold">
+                            {details.quantity}
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setIsEditingQuantity(true)}
+                            sx={{ ml: 1 }}
+                          >
+                            Edytuj
+                          </Button>
+                        </Box>
+                      )
+                    ) : (
+                      <Typography variant="body1" fontWeight="bold">
+                        {details.quantity}
+                      </Typography>
+                    )}
                   </Box>
                 )}
               </Box>

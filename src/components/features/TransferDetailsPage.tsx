@@ -32,7 +32,6 @@ import { MapPosition, locationService } from '../../services/locationService';
 import { useAuth } from '../../hooks/useAuth';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
-
 // Lazy loaded components
 const MapComponent = lazy(() => import('../common/MapComponent'));
 const LocationPicker = lazy(() => import('../common/LocationPicker'));
@@ -213,15 +212,15 @@ const TransferDetailsPage: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return <Suspense fallback={null}><LocalShippingIcon /></Suspense>;
+        return <LocalShippingIcon />;
       case 'delivered':
       case 'available':
       case 'located':
-        return <Suspense fallback={null}><CheckCircleIcon /></Suspense>;
+        return <CheckCircleIcon />;
       case 'returned':
-        return <Suspense fallback={null}><UTurnLeftIcon /></Suspense>;
+        return <UTurnLeftIcon />;
       default:
-        return <Suspense fallback={null}><ErrorIcon /></Suspense>;
+        return <ErrorIcon />;
     }
   };
 
@@ -632,7 +631,7 @@ const TransferDetailsPage: React.FC = () => {
                   <Chip
                     icon={getStatusIcon(asset.status)}
                     color="success"
-                    sx={{ mr: 2 }}
+                    sx={{ mr: 2, pl: 1 }}
                   />
                 </ListItemAvatar>
                 <ListItemText

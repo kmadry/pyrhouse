@@ -33,6 +33,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Tooltip,
 } from '@mui/material';
 import { jwtDecode } from 'jwt-decode';
 import { getApiUrl } from '../../config/api';
@@ -47,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { addUserPointsAPI } from '../../services/userService';
 
 interface Transfer {
   ID: number;
@@ -87,6 +89,9 @@ const UserDetailsPage: React.FC = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [transfersLoading, setTransfersLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const [isPointsDialogOpen, setIsPointsDialogOpen] = useState(false);
+  const [pointsValue, setPointsValue] = useState('');
+  const [isPointsLoading, setIsPointsLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -186,7 +191,7 @@ const UserDetailsPage: React.FC = () => {
     if (!token) return false;
     try {
       const decoded = jwtDecode(token) as any;
-      return decoded.userID === Number(id) || decoded.role === 'admin';
+      return Number(decoded.userID) === Number(id) || decoded.role === 'admin';
     } catch {
       return false;
     }
@@ -302,6 +307,57 @@ const UserDetailsPage: React.FC = () => {
     }
   };
 
+  const getCurrentUser = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    try {
+      return jwtDecode(token) as any;
+    } catch {
+      return null;
+    }
+  };
+
+  const canEdit = () => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    return Number(currentUser.userID) === Number(id);
+  };
+
+  const canEditRole = () => {
+    const currentUser = getCurrentUser();
+    return currentUser && currentUser.role === 'admin';
+  };
+
+  const handleOpenPointsDialog = () => {
+    setPointsValue('');
+    setIsPointsDialogOpen(true);
+  };
+  const handleClosePointsDialog = () => {
+    setIsPointsDialogOpen(false);
+    setPointsValue('');
+  };
+  const handlePointsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPointsValue(e.target.value.replace(/[^-0-9]/g, ''));
+  };
+  const handleSubmitPoints = async () => {
+    if (!pointsValue || isNaN(Number(pointsValue))) {
+      showSnackbar('error', 'Podaj poprawną liczbę punktów');
+      return;
+    }
+    setIsPointsLoading(true);
+    try {
+      const result = await addUserPointsAPI(Number(id), Number(pointsValue));
+      setUser((prev: any) => ({ ...prev, points: result.points }));
+      showSnackbar('success', `Punkty zostały zaktualizowane. Aktualny stan: ${result.points}`);
+      handleClosePointsDialog();
+    } catch (err: any) {
+      showSnackbar('error', err.message || 'Błąd podczas aktualizacji punktów');
+    } finally {
+      setIsPointsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -375,58 +431,27 @@ const UserDetailsPage: React.FC = () => {
                 icon={<Suspense fallback={null}><BadgeIcon /></Suspense>}
               />
               
-              <Divider sx={{ width: '100%', my: 2 }} />
+              <Divider sx={{ width: '100%', my: 1 }} />
               
-              <Box sx={{ width: '100%', mt: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Suspense fallback={null}>
-                    <EmailIcon />
-                  </Suspense>
-                  <Typography variant="body1">{user.username}</Typography>
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Suspense fallback={null}>
-                    <CalendarTodayIcon />
-                  </Suspense>
-                  <Typography variant="body2" color="text.secondary">
-                    Dołączył: {new Date(user.createdAt).toLocaleDateString('pl-PL')}
-                  </Typography>
-                </Box>
-                
-                {user.lastLogin && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Suspense fallback={null}>
-                      <AccessTimeIcon />
-                    </Suspense>
-                    <Typography variant="body2" color="text.secondary">
-                      Ostatnie logowanie: {new Date(user.lastLogin).toLocaleString('pl-PL')}
-                    </Typography>
-                  </Box>
-                )}
-
+              <Box sx={{ width: '100%' }}>           
                 {/* Wyświetl punkty tylko dla administratorów */}
                 {isAdmin() && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, p: 1, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider', gap: 2 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.2}}>
                     <Suspense fallback={null}>
                       <StarIcon />
                     </Suspense>
                     <Typography variant="body1" fontWeight="bold">
-                      Punkty: {user.points || 0}
+                      EXP: {user.points || 0}
                     </Typography>
-                  </Box>
-                )}
-
-                {/* Przycisk zmiany hasła */}
-                {canChangePassword() && (
-                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+                    </Box>
                     <Button
                       variant="outlined"
-                      startIcon={<Suspense fallback={null}><LockIcon /></Suspense>}
-                      onClick={handlePasswordDialogOpen}
-                      color="primary"
+                      size="small"
+                      onClick={handleOpenPointsDialog}
+                      sx={{ ml: 2, borderRadius: 1 }}
                     >
-                      Zmień hasło
+                      Ustaw XP
                     </Button>
                   </Box>
                 )}
@@ -439,13 +464,37 @@ const UserDetailsPage: React.FC = () => {
         <Grid item xs={12} md={8}>
           <Card elevation={3} sx={{ height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="h6" gutterBottom>
                   Szczegółowe informacje
                 </Typography>
-                <Suspense fallback={null}>
-                  <EditIcon />
-                </Suspense>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+                  {canEdit() && (
+                    <Tooltip title="Edytuj dane użytkownika">
+                      <Button
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={handleEditClick}
+                        disabled={isEditing}
+                        sx={{ minWidth: 120 }}
+                      >
+                        Edytuj
+                      </Button>
+                    </Tooltip>
+                  )}
+                  {canChangePassword() && (
+                    <Tooltip title="Zmień swoje hasło">
+                      <Button
+                        variant="outlined"
+                        startIcon={<LockIcon />}
+                        onClick={handlePasswordDialogOpen}
+                        sx={{ minWidth: 120 }}
+                      >
+                        Zmień hasło
+                      </Button>
+                    </Tooltip>
+                  )}
+                </Box>
               </Box>
 
               {isEditing ? (
@@ -474,6 +523,7 @@ const UserDetailsPage: React.FC = () => {
                       value={editedUser.role}
                       onChange={handleSelectChange}
                       label="Rola"
+                      disabled={!canEditRole()}
                     >
                       <MenuItem value="user">Użytkownik</MenuItem>
                       <MenuItem value="moderator">Moderator</MenuItem>
@@ -515,14 +565,6 @@ const UserDetailsPage: React.FC = () => {
                         Rola
                       </Typography>
                       <Chip label={user.role.toUpperCase()} color={getRoleColor(user.role)} size="small" />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Data utworzenia konta
-                      </Typography>
-                      <Typography variant="body1">
-                        {new Date(user.createdAt).toLocaleString('pl-PL')}
-                      </Typography>
                     </Grid>
                     {user.lastLogin && (
                       <Grid item xs={12}>
@@ -687,43 +729,87 @@ const UserDetailsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={isPasswordDialogOpen} onClose={handlePasswordDialogClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Zmiana hasła</DialogTitle>
+      <Dialog open={isPasswordDialogOpen} onClose={handlePasswordDialogClose} maxWidth="xs" fullWidth>
+        <DialogTitle>Zmień hasło</DialogTitle>
         <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Nowe hasło"
-              name="newPassword"
-              type="password"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Potwierdź nowe hasło"
-              name="confirmPassword"
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={handlePasswordChange}
-              margin="normal"
-              required
-            />
-          </Box>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Wprowadź nowe hasło. Upewnij się, że jest silne i nieudostępniane innym osobom.
+          </Typography>
+          <TextField
+            autoFocus
+            label="Nowe hasło"
+            name="newPassword"
+            type="password"
+            value={passwordData.newPassword}
+            onChange={handlePasswordChange}
+            margin="normal"
+            required
+            fullWidth
+            onKeyDown={e => { if (e.key === 'Enter') handlePasswordUpdate(); if (e.key === 'Escape') handlePasswordDialogClose(); }}
+            inputProps={{ minLength: 6 }}
+            disabled={isPasswordUpdating}
+          />
+          <TextField
+            label="Potwierdź nowe hasło"
+            name="confirmPassword"
+            type="password"
+            value={passwordData.confirmPassword}
+            onChange={handlePasswordChange}
+            margin="normal"
+            required
+            fullWidth
+            onKeyDown={e => { if (e.key === 'Enter') handlePasswordUpdate(); if (e.key === 'Escape') handlePasswordDialogClose(); }}
+            inputProps={{ minLength: 6 }}
+            disabled={isPasswordUpdating}
+          />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handlePasswordDialogClose} disabled={isPasswordUpdating}>
+        <DialogActions sx={{ flexDirection: { xs: 'column', sm: 'row' }, gap: 1, p: 2 }}>
+          <Button onClick={handlePasswordDialogClose} disabled={isPasswordUpdating} fullWidth={true}>
             Anuluj
           </Button>
-          <Button 
-            onClick={handlePasswordUpdate} 
-            variant="contained" 
+          <Button
+            onClick={handlePasswordUpdate}
+            variant="contained"
             color="primary"
             disabled={isPasswordUpdating}
+            fullWidth={true}
           >
             {isPasswordUpdating ? <CircularProgress size={24} /> : 'Zmień hasło'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={isPointsDialogOpen} onClose={handleClosePointsDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Zarządzaj punktami użytkownika</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Podaj liczbę punktów do dodania lub odjęcia.
+          </Typography>
+          <TextField
+            autoFocus
+            label="Liczba punktów"
+            type="number"
+            value={pointsValue}
+            onChange={handlePointsChange}
+            fullWidth
+            inputProps={{ step: 1 }}
+            disabled={isPointsLoading}
+          />
+          <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+            -100 oznacza odjęcie 100 punktów a 100 oznacza dodanie 100 punktów.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePointsDialog} disabled={isPointsLoading}>
+            Anuluj
+          </Button>
+          <Button
+            onClick={handleSubmitPoints}
+            variant="contained"
+            color="primary"
+            disabled={isPointsLoading}
+          >
+            {isPointsLoading ? <CircularProgress size={20} /> : 'Zatwierdź'}
           </Button>
         </DialogActions>
       </Dialog>

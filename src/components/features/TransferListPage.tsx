@@ -83,13 +83,13 @@ const TransfersListPage: React.FC = () => {
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return <Chip icon={<Suspense fallback={null}><LocalShippingIcon /></Suspense>} label="W trasie" color="warning" />;
+        return <Chip icon={<LocalShippingIcon />} label="W trasie" color="warning" />;
       case 'completed':
-        return <Chip icon={<Suspense fallback={null}><CheckCircleIcon /></Suspense>} label="Dostarczony" color="success" />;
+        return <Chip icon={<CheckCircleIcon />} label="Dostarczony" color="success" />;
       case 'created':
-        return <Chip icon={<Suspense fallback={null}><HourglassEmptyIcon /></Suspense>} label="Utworzony" color="default" />;
+        return <Chip icon={<HourglassEmptyIcon />} label="Utworzony" color="default" />;
       case 'cancelled':
-        return <Chip icon={<Suspense fallback={null}><CancelIcon /></Suspense>} label="Anulowany" color="error" />;
+        return <Chip icon={<CancelIcon />} label="Anulowany" color="error" />;
       default:
         return <Chip label="Unknown" />;
     }

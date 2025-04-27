@@ -75,54 +75,74 @@ function App() {
             
             {/* Lazy loaded routes */}
             <Route path="users" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <UserManagementPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="users/:id" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <UserDetailsPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="categories" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <CategoryManagementPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="transfers" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <TransfersListPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="transfers/:id" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <TransferDetailsPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="quests" element={
+              <ErrorBoundary>
               <Suspense fallback={<QuestLoadingBar />}>
                 <QuestBoard />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="equipment/:id" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <EquipmentDetails />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="locations" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <LocationsPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="locations/:id" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <LocationDetailsPage />
               </Suspense>
+              </ErrorBoundary>
             } />
             <Route path="tutorial" element={
+              <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <TutorialPage />
               </Suspense>
+              </ErrorBoundary>
             } />
           </Route>
         </Routes>

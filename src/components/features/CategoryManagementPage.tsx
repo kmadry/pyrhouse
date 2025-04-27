@@ -179,7 +179,7 @@ const CategoryManagementPage: React.FC = () => {
               </TableCell>
               <TableCell>
                 <Chip 
-                  label={category.type} 
+                  label={category.type === 'asset' ? 'Sprzęt' : 'Magazyn'} 
                   color={category.type === 'asset' ? 'primary' : 'secondary'}
                   size="small"
                 />
@@ -220,7 +220,7 @@ const CategoryManagementPage: React.FC = () => {
                   ID: {category.id}
                 </Typography>
                 <Chip 
-                  label={category.type} 
+                  label={category.type === 'asset' ? 'Sprzęt' : 'Magazyn'} 
                   color={category.type === 'asset' ? 'primary' : 'secondary'}
                   size="small"
                 />

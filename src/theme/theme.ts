@@ -91,7 +91,25 @@ export const createThemeWithMode = (mode: 'light' | 'dark') => {
           variants: []
         }
       }
-    }
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          minWidth: 120,
+          // justifyContent: 'left',
+        },
+        icon: {
+          display: 'flex',
+          paddingLeft: 1,
+          alignItems: 'left',
+          justifyContent: 'left',
+        },
+        label: {
+          display: 'flex',
+          alignItems: 'center',
+        },
+      },
+    },
   };
 
   themeCache.set(cacheKey, theme);
