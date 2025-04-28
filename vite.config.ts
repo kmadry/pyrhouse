@@ -48,16 +48,30 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@mui')) return 'vendor-mui';
-            if (id.includes('react')) return 'vendor-react';
-            if (id.includes('date-fns') || id.includes('react-hook-form') || id.includes('axios')) return 'vendor-utils';
-          }
+          /* 1. React & router – zawsze na starcie  */
+          if (id.includes('node_modules/react')) return 'vendor-react'
+
+          /* 2. MUI + emotion + popper */
+          if (/node_modules\/(@mui|@emotion|@popperjs)\//.test(id))
+            return 'vendor-mui'
+
+          /* 3. Duże biblioteki ładowane warunkowo */
+          if (id.includes('bwip-js'))                return 'vendor-barcodes'
+          if (id.includes('canvg'))                  return 'vendor-canvg'
+          if (id.match(/@react-google-maps|react-google-maps|vis\.gl\/react-google-maps/))
+                                                     return 'vendor-gmaps'
+          if (id.includes('html2canvas'))            return 'vendor-html2canvas'
+          if (id.includes('dompurify'))              return 'vendor-dom'
+
+          /* 4. Pozostałe node_modules – zostaw pluginowi */
+          if (id.includes('node_modules'))           return null
+
+          /* 5. Podział po folderach features/ */
           if (id.includes('src/components/features/')) {
-            const dirs = id.split('src/components/features/')[1].split('/');
-            return `feature-${dirs[0]}`;
+            const [folder] = id.split('src/components/features/')[1].split('/')
+            return `feature-${folder}`
           }
-        },
+        }
       }
     },
     cssCodeSplit: true,
@@ -73,7 +87,7 @@ export default defineConfig({
     }
   },
   esbuild: {
-    jsxInject: `import React from 'react'`,
+    // jsxInject: `import React from 'react'`,
     jsxFactory: 'React.createElement',
     jsxFragment: 'React.Fragment'
   }
