@@ -42,7 +42,7 @@ const styles: {
   },
   mainContent: {
     width: '100%',
-    marginTop: '84px',
+    marginTop: '64px',
     padding: '24px',
     transition: 'margin 0.3s, width 0.3s',
     boxSizing: 'border-box',

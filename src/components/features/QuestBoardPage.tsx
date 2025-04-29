@@ -202,12 +202,10 @@ const QuestBoardPage: React.FC = () => {
 
   // Automatyczne zamykanie informacji dla administratorów po 5 sekundach
   useEffect(() => {
-    if (hasAdminAccess()) {
-      const timer = setTimeout(() => {
-        setShowAdminInfo(false);
-      }, 3000);
-
-      return () => clearTimeout(timer);
+    const hasVisited = localStorage.getItem('hasVisitedQuestBoard');
+    if (!hasVisited) {
+      setShowAdminInfo(true);
+      localStorage.setItem('hasVisitedQuestBoard', 'true');
     }
   }, []);
 
@@ -389,7 +387,6 @@ const QuestBoardPage: React.FC = () => {
               onClose={() => setShowAdminInfo(false)}
               severity="info"
               sx={{
-                width: '100%',
                 backgroundColor: '#54291E',
                 color: '#E6CB99',
                 '& .MuiAlert-icon': {

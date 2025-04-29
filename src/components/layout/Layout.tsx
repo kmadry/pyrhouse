@@ -28,7 +28,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Tooltip from '@mui/material/Tooltip';
 import Switch from '@mui/material/Switch';
-
+import BreadcrumbsComponent from './BreadcrumbsComponent';
 // Dynamiczne importy dla mniej krytycznych komponentów
 const LazyIcon = lazy(() => import('../ui/LazyIcon'));
 
@@ -478,6 +478,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     </Box>
   );
 
+  const generateBreadcrumbs = () => {
+    const pathnames = window.location.pathname.split('/').filter((x) => x);
+    if (pathnames.length === 1 && pathnames[0] === 'home') return null;
+    return <BreadcrumbsComponent pathnames={pathnames} />;
+  };
+
   return (
     <Box sx={styles.root}>
       <CssBaseline />
@@ -803,6 +809,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         }}
       >
         <Suspense fallback={<div>Ładowanie...</div>}>
+          {generateBreadcrumbs()}
           {children}
         </Suspense>
         {showQuestTransition && (
