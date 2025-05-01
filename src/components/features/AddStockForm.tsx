@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Box, Button, Select, MenuItem, TextField, CircularProgress, InputLabel, FormControl } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import CircularProgress from '@mui/material/CircularProgress';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { getApiUrl } from '../../config/api';

@@ -8,17 +8,27 @@ import { visualizer } from 'rollup-plugin-visualizer'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-runtime', {
+            regenerator: true
+          }]
+        ]
+      }
+    }),
     compression({
       algorithm: 'gzip',
       exclude: [/\.(br)$/, /\.(gz)$/],
+      threshold: 1024
     }),
     compression({
       algorithm: 'brotliCompress',
       exclude: [/\.(br)$/, /\.(gz)$/],
+      threshold: 1024
     }),
     visualizer({
-      open: true,
+      open: false,
       gzipSize: true,
       brotliSize: true,
       filename: 'dist/stats.html'
@@ -35,6 +45,14 @@ export default defineConfig({
       overlay: false
     }
   },
+  preview: {
+    port: 3000,
+    strictPort: true,
+    cors: true,
+    headers: {
+      'Cache-Control': 'public, max-age=31536000'
+    }
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -44,51 +62,51 @@ export default defineConfig({
     target: 'es2015',
     minify: 'terser',
     cssMinify: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          /* 1. React & router – zawsze na starcie  */
-          if (id.includes('node_modules/react')) return 'vendor-react'
-
-          /* 2. MUI + emotion + popper */
-          if (/node_modules\/(@mui|@emotion|@popperjs)\//.test(id))
-            return 'vendor-mui'
-
-          /* 3. Duże biblioteki ładowane warunkowo */
-          if (id.includes('bwip-js'))                return 'vendor-barcodes'
-          if (id.includes('canvg'))                  return 'vendor-canvg'
-          if (id.match(/@react-google-maps|react-google-maps|vis\.gl\/react-google-maps/))
-                                                     return 'vendor-gmaps'
-          if (id.includes('html2canvas'))            return 'vendor-html2canvas'
-          if (id.includes('dompurify'))              return 'vendor-dom'
-
-          /* 4. Pozostałe node_modules – zostaw pluginowi */
-          if (id.includes('node_modules'))           return null
-
-          /* 5. Podział po folderach features/ */
-          if (id.includes('src/components/features/')) {
-            const [folder] = id.split('src/components/features/')[1].split('/')
-            return `feature-${folder}`
-          }
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          'vendor-utils': ['jwt-decode', 'date-fns', 'dompurify'],
+          'vendor-maps': ['@react-google-maps/api'],
+          'vendor-canvas': ['html2canvas', 'canvg'],
+          'vendor-barcodes': ['bwip-js']
         }
       }
     },
     cssCodeSplit: true,
     cssTarget: 'chrome80',
     reportCompressedSize: true,
-    sourcemap: false
+    sourcemap: false,
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+      },
+      format: {
+        comments: false
+      }
+    }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', '@mui/material', '@mui/icons-material'],
+    include: ['react', 'react-dom'],
     exclude: ['@emotion/cache'],
     esbuildOptions: {
-      target: 'es2015'
+      target: 'es2015',
+      treeShaking: true,
+      define: {
+        global: 'globalThis'
+      }
     }
   },
   esbuild: {
-    // jsxInject: `import React from 'react'`,
     jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment'
+    jsxFragment: 'React.Fragment',
+    treeShaking: true,
+    minifyWhitespace: true,
+    minifyIdentifiers: true,
+    minifySyntax: true
   }
 })

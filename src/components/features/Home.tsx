@@ -13,6 +13,8 @@ import {
   Grid,
   Chip,
   Alert,
+  styled,
+  alpha
 } from '@mui/material';
 import { 
   LocalShipping, 
@@ -25,26 +27,10 @@ import {
   AddTask
 } from '@mui/icons-material';
 import { useTransfers } from '../../hooks/useTransfers';
-import { styled } from '@mui/material/styles';
 import { getApiUrl } from '../../config/api';
 import { jwtDecode } from 'jwt-decode';
-import { alpha } from '@mui/material/styles';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
-
-// Interfejs dla zadania
-interface Quest {
-  id: number;
-  deadline: string;
-  items: Array<{
-    quantity: number;
-    name: string;
-  }>;
-  description?: string;
-  reward?: string;
-  difficulty?: 'easy' | 'medium' | 'hard';
-  location?: string;
-}
 
 interface PyrCodeSuggestion {
   id: number;
@@ -270,101 +256,6 @@ const HomePage: React.FC = () => {
     };
 
     fetchUserTransfers();
-  }, []);
-
-  useEffect(() => {
-    const now = new Date();
-    
-    const mockQuests: Quest[] = [
-      {
-        id: 1,
-        // 2 dni od teraz
-        deadline: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        items: [
-          { quantity: 5, name: 'laptop' },
-          { quantity: 30, name: 'przedłużacz' }
-        ],
-        description: 'Przygotuj sprzęt do sali konferencyjnej na ważne spotkanie gildii.',
-        reward: '300 złotych monet',
-        location: 'Sala Konferencyjna - Poziom 3',
-        difficulty: 'easy'
-      },
-      {
-        id: 2,
-        // 5 dni od teraz
-        deadline: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Przygotować salę konferencyjną na zebranie Rady Królewskiej',
-        items: [
-          { quantity: 10, name: 'krzesło' },
-          { quantity: 2, name: 'projektor' },
-          { quantity: 1, name: 'ekran' },
-          { quantity: 2, name: 'mikrofon bezprzewodowy' }
-        ],
-        reward: '500 złotych monet',
-        location: 'Sala Tronowa - Poziom 1',
-        difficulty: 'medium'
-      },
-      {
-        id: 3,
-        // 30 minut od teraz (pilne!)
-        deadline: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
-        description: 'Pilne! Przeprowadź inwentaryzację sprzętu w magazynie głównym. Sprawdź numery seryjne i stan techniczny wszystkich urządzeń.',
-        items: [],
-        reward: '200 złotych monet',
-        location: 'Magazyn Główny - Poziom -1',
-        difficulty: 'easy'
-      },
-      {
-        id: 4,
-        // 25 dni od teraz
-        deadline: new Date(now.getTime() + 25 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Zorganizuj sprzęt na wielki turniej e-sportowy w głównej sali.',
-        items: [
-          { quantity: 20, name: 'słuchawki gamingowe' },
-          { quantity: 20, name: 'komputer gamingowy' },
-          { quantity: 4, name: 'router' },
-          { quantity: 2, name: 'switch sieciowy' },
-          { quantity: 1, name: 'serwer turniejowy' },
-          { quantity: 4, name: 'monitor zapasowy' }
-        ],
-        reward: '1000 złotych monet',
-        location: 'Arena Główna - Poziom 2',
-        difficulty: 'hard'
-      },
-      {
-        id: 5,
-        // 6 dni od teraz
-        deadline: new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000).toISOString(),
-        description: 'Przygotuj mobilne stanowisko do prezentacji w terenie.',
-        items: [
-          { quantity: 1, name: 'projektor przenośny' },
-          { quantity: 1, name: 'ekran projekcyjny' },
-          { quantity: 2, name: 'głośnik bluetooth' },
-          { quantity: 1, name: 'laptop prezentacyjny' }
-        ],
-        reward: '400 złotych monet',
-        location: 'Plac Targowy - Miasto',
-        difficulty: 'medium'
-      }
-    ];
-
-    // Filtruj zadania z czasem pozostałym między 0 a 2 godziny
-    const urgentQuests = mockQuests.filter(quest => {
-      const deadlineDate = new Date(quest.deadline);
-      const difference = deadlineDate.getTime() - now.getTime();
-      const hoursLeft = difference / (1000 * 60 * 60);
-      return hoursLeft <= 2 && hoursLeft > 0;
-    });
-
-    // Sortuj po czasie pozostałym (od najpilniejszych)
-    const sortedUrgentQuests = urgentQuests.sort((a, b) => {
-      const deadlineA = new Date(a.deadline).getTime();
-      const deadlineB = new Date(b.deadline).getTime();
-      return deadlineA - deadlineB;
-    });
-
-    // Weź 2-3 najbardziej pilne zadania
-    setUserTransfers(sortedUrgentQuests.slice(0, 3));
   }, []);
 
   useEffect(() => {
