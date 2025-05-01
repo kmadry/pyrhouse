@@ -9,11 +9,13 @@ import { visualizer } from 'rollup-plugin-visualizer'
 export default defineConfig({
   plugins: [
     react({
+      jsxImportSource: '@emotion/react',
       babel: {
         plugins: [
           ['@babel/plugin-transform-runtime', {
             regenerator: true
-          }]
+          }],
+          '@emotion/babel-plugin'
         ]
       }
     }),
@@ -66,12 +68,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-react': ['react', 'react-dom'],
           'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
-          'vendor-utils': ['jwt-decode', 'date-fns', 'dompurify'],
-          'vendor-maps': ['@react-google-maps/api'],
-          'vendor-canvas': ['html2canvas', 'canvg'],
-          'vendor-barcodes': ['bwip-js']
+          'vendor-maps': ['@react-google-maps/api', '@vis.gl/react-google-maps'],
+          'vendor-canvas': ['html2canvas'],
+          'vendor-utils': ['lodash', 'date-fns', 'jwt-decode']
         }
       }
     },
@@ -91,7 +92,14 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'],
+    include: [
+      'react',
+      'react-dom',
+      '@emotion/react',
+      '@emotion/styled',
+      '@mui/material',
+      '@mui/icons-material'
+    ],
     exclude: ['@emotion/cache'],
     esbuildOptions: {
       target: 'es2015',

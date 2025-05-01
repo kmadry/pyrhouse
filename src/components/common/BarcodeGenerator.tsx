@@ -1,7 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { Box, Button, Typography, Paper, Grid } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
+import JsBarcode from 'jsbarcode';
 import { jsPDF } from 'jspdf';
-import bwipjs from 'bwip-js';
 
 interface Asset {
   id: number;
@@ -29,138 +33,189 @@ interface BarcodeGeneratorProps {
 }
 
 export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onClose }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
-  const [pdf, setPdf] = React.useState<jsPDF | null>(null);
   const [error, setError] = React.useState<string>('');
   const [isGenerating, setIsGenerating] = React.useState(false);
-  const [isReady, setIsReady] = React.useState(false);
-  const [generatedBarcodes, setGeneratedBarcodes] = React.useState<{imgData: string, asset: Asset}[]>([]);
+  const barcodeRef = useRef<HTMLCanvasElement>(null);
 
-  // Inicjalizacja PDF
+  // Generowanie kodu kreskowego
   useEffect(() => {
+    if (!assets || !assets.length || !barcodeRef.current) return;
+
     try {
-      const newPdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+      JsBarcode(barcodeRef.current, assets[currentIndex].pyrcode, {
+        format: 'CODE128',
+        width: 2,
+        height: 40,
+        displayValue: true,
+        fontSize: 12,
+        margin: 5,
+        background: '#FFFFFF',
+        lineColor: '#000000',
+        textAlign: 'center',
+        textPosition: 'bottom',
+        textMargin: 2,
+        text: assets[currentIndex].pyrcode
       });
-      setPdf(newPdf);
     } catch (err) {
-      console.error('Błąd podczas inicjalizacji PDF:', err);
-      setError('Nie udało się zainicjalizować PDF');
+      console.error('Błąd podczas generowania kodu kreskowego:', err);
+      setError('Nie udało się wygenerować kodu kreskowego');
     }
-  }, []);
+  }, [assets, currentIndex]);
 
-  // Automatyczne generowanie wszystkich kodów kreskowych
-  useEffect(() => {
-    if (!assets || !assets.length) {
-      console.error('Brak zasobów do wygenerowania kodów kreskowych');
-      setError('Brak zasobów do wygenerowania kodów kreskowych');
-      return;
-    }
-
-    const generateAllBarcodes = async () => {
-      setIsGenerating(true);
-      
-      try {
-        const newBarcodes: {imgData: string, asset: Asset}[] = [];
-        
-        for (let i = 0; i < assets.length; i++) {
-          const asset = assets[i];
-          
-          if (!asset.pyrcode) {
-            console.error('Brak kodu PYR dla zasobu:', asset);
-            continue;
-          }
-          
-          if (!canvasRef.current) {
-            console.error('Brak elementu canvas');
-            continue;
-          }
-          
-          // Generowanie kodu kreskowego
-          bwipjs.toCanvas(canvasRef.current, {
-            bcid: 'code128',
-            text: asset.pyrcode,
-            scale: 3,
-            height: 10,
-            includetext: true,
-            textxalign: 'center',
-            backgroundcolor: 'FFFFFF',
-            padding: 10,
-          });
-          
-          const imgData = canvasRef.current.toDataURL('image/png');
-          newBarcodes.push({ imgData, asset });
-        }
-        
-        setGeneratedBarcodes(newBarcodes);
-        generatePDF(newBarcodes);
-        setIsReady(true);
-      } catch (err) {
-        console.error('Błąd podczas generowania kodów kreskowych:', err);
-        setError('Błąd podczas generowania kodów kreskowych');
-      } finally {
-        setIsGenerating(false);
-      }
-    };
-    
-    generateAllBarcodes();
-  }, [assets]);
-
-  // Generowanie PDF
-  const generatePDF = (barcodes: {imgData: string, asset: Asset}[]) => {
-    if (isGenerating) return;
+  const handleDownloadPDF = async () => {
+    if (!barcodeRef.current) return;
     setIsGenerating(true);
 
     try {
-      const newPdf = new jsPDF({
-        orientation: 'portrait',
+      // Pobierz dane z canvas jako PNG
+      const barcodeDataUrl = barcodeRef.current.toDataURL('image/png', 1.0);
+
+      // Utwórz element do generowania PDF
+      const element = document.createElement('div');
+      element.style.padding = '10mm';
+      element.style.textAlign = 'center';
+      element.style.backgroundColor = 'white';
+      element.style.width = '80mm';
+      element.style.height = '50mm';
+      element.style.display = 'flex';
+      element.style.flexDirection = 'column';
+      element.style.alignItems = 'center';
+      element.style.justifyContent = 'center';
+
+      // Dodaj kod kreskowy jako obraz
+      const img = document.createElement('img');
+      img.src = barcodeDataUrl;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      element.appendChild(img);
+
+      // Dodaj pyrcode jako tekst
+      const text = document.createElement('div');
+      text.style.marginTop = '5mm';
+      text.style.fontSize = '12px';
+      text.textContent = assets[currentIndex].pyrcode;
+      element.appendChild(text);
+
+      // Konfiguracja PDF
+      const doc = new jsPDF({
+        orientation: 'landscape',
         unit: 'mm',
-        format: 'a4',
+        format: [40, 80]
       });
 
-      barcodes.forEach((barcode, index) => {
-        // Dodaj nową stronę dla każdego kodu kreskowego (oprócz pierwszego)
-        if (index > 0) {
-          newPdf.addPage();
-        }
+      // Oblicz wymiary i pozycję kodu kreskowego
+      const pdfWidth = 80;
+      const pdfHeight = 40;
+      const barcodeWidth = 60;
+      const barcodeHeight = 25;
+      const x = (pdfWidth - barcodeWidth) / 2;
+      const y = (pdfHeight - barcodeHeight) / 2;
 
-        const pageWidth = newPdf.internal.pageSize.getWidth();
-        const pageHeight = newPdf.internal.pageSize.getHeight();
-        
-        // Oblicz wymiary kodu kreskowego - zajmuje 70% szerokości strony
-        const barcodeWidth = pageWidth * 0.7;
-        const barcodeHeight = barcodeWidth * 0.3; // proporcja 3:1 dla kodu kreskowego
-        
-        // Wycentruj kod kreskowy na stronie
-        const x = (pageWidth - barcodeWidth) / 2;
-        const y = (pageHeight - barcodeHeight - 30) / 2; // 30mm na tekst pod kodem
+      // Dodaj tylko kod kreskowy (tekst jest już częścią obrazu z canvas)
+      doc.addImage(barcodeDataUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
 
-        // Konwertuj base64 na Uint8Array
-        const base64Data = barcode.imgData.split(',')[1];
-        const binaryData = atob(base64Data);
-        const array = new Uint8Array(binaryData.length);
-        for (let i = 0; i < binaryData.length; i++) {
-          array[i] = binaryData.charCodeAt(i);
-        }
-
-        // Dodaj obraz do PDF
-        newPdf.addImage(
-          array, 
-          'PNG', 
-          x, 
-          y, 
-          barcodeWidth, 
-          barcodeHeight
-        );
-      });
-
-      setPdf(newPdf);
-    } catch (err) {
-      console.error('Błąd podczas generowania PDF:', err);
+      // Zapisz PDF
+      doc.save(`barcode-${assets[currentIndex].pyrcode}.pdf`);
+      setIsGenerating(false);
+    } catch (error) {
+      console.error('Błąd podczas generowania PDF:', error);
       setError('Nie udało się wygenerować PDF');
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!barcodeRef.current) return;
+    setIsGenerating(true);
+
+    try {
+      const printCanvas = document.createElement('canvas');
+      const ctx = printCanvas.getContext('2d');
+      
+      if (!ctx) {
+        throw new Error('Nie można utworzyć kontekstu canvas');
+      }
+
+      // Ustawiamy rozmiar canvasu - mniejszy dla drukarki termicznej
+      printCanvas.width = 300;
+      printCanvas.height = 150;
+
+      // Wypełniamy tło na biało
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, printCanvas.width, printCanvas.height);
+
+      // Centrujemy kod kreskowy
+      const scale = Math.min(1, printCanvas.width / barcodeRef.current.width);
+      const scaledWidth = barcodeRef.current.width * scale;
+      const scaledHeight = barcodeRef.current.height * scale;
+      const x = (printCanvas.width - scaledWidth) / 2;
+      const y = (printCanvas.height - scaledHeight) / 2;
+
+      // Rysujemy kod kreskowy
+      ctx.drawImage(
+        barcodeRef.current,
+        x,
+        y,
+        scaledWidth,
+        scaledHeight
+      );
+
+      // Tworzymy element do drukowania
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('Nie można otworzyć okna drukowania');
+      }
+
+      // Dodajemy style i zawartość
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Drukuj kod kreskowy</title>
+            <style>
+              @page {
+                size: 80mm 50mm;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background: white;
+              }
+              img {
+                max-width: 90%;
+                height: auto;
+                display: block;
+                margin: auto;
+                transform-origin: center center;
+              }
+            </style>
+          </head>
+          <body>
+            <img src="${printCanvas.toDataURL('image/png', 1.0)}" />
+          </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+      
+      await new Promise(resolve => {
+        const img = printWindow.document.querySelector('img');
+        if (img) {
+          img.onload = resolve;
+        } else {
+          resolve(null);
+        }
+      });
+
+      printWindow.print();
+      printWindow.close();
+    } catch (err) {
+      console.error('Błąd podczas drukowania:', err);
+      setError('Nie udało się wydrukować');
     } finally {
       setIsGenerating(false);
     }
@@ -180,85 +235,54 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
     }
   };
 
-  const handleDownloadPDF = () => {
-    if (!pdf) {
-      console.error('Brak wygenerowanego PDF');
-      return;
-    }
-    try {
-      pdf.save('kody-kreskowe.pdf');
-    } catch (err) {
-      console.error('Błąd podczas zapisywania PDF:', err);
-      setError('Nie udało się zapisać PDF');
-    }
-  };
-
-  const handlePrint = () => {
-    if (!pdf) {
-      console.error('Brak wygenerowanego PDF');
-      return;
-    }
-    try {
-      const pdfUrl = URL.createObjectURL(
-        new Blob([pdf.output('blob')], { type: 'application/pdf' })
-      );
-      
-      const printWindow = window.open(pdfUrl, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
-      }
-    } catch (err) {
-      console.error('Błąd podczas drukowania:', err);
-      setError('Nie udało się wydrukować PDF');
-    }
-  };
-
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom>
-        Generowanie kodów kreskowych
-      </Typography>
-      
-      {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
-      )}
-      
       <Paper sx={{ p: 2, mb: 2 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {generatedBarcodes.length > 0 && (
-                <>
-                  <img 
-                    src={generatedBarcodes[currentIndex].imgData} 
-                    alt={`Kod kreskowy ${generatedBarcodes[currentIndex].asset.pyrcode}`}
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {generatedBarcodes[currentIndex].asset.pyrcode}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {generatedBarcodes[currentIndex].asset.serial} - {generatedBarcodes[currentIndex].asset.category.label}
-                  </Typography>
-                </>
-              )}
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
+          <Grid item xs={12}>
+            <Typography variant="h5" sx={{ mb: 3, textAlign: 'center' }}>
+              Generowanie kodów kreskowych
+            </Typography>
+            
+            {error && (
+              <Typography color="error" sx={{ mb: 2, textAlign: 'center' }}>
+                {error}
+              </Typography>
+            )}
+
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '4px',
+              width: '100%',
+              maxWidth: '300px',
+              margin: '0 auto',
+              mb: 3
+            }}>
+              <canvas 
+                ref={barcodeRef} 
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  backgroundColor: 'white'
+                }}
+              />
             </Box>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Typography variant="body1">
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Typography variant="body1" sx={{ mb: 1 }}>
                 Element {currentIndex + 1} z {assets.length}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+
+              <Box sx={{ display: 'flex', gap: 2, width: '100%', maxWidth: '300px', mb: 2 }}>
                 <Button 
                   variant="outlined" 
                   onClick={handlePrevious}
                   disabled={currentIndex === 0}
+                  sx={{ flex: 1 }}
                 >
                   Poprzedni
                 </Button>
@@ -266,36 +290,41 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
                   variant="outlined" 
                   onClick={handleNext}
                   disabled={currentIndex === assets.length - 1}
+                  sx={{ flex: 1 }}
                 >
                   Następny
                 </Button>
               </Box>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleDownloadPDF}
-                disabled={!isReady || isGenerating}
-                sx={{ mt: 2 }}
-              >
-                {isGenerating ? 'Generowanie...' : 'Pobierz PDF'}
-              </Button>
-              <Button 
-                variant="contained" 
-                color="secondary" 
-                onClick={handlePrint}
-                disabled={!isReady || isGenerating}
-              >
-                {isGenerating ? 'Generowanie...' : 'Drukuj'}
-              </Button>
-              {onClose && (
-                <Button 
-                  variant="outlined" 
-                  onClick={onClose}
-                  sx={{ mt: 1 }}
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', maxWidth: '300px' }}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleDownloadPDF}
+                  disabled={isGenerating}
+                  fullWidth
                 >
-                  Zamknij
+                  {isGenerating ? 'Generowanie...' : 'Pobierz PDF'}
                 </Button>
-              )}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handlePrint}
+                  disabled={isGenerating}
+                  fullWidth
+                >
+                  {isGenerating ? 'Generowanie...' : 'Drukuj'}
+                </Button>
+                {onClose && (
+                  <Button 
+                    variant="outlined"
+                    onClick={onClose}
+                    fullWidth
+                  >
+                    Zamknij
+                  </Button>
+                )}
+              </Box>
             </Box>
           </Grid>
         </Grid>
