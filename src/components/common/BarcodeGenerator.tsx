@@ -68,43 +68,13 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
     setIsGenerating(true);
 
     try {
-      // Pobierz dane z canvas jako PNG
-      const barcodeDataUrl = barcodeRef.current.toDataURL('image/png', 1.0);
-
-      // Utwórz element do generowania PDF
-      const element = document.createElement('div');
-      element.style.padding = '10mm';
-      element.style.textAlign = 'center';
-      element.style.backgroundColor = 'white';
-      element.style.width = '80mm';
-      element.style.height = '50mm';
-      element.style.display = 'flex';
-      element.style.flexDirection = 'column';
-      element.style.alignItems = 'center';
-      element.style.justifyContent = 'center';
-
-      // Dodaj kod kreskowy jako obraz
-      const img = document.createElement('img');
-      img.src = barcodeDataUrl;
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
-      element.appendChild(img);
-
-      // Dodaj pyrcode jako tekst
-      const text = document.createElement('div');
-      text.style.marginTop = '5mm';
-      text.style.fontSize = '12px';
-      text.textContent = assets[currentIndex].pyrcode;
-      element.appendChild(text);
-
-      // Konfiguracja PDF
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: [40, 80]
       });
 
-      // Oblicz wymiary i pozycję kodu kreskowego
+      // Konfiguracja wymiarów
       const pdfWidth = 80;
       const pdfHeight = 40;
       const barcodeWidth = 60;
@@ -112,11 +82,36 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
       const x = (pdfWidth - barcodeWidth) / 2;
       const y = (pdfHeight - barcodeHeight) / 2;
 
-      // Dodaj tylko kod kreskowy (tekst jest już częścią obrazu z canvas)
-      doc.addImage(barcodeDataUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
+      // Generuj PDF dla każdego zasobu
+      for (let i = 0; i < assets.length; i++) {
+        if (i > 0) {
+          doc.addPage();
+        }
+
+        // Generuj kod kreskowy dla aktualnego zasobu
+        const tempCanvas = document.createElement('canvas');
+        JsBarcode(tempCanvas, assets[i].pyrcode, {
+          format: 'CODE128',
+          width: 2,
+          height: 40,
+          displayValue: true,
+          fontSize: 12,
+          margin: 5,
+          background: '#FFFFFF',
+          lineColor: '#000000',
+          textAlign: 'center',
+          textPosition: 'bottom',
+          textMargin: 2,
+          text: assets[i].pyrcode
+        });
+
+        // Dodaj kod kreskowy do PDF
+        const barcodeDataUrl = tempCanvas.toDataURL('image/png', 1.0);
+        doc.addImage(barcodeDataUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
+      }
 
       // Zapisz PDF
-      doc.save(`barcode-${assets[currentIndex].pyrcode}.pdf`);
+      doc.save(`barcodes-${assets.length}.pdf`);
       setIsGenerating(false);
     } catch (error) {
       console.error('Błąd podczas generowania PDF:', error);
@@ -130,48 +125,16 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
     setIsGenerating(true);
 
     try {
-      const printCanvas = document.createElement('canvas');
-      const ctx = printCanvas.getContext('2d');
-      
-      if (!ctx) {
-        throw new Error('Nie można utworzyć kontekstu canvas');
-      }
-
-      // Ustawiamy rozmiar canvasu - mniejszy dla drukarki termicznej
-      printCanvas.width = 300;
-      printCanvas.height = 150;
-
-      // Wypełniamy tło na biało
-      ctx.fillStyle = 'white';
-      ctx.fillRect(0, 0, printCanvas.width, printCanvas.height);
-
-      // Centrujemy kod kreskowy
-      const scale = Math.min(1, printCanvas.width / barcodeRef.current.width);
-      const scaledWidth = barcodeRef.current.width * scale;
-      const scaledHeight = barcodeRef.current.height * scale;
-      const x = (printCanvas.width - scaledWidth) / 2;
-      const y = (printCanvas.height - scaledHeight) / 2;
-
-      // Rysujemy kod kreskowy
-      ctx.drawImage(
-        barcodeRef.current,
-        x,
-        y,
-        scaledWidth,
-        scaledHeight
-      );
-
-      // Tworzymy element do drukowania
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
         throw new Error('Nie można otworzyć okna drukowania');
       }
 
-      // Dodajemy style i zawartość
-      printWindow.document.write(`
+      // Przygotuj HTML dla wszystkich kodów kreskowych
+      let htmlContent = `
         <html>
           <head>
-            <title>Drukuj kod kreskowy</title>
+            <title>Drukuj kody kreskowe</title>
             <style>
               @page {
                 size: 80mm 50mm;
@@ -180,10 +143,20 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
               body {
                 margin: 0;
                 display: flex;
+                flex-direction: column;
+                align-items: center;
+                background: white;
+              }
+              .barcode-container {
+                page-break-after: always;
+                display: flex;
                 justify-content: center;
                 align-items: center;
                 min-height: 100vh;
-                background: white;
+                width: 100%;
+              }
+              .barcode-container:last-child {
+                page-break-after: avoid;
               }
               img {
                 max-width: 90%;
@@ -195,20 +168,50 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
             </style>
           </head>
           <body>
-            <img src="${printCanvas.toDataURL('image/png', 1.0)}" />
+      `;
+
+      // Dodaj każdy kod kreskowy
+      for (let i = 0; i < assets.length; i++) {
+        const tempCanvas = document.createElement('canvas');
+        JsBarcode(tempCanvas, assets[i].pyrcode, {
+          format: 'CODE128',
+          width: 2,
+          height: 40,
+          displayValue: true,
+          fontSize: 12,
+          margin: 5,
+          background: '#FFFFFF',
+          lineColor: '#000000',
+          textAlign: 'center',
+          textPosition: 'bottom',
+          textMargin: 2,
+          text: assets[i].pyrcode
+        });
+
+        htmlContent += `
+          <div class="barcode-container">
+            <img src="${tempCanvas.toDataURL('image/png', 1.0)}" />
+          </div>
+        `;
+      }
+
+      htmlContent += `
           </body>
         </html>
-      `);
+      `;
 
+      printWindow.document.write(htmlContent);
       printWindow.document.close();
       
       await new Promise(resolve => {
-        const img = printWindow.document.querySelector('img');
-        if (img) {
-          img.onload = resolve;
-        } else {
-          resolve(null);
-        }
+        const imgs = printWindow.document.querySelectorAll('img');
+        let loaded = 0;
+        imgs.forEach(img => {
+          img.onload = () => {
+            loaded++;
+            if (loaded === imgs.length) resolve(null);
+          };
+        });
       });
 
       printWindow.print();
