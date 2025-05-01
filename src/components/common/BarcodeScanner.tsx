@@ -12,69 +12,94 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
     if (isOpen && videoRef.current) {
+      console.log('Inicjalizacja skanera...');
       setIsLoading(true);
       setError(null);
+      setIsCameraReady(false);
       
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
+      const videoElement = videoRef.current;
 
-      reader
-        .decodeFromConstraints(
-          {
-            audio: false,
-            video: { 
-              facingMode: 'environment',
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            }
-          },
-          videoRef.current,
-          (result: Result | null, error: Exception | null) => {
-            setIsLoading(false);
-            if (result) {
-              const scannedCode = result.getText();
-              if (scannedCode.toLowerCase().includes('pyr')) {
-                onScan(scannedCode);
-                handleClose();
+      // Sprawdź dostępność kamery
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(() => {
+          console.log('Dostęp do kamery uzyskany');
+          reader
+            .decodeFromConstraints(
+              {
+                audio: false,
+                video: { 
+                  facingMode: 'environment',
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 }
+                }
+              },
+              videoElement,
+              (result: Result | null, error: Exception | null) => {
+                if (!isCameraReady) {
+                  console.log('Kamera gotowa do skanowania');
+                  setIsLoading(false);
+                  setIsCameraReady(true);
+                }
+                
+                if (result) {
+                  console.log('Zeskanowany kod:', result.getText());
+                  const scannedCode = result.getText();
+                  if (scannedCode.toLowerCase().includes('pyr')) {
+                    onScan(scannedCode);
+                    handleClose();
+                  }
+                }
+                if (error) {
+                  console.warn('Błąd skanowania:', error);
+                }
               }
-            }
-            if (error) {
-              console.error('Błąd skanowania:', error);
-            }
-          }
-        )
+            )
+            .catch((err: Error) => {
+              console.error('Błąd inicjalizacji czytnika:', err);
+              setError('Błąd inicjalizacji skanera. Spróbuj ponownie.');
+              setIsLoading(false);
+            });
+        })
         .catch((err: Error) => {
+          console.error('Błąd dostępu do kamery:', err);
+          setError('Nie można uzyskać dostępu do kamery. Upewnij się, że udzielono odpowiednich uprawnień i odśwież stronę.');
           setIsLoading(false);
-          setError('Nie można uzyskać dostępu do kamery. Upewnij się, że udzielono odpowiednich uprawnień.');
-          console.error('Błąd inicjalizacji kamery:', err);
         });
 
       return () => {
+        console.log('Zamykanie skanera...');
         if (readerRef.current) {
           readerRef.current.reset();
         }
       };
     }
-  }, [isOpen, onScan]);
+  }, [isOpen, onScan, isCameraReady]);
 
   const handleOpen = () => {
+    console.log('Otwieranie skanera...');
     setIsOpen(true);
     setError(null);
     setIsLoading(true);
+    setIsCameraReady(false);
   };
   
   const handleClose = () => {
+    console.log('Zamykanie skanera...');
     if (readerRef.current) {
       readerRef.current.reset();
     }
     setIsOpen(false);
     setError(null);
     setIsLoading(false);
+    setIsCameraReady(false);
   };
 
   return (
@@ -128,15 +153,19 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
           alignItems: 'center',
           minHeight: '50vh'
         }}>
-          {isLoading && !error && (
+          {isLoading && !isCameraReady && !error && (
             <Box sx={{ 
               position: 'absolute', 
               top: '50%', 
               left: '50%', 
               transform: 'translate(-50%, -50%)',
-              zIndex: 2
+              zIndex: 2,
+              textAlign: 'center'
             }}>
-              <CircularProgress color="primary" />
+              <CircularProgress color="primary" sx={{ mb: 2 }} />
+              <Typography color="white" variant="body2">
+                Inicjalizacja kamery...
+              </Typography>
             </Box>
           )}
           {error ? (
@@ -153,21 +182,25 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
                   objectFit: 'cover',
                   backgroundColor: 'black'
                 }}
+                autoPlay
+                playsInline
               />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '80%',
-                  height: '150px',
-                  border: '2px solid #00ff00',
-                  borderRadius: '8px',
-                  pointerEvents: 'none',
-                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
-                }}
-              />
+              {isCameraReady && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '80%',
+                    height: '150px',
+                    border: '2px solid #00ff00',
+                    borderRadius: '8px',
+                    pointerEvents: 'none',
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
+                  }}
+                />
+              )}
             </Box>
           )}
         </DialogContent>
