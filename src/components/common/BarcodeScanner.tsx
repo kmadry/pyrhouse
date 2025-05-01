@@ -15,73 +15,110 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
   const [isCameraReady, setIsCameraReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    if (isOpen && videoRef.current) {
+    let isMounted = true;
+
+    const initializeScanner = async () => {
+      if (!isOpen || !videoRef.current) return;
+
       console.log('Inicjalizacja skanera...');
       setIsLoading(true);
       setError(null);
       setIsCameraReady(false);
-      
-      const reader = new BrowserMultiFormatReader();
-      readerRef.current = reader;
-      const videoElement = videoRef.current;
 
-      // Sprawdź dostępność kamery
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(() => {
-          console.log('Dostęp do kamery uzyskany');
-          reader
-            .decodeFromConstraints(
-              {
-                audio: false,
-                video: { 
-                  facingMode: 'environment',
-                  width: { ideal: 1280 },
-                  height: { ideal: 720 }
-                }
-              },
-              videoElement,
-              (result: Result | null, error: Exception | null) => {
-                if (!isCameraReady) {
-                  console.log('Kamera gotowa do skanowania');
-                  setIsLoading(false);
-                  setIsCameraReady(true);
-                }
-                
-                if (result) {
-                  console.log('Zeskanowany kod:', result.getText());
-                  const scannedCode = result.getText();
-                  if (scannedCode.toLowerCase().includes('pyr')) {
-                    onScan(scannedCode);
-                    handleClose();
-                  }
-                }
-                if (error) {
-                  console.warn('Błąd skanowania:', error);
-                }
-              }
-            )
-            .catch((err: Error) => {
-              console.error('Błąd inicjalizacji czytnika:', err);
-              setError('Błąd inicjalizacji skanera. Spróbuj ponownie.');
-              setIsLoading(false);
-            });
-        })
-        .catch((err: Error) => {
-          console.error('Błąd dostępu do kamery:', err);
-          setError('Nie można uzyskać dostępu do kamery. Upewnij się, że udzielono odpowiednich uprawnień i odśwież stronę.');
-          setIsLoading(false);
+      try {
+        // Najpierw sprawdź dostępność kamery
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
         });
 
-      return () => {
-        console.log('Zamykanie skanera...');
-        if (readerRef.current) {
-          readerRef.current.reset();
+        if (!isMounted) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
         }
-      };
-    }
-  }, [isOpen, onScan, isCameraReady]);
+
+        streamRef.current = stream;
+        console.log('Dostęp do kamery uzyskany');
+
+        const reader = new BrowserMultiFormatReader();
+        readerRef.current = reader;
+        const videoElement = videoRef.current;
+
+        // Podłącz strumień do elementu video
+        videoElement.srcObject = stream;
+        await videoElement.play();
+
+        reader
+          .decodeFromConstraints(
+            {
+              audio: false,
+              video: {
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            },
+            videoElement,
+            (result: Result | null, error: Exception | null) => {
+              if (!isMounted) return;
+
+              if (!isCameraReady) {
+                console.log('Kamera gotowa do skanowania');
+                setIsLoading(false);
+                setIsCameraReady(true);
+              }
+
+              if (result) {
+                console.log('Zeskanowany kod:', result.getText());
+                const scannedCode = result.getText();
+                if (scannedCode.toLowerCase().includes('pyr')) {
+                  onScan(scannedCode);
+                  handleClose();
+                }
+              }
+              if (error) {
+                console.warn('Błąd skanowania:', error);
+              }
+            }
+          )
+          .catch((err: Error) => {
+            if (!isMounted) return;
+            console.error('Błąd inicjalizacji czytnika:', err);
+            setError('Błąd inicjalizacji skanera. Spróbuj ponownie.');
+            setIsLoading(false);
+          });
+      } catch (err) {
+        if (!isMounted) return;
+        console.error('Błąd dostępu do kamery:', err);
+        setError('Nie można uzyskać dostępu do kamery. Upewnij się, że udzielono odpowiednich uprawnień i odśwież stronę.');
+        setIsLoading(false);
+      }
+    };
+
+    initializeScanner();
+
+    return () => {
+      isMounted = false;
+      console.log('Czyszczenie zasobów skanera...');
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      if (readerRef.current) {
+        readerRef.current.reset();
+        readerRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [isOpen, onScan]);
 
   const handleOpen = () => {
     console.log('Otwieranie skanera...');
@@ -90,11 +127,19 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
     setIsLoading(true);
     setIsCameraReady(false);
   };
-  
+
   const handleClose = () => {
     console.log('Zamykanie skanera...');
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
     if (readerRef.current) {
       readerRef.current.reset();
+      readerRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setIsOpen(false);
     setError(null);
