@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -174,39 +174,10 @@ const QuestStatus = styled(Chip)(({ theme }) => ({
   },
 }));
 
-const SearchContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(4),
-  marginTop: theme.spacing(-3),
-  borderRadius: theme.shape.borderRadius * 2,
-  background: theme.palette.mode === 'dark' 
-    ? '#2d2d2d'
-    : '#ffffff',
-  boxShadow: theme.palette.mode === 'dark'
-    ? '0 4px 20px rgba(0,0,0,0.3)'
-    : '0 4px 20px rgba(0,0,0,0.05)',
-  transition: 'none',
-  '&:hover': {
-    boxShadow: theme.palette.mode === 'dark'
-      ? '0 4px 20px rgba(0,0,0,0.3)'
-      : '0 4px 20px rgba(0,0,0,0.05)',
-    transform: 'none'
-  }
-}));
-
-const SearchButton = styled(Button)(({ theme }) => ({
-  height: '40px',
-  minWidth: '120px',
-  borderRadius: theme.shape.borderRadius * 2,
-  transition: 'all 0.2s ease',
-  '&:hover': {
-    transform: 'translateY(-1px)',
-    boxShadow: theme.shadows[2]
-  }
-}));
+const BarcodeScanner = lazy(() => import('../common/BarcodeScanner'));
 
 const HomePage: React.FC = () => {
-  const { loading } = useTransfers();
+  useTransfers();
   const navigate = useNavigate();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
@@ -345,6 +316,13 @@ const HomePage: React.FC = () => {
     navigate(`/equipment/${value.id}?type=asset`);
   };
 
+  const handleBarcodeScan = (scannedCode: string) => {
+    if (scannedCode.includes('pyr')) {
+      setPyrcode(scannedCode);
+      handlePyrCodeSearch(scannedCode);
+    }
+  };
+
   return (
     <Box>
       <AppSnackbar
@@ -357,102 +335,127 @@ const HomePage: React.FC = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <SearchContainer elevation={0}>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: 'center', 
-            gap: 2 
-          }}>
-            <Autocomplete
-              fullWidth
-              freeSolo
-              options={pyrCodeSuggestions}
-              getOptionLabel={(option) => 
-                typeof option === 'string' ? option : option.pyrcode
-              }
-              onChange={handleOptionSelected}
-              renderOption={(props, option) => {
-                const { key, ...otherProps } = props;
-                return (
-                  <Box key={key} component="li" {...otherProps}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="body1">{option.pyrcode}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {option.category.label} - {option.location.name}
-                      </Typography>
-                    </Box>
+        <Box sx={{ 
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          position: 'relative',
+          mb: 4,
+          mt: -3
+        }}>
+          <Autocomplete
+            fullWidth
+            freeSolo
+            options={pyrCodeSuggestions}
+            getOptionLabel={(option) => 
+              typeof option === 'string' ? option : option.pyrcode
+            }
+            onChange={handleOptionSelected}
+            renderOption={(props, option) => {
+              const { key, ...otherProps } = props;
+              return (
+                <Box key={key} component="li" {...otherProps}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="body1">{option.pyrcode}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {option.category.label} - {option.location.name}
+                    </Typography>
                   </Box>
-                );
-              }}
-              loading={searchLoading}
-              onInputChange={(_, newValue) => {
-                setPyrcode(newValue);
-                handlePyrCodeSearch(newValue);
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  fullWidth
-                  // label="Wyszukaj po Pyrcode"
-                  variant="outlined"
-                  placeholder="Wprowadź kod Pyrcode..."
-                  onKeyDown={handleKeyDown}
-                  InputProps={{
-                    ...params.InputProps,
-                    sx: {
-                      height: '40px',
-                      '& input': {
-                        height: '40px',
-                        padding: '0 14px',
-                      }
-                    },
-                    endAdornment: (
-                      <>
-                        {searchLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                        {params.InputProps.endAdornment}
-                      </>
-                    ),
-                  }}
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#fff',
-                      '& fieldset': {
-                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
-                      },
-                      '&:hover fieldset': {
-                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: 'primary.main',
-                      },
-                      '& input': {
-                        color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'inherit',
-                      },
+                </Box>
+              );
+            }}
+            loading={searchLoading}
+            onInputChange={(_, newValue) => {
+              setPyrcode(newValue);
+              handlePyrCodeSearch(newValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                variant="outlined"
+                placeholder="Wprowadź Pyrcode..."
+                onKeyDown={handleKeyDown}
+                InputProps={{
+                  ...params.InputProps,
+                  sx: {
+                    height: '48px',
+                    pr: '96px',
+                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#2d2d2d' : '#ffffff',
+                    borderRadius: 3,
+                    '& input': {
+                      height: '48px',
+                      padding: '0 14px',
                     }
-                  }}
-                />
-              )}
-            />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <SearchButton
-                variant="contained"
-                color="primary"
-                startIcon={<Search />}
-                onClick={handleSearch}
-                disabled={loading}
-                sx={{
-                  borderRadius: 1,
+                  },
+                  startAdornment: (
+                    <Search sx={{ 
+                      color: 'text.secondary', 
+                      ml: 1, 
+                      mr: 0.5 
+                    }} />
+                  ),
+                  endAdornment: (
+                    <Box sx={{ 
+                      position: 'absolute',
+                      right: 8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5
+                    }}>
+                      {searchLoading && (
+                        <CircularProgress 
+                          color="inherit" 
+                          size={20} 
+                          sx={{ mr: 1 }}
+                        />
+                      )}
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleSearch}
+                          sx={{ 
+                            borderRadius: 2,
+                            height: '36px',
+                            minWidth: '100px'
+                          }}
+                        >
+                          Szukaj
+                        </Button>
+                      </Box>
+                      <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+                        <Suspense fallback={null}>
+                          <BarcodeScanner onScan={handleBarcodeScan} />
+                        </Suspense>
+                      </Box>
+                    </Box>
+                  ),
                 }}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Szukaj'}
-              </SearchButton>
-            </Box>
-          </Box>
-        </SearchContainer>
+                sx={{ 
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 3,
+                    '& fieldset': {
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)',
+                      borderRadius: 3
+                    },
+                    '&:hover fieldset': {
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                    '& input': {
+                      color: (theme) => theme.palette.mode === 'dark' ? '#fff' : 'inherit',
+                    },
+                  }
+                }}
+              />
+            )}
+          />
+        </Box>
 
         {/* Szybkie akcje */}
         <Box sx={{ mb: 6 }}>

@@ -19,6 +19,7 @@
     "@mui/system": "^5.17.1",
     "@react-google-maps/api": "^2.19.3",
     "@vis.gl/react-google-maps": "^1.5.2",
+    "@zxing/browser": "^0.1.5",
     "date-fns": "^3.6.0",
     "jsbarcode": "^3.11.6",
     "jspdf": "^3.0.1",
