@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader, Result, Exception } from '@zxing/browser';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography, CircularProgress } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 
@@ -11,11 +11,15 @@ interface BarcodeScannerProps {
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
     if (isOpen && videoRef.current) {
+      setIsLoading(true);
+      setError(null);
+      
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
 
@@ -23,13 +27,18 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
         .decodeFromConstraints(
           {
             audio: false,
-            video: { facingMode: 'environment' }
+            video: { 
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            }
           },
           videoRef.current,
           (result: Result | null, error: Exception | null) => {
+            setIsLoading(false);
             if (result) {
               const scannedCode = result.getText();
-              if (scannedCode.startsWith('PYR')) {
+              if (scannedCode.toLowerCase().includes('pyr')) {
                 onScan(scannedCode);
                 handleClose();
               }
@@ -40,6 +49,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
           }
         )
         .catch((err: Error) => {
+          setIsLoading(false);
           setError('Nie można uzyskać dostępu do kamery. Upewnij się, że udzielono odpowiednich uprawnień.');
           console.error('Błąd inicjalizacji kamery:', err);
         });
@@ -52,7 +62,11 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
     }
   }, [isOpen, onScan]);
 
-  const handleOpen = () => setIsOpen(true);
+  const handleOpen = () => {
+    setIsOpen(true);
+    setError(null);
+    setIsLoading(true);
+  };
   
   const handleClose = () => {
     if (readerRef.current) {
@@ -60,6 +74,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
     }
     setIsOpen(false);
     setError(null);
+    setIsLoading(false);
   };
 
   return (
@@ -83,8 +98,14 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: 'black',
+            backgroundImage: 'none'
+          }
+        }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: 'white' }}>
           Skanuj kod kreskowy
           <IconButton
             aria-label="close"
@@ -93,24 +114,44 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
               position: 'absolute',
               right: 8,
               top: 8,
+              color: 'white'
             }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ 
+          p: 0, 
+          backgroundColor: 'black',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '50vh'
+        }}>
+          {isLoading && !error && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              zIndex: 2
+            }}>
+              <CircularProgress color="primary" />
+            </Box>
+          )}
           {error ? (
-            <Typography color="error" variant="body1" align="center">
+            <Typography color="error" variant="body1" align="center" sx={{ p: 3 }}>
               {error}
             </Typography>
           ) : (
-            <Box sx={{ width: '100%', position: 'relative' }}>
+            <Box sx={{ width: '100%', position: 'relative', backgroundColor: 'black' }}>
               <video
                 ref={videoRef}
                 style={{
                   width: '100%',
                   maxHeight: '70vh',
-                  objectFit: 'cover'
+                  objectFit: 'cover',
+                  backgroundColor: 'black'
                 }}
               />
               <Box
@@ -123,14 +164,15 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan }) => {
                   height: '150px',
                   border: '2px solid #00ff00',
                   borderRadius: '8px',
-                  pointerEvents: 'none'
+                  pointerEvents: 'none',
+                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
                 }}
               />
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
+        <DialogActions sx={{ backgroundColor: 'black' }}>
+          <Button onClick={handleClose} sx={{ color: 'white' }}>
             Anuluj
           </Button>
         </DialogActions>

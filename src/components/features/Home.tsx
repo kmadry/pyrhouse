@@ -334,7 +334,10 @@ const HomePage: React.FC = () => {
         autoHideDuration={snackbar.autoHideDuration}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="xl" sx={{ 
+        py: { xs: 4, sm: 4 },
+        mt: { xs: 2, sm: 0 }
+      }}>
         <Box sx={{ 
           display: 'flex',
           alignItems: 'center',
