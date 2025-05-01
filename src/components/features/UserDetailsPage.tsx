@@ -428,7 +428,7 @@ const UserDetailsPage: React.FC = () => {
                 label={user.role.toUpperCase()} 
                 color={getRoleColor(user.role)} 
                 sx={{ mb: 2 }}
-                icon={<Suspense fallback={null}><BadgeIcon /></Suspense>}
+                icon={<Suspense fallback={null}><BadgeIcon sx={{ ml: 1 }} /></Suspense>}
               />
               
               <Divider sx={{ width: '100%', my: 1 }} />
