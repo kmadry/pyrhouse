@@ -544,9 +544,7 @@ const EquipmentList: React.FC = () => {
         alignItems: { xs: 'flex-start', sm: 'center' }, 
         marginBottom: 3,
         gap: 2,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        pb: 2
+        pb: 1
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Typography 
