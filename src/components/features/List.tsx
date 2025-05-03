@@ -23,6 +23,7 @@ import {
   useTheme,
   Divider,
   Tooltip,
+  IconButton,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../../hooks/useLocations';
@@ -32,6 +33,9 @@ import { AppSnackbar } from '../ui/AppSnackbar';
 import { getApiUrl } from '../../config/api';
 import { Category } from '@mui/icons-material';
 import WarningIcon from '@mui/icons-material/Warning';
+import DownloadIcon from '@mui/icons-material/Download';
+import Menu from '@mui/material/Menu';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Location {
   id: number;
@@ -88,6 +92,51 @@ const EquipmentList: React.FC = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const { userRole } = useAuth();
+
+  // Stan do obsługi menu pobierania raportu
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Funkcja do pobierania raportu
+  const handleDownloadReport = async (type: 'assets' | 'stock') => {
+    handleMenuClose();
+    const token = localStorage.getItem('token');
+    const url = type === 'assets'
+      ? getApiUrl('/assets/report')
+      : getApiUrl('/stocks/report');
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+      if (!response.ok) {
+        showSnackbar('error', 'Nie udało się pobrać raportu');
+        return;
+      }
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = type === 'assets' ? 'assets_report.csv' : 'stock_report.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      showSnackbar('success', 'Raport został pobrany');
+    } catch (err: any) {
+      showSnackbar('error', err.message || 'Błąd podczas pobierania raportu');
+    }
+  };
 
   useEffect(() => {
     fetchLocations();
@@ -499,18 +548,31 @@ const EquipmentList: React.FC = () => {
         borderColor: 'divider',
         pb: 2
       }}>
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          gutterBottom
-          sx={{ 
-            fontWeight: 600,
-            color: 'primary.main',
-            mb: { xs: 1, sm: 0 }
-          }}
-        >
-          Stan magazynowy
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              fontWeight: 600,
+              color: 'primary.main',
+              mb: { xs: 1, sm: 0 }
+            }}
+          >
+            Stan magazynowy
+          </Typography>
+          {userRole === 'admin' || userRole === 'moderator' ? (
+            <>
+              <IconButton onClick={handleMenuClick} aria-label="Pobierz raport" size="large">
+                <DownloadIcon />
+              </IconButton>
+              <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+                <MenuItem onClick={() => handleDownloadReport('assets')}>Raport sprzętu</MenuItem>
+                <MenuItem onClick={() => handleDownloadReport('stock')}>Raport zapasów</MenuItem>
+              </Menu>
+            </>
+          ) : null}
+        </Box>
         
         <Button
           variant="outlined"
