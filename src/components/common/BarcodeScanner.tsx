@@ -50,7 +50,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
       stopQuagga();
       stopCamera();
       onScan(code);
-      onClose();
+      handleClose();
       return;
     }
 
@@ -60,7 +60,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
       stopQuagga();
       stopCamera();
       onScan(code);
-      onClose();
+      handleClose();
     }
   };
 

@@ -40,6 +40,8 @@ import { APIProvider, Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useAuth } from '../../hooks/useAuth';
+import BarcodeScanner from '../common/BarcodeScanner';
+import QrCodeScanner from '@mui/icons-material/QrCodeScanner';
 
 interface AssetLog {
   id: number;
@@ -86,6 +88,8 @@ const EquipmentDetails: React.FC = () => {
   const [isEditingSerial, setIsEditingSerial] = useState(false);
   const [serialInput, setSerialInput] = useState('');
   const [savingSerial, setSavingSerial] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [showSerialModal, setShowSerialModal] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -577,34 +581,94 @@ const EquipmentDetails: React.FC = () => {
                       </Typography>
                       {details.serial === null ? (
                         isEditingSerial ? (
-                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <TextField
-                              size="small"
-                              value={serialInput}
-                              onChange={e => setSerialInput(e.target.value)}
-                              label="Nowy numer seryjny"
-                              disabled={savingSerial}
-                              autoFocus
-                            />
-                            <Button
-                              variant="contained"
-                              color="success"
-                              size="small"
-                              onClick={handleSaveSerial}
-                              disabled={savingSerial || !serialInput.trim()}
-                            >
-                              Zapisz
-                            </Button>
-                            <Button
-                              variant="text"
-                              size="small"
-                              color="inherit"
-                              onClick={() => { setIsEditingSerial(false); setSerialInput(''); }}
-                              disabled={savingSerial}
-                            >
-                              Anuluj
-                            </Button>
-                          </Box>
+                          <>
+                            {/* MOBILE: modal */}
+                            <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1, alignItems: 'center', width: '100%' }}>
+                              <TextField
+                                size="small"
+                                value={serialInput}
+                                onChange={e => setSerialInput(e.target.value)}
+                                label="Nowy numer seryjny"
+                                placeholder="Wprowadź lub zeskanuj numer seryjny"
+                                disabled={savingSerial}
+                                autoFocus
+                                sx={{ flex: 1 }}
+                              />
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setShowScanner(true)}
+                                sx={{ minWidth: 0, px: 1.5, display: { xs: 'inline-flex', sm: 'none' } }}
+                                aria-label="Skanuj numer seryjny"
+                              >
+                                <QrCodeScanner sx={{ mr: 0.5 }} />
+                                Skanuj
+                              </Button>
+                              <Button
+                                variant="contained"
+                                color="success"
+                                size="small"
+                                onClick={handleSaveSerial}
+                                disabled={savingSerial || !serialInput.trim()}
+                              >
+                                Zapisz
+                              </Button>
+                              <Button
+                                variant="text"
+                                color="inherit"
+                                onClick={() => { setIsEditingSerial(false); setSerialInput(''); setShowSerialModal(false); }}
+                                disabled={savingSerial}
+                              >
+                                Anuluj
+                              </Button>
+                            </Box>
+                            {/* MOBILE: modal */}
+                            <Dialog open={showSerialModal} onClose={() => { setShowSerialModal(false); setShowScanner(false); }} fullWidth maxWidth="xs" sx={{ display: { xs: 'block', sm: 'none' } }}>
+                              <DialogTitle>Uzupełnij numer seryjny</DialogTitle>
+                              <DialogContent>
+                                <TextField
+                                  fullWidth
+                                  value={serialInput}
+                                  onChange={e => setSerialInput(e.target.value)}
+                                  label="Nowy numer seryjny"
+                                  placeholder="Wprowadź lub zeskanuj numer seryjny"
+                                  disabled={savingSerial}
+                                  autoFocus
+                                  sx={{ mb: 2 }}
+                                />
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  fullWidth
+                                  size="large"
+                                  onClick={() => setShowScanner(true)}
+                                  startIcon={<QrCodeScanner />}
+                                  sx={{ mb: 2 }}
+                                  aria-label="Skanuj numer seryjny"
+                                >
+                                  Skanuj
+                                </Button>
+                              </DialogContent>
+                              <DialogActions>
+                                <Button
+                                  variant="contained"
+                                  color="success"
+                                  onClick={handleSaveSerial}
+                                  disabled={savingSerial || !serialInput.trim()}
+                                >
+                                  Zapisz
+                                </Button>
+                                <Button
+                                  variant="text"
+                                  color="inherit"
+                                  onClick={() => { setIsEditingSerial(false); setSerialInput(''); setShowSerialModal(false); }}
+                                  disabled={savingSerial}
+                                >
+                                  Anuluj
+                                </Button>
+                              </DialogActions>
+                            </Dialog>
+                          </>
                         ) : (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="body1" sx={{ fontWeight: 600, color: 'warning.main' }}>
@@ -613,7 +677,14 @@ const EquipmentDetails: React.FC = () => {
                             <Button
                               variant="outlined"
                               size="small"
-                              onClick={() => setIsEditingSerial(true)}
+                              onClick={() => {
+                                if (window.innerWidth < 600) {
+                                  setIsEditingSerial(true);
+                                  setShowSerialModal(true);
+                                } else {
+                                  setIsEditingSerial(true);
+                                }
+                              }}
                             >
                               Uzupełnij
                             </Button>
@@ -1000,6 +1071,24 @@ const EquipmentDetails: React.FC = () => {
           />
         </DialogContent>
       </Dialog>
+
+      {showScanner && (
+        <BarcodeScanner
+          onClose={() => {
+            setShowScanner(false);
+            setIsEditingSerial(true);
+          }}
+          onScan={code => {
+            setSerialInput(code);
+            setShowScanner(false);
+            setIsEditingSerial(true);
+            setShowSerialModal(true);
+            showSnackbar('success', 'Kod zeskanowany i wprowadzony do pola');
+          }}
+          title="Skanuj numer seryjny"
+          subtitle="Zeskanuj kod z urządzenia"
+        />
+      )}
     </Box>
   );
 };
