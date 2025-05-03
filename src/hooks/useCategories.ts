@@ -117,7 +117,12 @@ export const useCategories = () => {
       }
 
       const data = await response.json();
+      // Inwalidacja cache'u
+      localStorage.removeItem(CACHE_KEY);
+      // Aktualizacja stanu lokalnego
       setCategories(prev => prev.map(cat => cat.id === id ? data : cat));
+      // Pobranie świeżych danych z serwera
+      await fetchCategories();
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
