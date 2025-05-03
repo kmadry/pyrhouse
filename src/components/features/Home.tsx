@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -32,6 +32,7 @@ import { getApiUrl } from '../../config/api';
 import { jwtDecode } from 'jwt-decode';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import BarcodeScanner from '../common/BarcodeScanner';
 
 interface PyrCodeSuggestion {
   id: number;
@@ -175,8 +176,6 @@ const QuestStatus = styled(Chip)(({ theme }) => ({
   },
 }));
 
-const BarcodeScanner = lazy(() => import('../common/BarcodeScanner'));
-
 const HomePage: React.FC = () => {
   useTransfers();
   const navigate = useNavigate();
@@ -190,6 +189,15 @@ const HomePage: React.FC = () => {
   const [userTransfersError, setUserTransfersError] = useState<string | null>(null);
   const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const handleCloseScanner = useCallback(() => {
+    setShowScanner(false);
+  }, []);
+
+  const scannerComponent = useMemo(() => {
+    if (!showScanner) return null;
+    return <BarcodeScanner onClose={handleCloseScanner} />;
+  }, [showScanner, handleCloseScanner]);
 
   // Fetch user transfers
   useEffect(() => {
@@ -446,11 +454,6 @@ const HomePage: React.FC = () => {
                         >
                           Skanuj
                         </Button>
-                        {showScanner && (
-                          <Suspense fallback={null}>
-                            <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />
-                          </Suspense>
-                        )}
                       </Box>
                     </Box>
                   ),
@@ -477,6 +480,8 @@ const HomePage: React.FC = () => {
             )}
           />
         </Box>
+
+        {scannerComponent}
 
         {/* Szybkie akcje */}
         <Box sx={{ mb: 6 }}>
