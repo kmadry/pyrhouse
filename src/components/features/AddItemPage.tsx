@@ -102,7 +102,7 @@ const AddItemPage: React.FC = () => {
                   }
                 }}
               >
-                Bez numeru seryjnego
+                Wybuchło - bez numeru seryjnego
               </Button>
             </ButtonGroup>
           </Box>
