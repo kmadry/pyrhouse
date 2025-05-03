@@ -335,13 +335,13 @@ const CategoryManagementPage: React.FC = () => {
                   >
                     <EditIcon />
                   </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleOpenDeleteModal(category.id)}
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={() => handleOpenDeleteModal(category.id)}
+                  size="small"
+                >
+                  <DeleteIcon />
+                </IconButton>
                 </Box>
               </TableCell>
             </TableRow>

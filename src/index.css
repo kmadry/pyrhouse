@@ -2,3 +2,11 @@ body {
   margin: 0;
   min-width: 320px;
 }
+
+.quagga-video-container video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  background: #000 !important;
+}

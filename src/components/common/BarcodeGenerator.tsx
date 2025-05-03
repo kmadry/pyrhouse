@@ -65,9 +65,9 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
 
   const handleDownloadPDF = async () => {
     if (!barcodeRef.current) return;
-    setIsGenerating(true);
-
-    try {
+      setIsGenerating(true);
+      
+      try {
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
@@ -83,7 +83,7 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
       const y = (pdfHeight - barcodeHeight) / 2;
 
       // Generuj PDF dla każdego zasobu
-      for (let i = 0; i < assets.length; i++) {
+        for (let i = 0; i < assets.length; i++) {
         if (i > 0) {
           doc.addPage();
         }
@@ -116,10 +116,10 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
     } catch (error) {
       console.error('Błąd podczas generowania PDF:', error);
       setError('Nie udało się wygenerować PDF');
-      setIsGenerating(false);
-    }
-  };
-
+        setIsGenerating(false);
+      }
+    };
+    
   const handlePrint = async () => {
     if (!barcodeRef.current) return;
     setIsGenerating(true);
@@ -139,7 +139,7 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
               @page {
                 size: 80mm 50mm;
                 margin: 0;
-              }
+        }
               body {
                 margin: 0;
                 display: flex;
@@ -244,15 +244,15 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12}>
             <Typography variant="h5" sx={{ mb: 3, textAlign: 'center' }}>
-              Generowanie kodów kreskowych
-            </Typography>
-            
-            {error && (
+        Generowanie kodów kreskowych
+      </Typography>
+      
+      {error && (
               <Typography color="error" sx={{ mb: 2, textAlign: 'center' }}>
-                {error}
-              </Typography>
-            )}
-
+          {error}
+        </Typography>
+      )}
+      
             <Box sx={{ 
               display: 'flex', 
               flexDirection: 'column', 
@@ -300,33 +300,33 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
               </Box>
 
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', maxWidth: '300px' }}>
-                <Button
-                  variant="contained"
+              <Button 
+                variant="contained" 
                   color="secondary"
-                  onClick={handleDownloadPDF}
+                onClick={handleDownloadPDF}
                   disabled={isGenerating}
                   fullWidth
-                >
-                  {isGenerating ? 'Generowanie...' : 'Pobierz PDF'}
-                </Button>
-                <Button
-                  variant="contained"
+              >
+                {isGenerating ? 'Generowanie...' : 'Pobierz PDF'}
+              </Button>
+              <Button 
+                variant="contained" 
                   color="primary"
-                  onClick={handlePrint}
+                onClick={handlePrint}
                   disabled={isGenerating}
                   fullWidth
-                >
-                  {isGenerating ? 'Generowanie...' : 'Drukuj'}
-                </Button>
-                {onClose && (
-                  <Button 
-                    variant="outlined"
-                    onClick={onClose}
+              >
+                {isGenerating ? 'Generowanie...' : 'Drukuj'}
+              </Button>
+              {onClose && (
+                <Button 
+                  variant="outlined" 
+                  onClick={onClose}
                     fullWidth
-                  >
-                    Zamknij
-                  </Button>
-                )}
+                >
+                  Zamknij
+                </Button>
+              )}
               </Box>
             </Box>
           </Grid>

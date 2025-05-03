@@ -29,12 +29,12 @@ export default defineConfig({
       exclude: [/\.(br)$/, /\.(gz)$/],
       threshold: 1024
     }),
-    visualizer({
+      visualizer({
       open: false,
-      gzipSize: true,
-      brotliSize: true,
+        gzipSize: true,
+        brotliSize: true,
       filename: 'dist/stats.html'
-    })
+      })
   ],
   resolve: {
     alias: {
@@ -106,8 +106,8 @@ export default defineConfig({
       treeShaking: true,
       define: {
         global: 'globalThis'
-      }
     }
+  }
   },
   esbuild: {
     jsxFactory: 'React.createElement',

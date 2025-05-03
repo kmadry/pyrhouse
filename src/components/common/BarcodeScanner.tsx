@@ -1,113 +1,127 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box, Dialog, DialogTitle, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import Quagga from 'quagga';
 
 interface BarcodeScannerProps {
   onClose: () => void;
+  onScan: (code: string) => void;
+  title?: string;
+  subtitle?: string;
 }
 
-const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ 
+  onClose, 
+  onScan,
+  title = 'Skaner kodów kreskowych',
+  subtitle = 'Umieść kod w polu widzenia kamery'
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
-  const initAttemptRef = useRef(0);
+  const scanBufferRef = useRef<{ [key: string]: number }>({});
 
-  const initializeCamera = async () => {
-    if (!mountedRef.current) {
-      console.log('⚠️ Komponent został odmontowany przed inicjalizacją kamery');
+  const stopCamera = () => {
+    try {
+      const video = containerRef.current?.querySelector('video');
+      if (video && video.srcObject) {
+        (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+        (video as any).srcObject = null;
+        console.log('🔴 Strumień kamery zatrzymany');
+      }
+    } catch (e) {}
+  };
+
+  const stopQuagga = () => {
+    try {
+      Quagga.offDetected(handleDetected);
+      Quagga.stop();
+      console.log('🔴 Quagga zatrzymana');
+    } catch (e) {}
+  };
+
+  const handleDetected = (result: any) => {
+    if (!result?.codeResult?.code) {
+      return;
+    }
+    const code = result.codeResult.code;
+    
+    if (code.includes('PYR')) {
+      console.log('✅ Wykryto kod PYR:', code);
+      stopQuagga();
+      stopCamera();
+      onScan(code);
+      onClose();
       return;
     }
 
-    try {
-      console.log('📹 Próba uzyskania dostępu do kamery...');
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        } 
-      });
-      
-      if (!mountedRef.current) {
-        stream.getTracks().forEach(track => track.stop());
-        return;
-      }
-
-      streamRef.current = stream;
-      console.log('✅ Dostęp do kamery uzyskany');
-
-      if (videoRef.current) {
-        console.log('📹 Konfiguracja elementu video...');
-        videoRef.current.srcObject = stream;
-        
-        try {
-          console.log('▶️ Próba uruchomienia wideo...');
-          await videoRef.current.play();
-          console.log('✅ Wideo uruchomione pomyślnie');
-          setIsInitialized(true);
-        } catch (error) {
-          console.error('❌ Błąd podczas uruchamiania wideo:', error);
-          stopCamera();
-        }
-      }
-    } catch (error) {
-      console.error('❌ Błąd podczas inicjalizacji kamery:', error);
+    scanBufferRef.current[code] = (scanBufferRef.current[code] || 0) + 1;
+    if (scanBufferRef.current[code] >= 3) {
+      console.log('✅ Potwierdzono kod:', code);
+      stopQuagga();
       stopCamera();
+      onScan(code);
+      onClose();
     }
-  };
-
-  const stopCamera = () => {
-    console.log('🔴 Wyłączanie kamery...');
-    
-    if (streamRef.current) {
-      const tracks = streamRef.current.getTracks();
-      console.log(`📹 Znaleziono ${tracks.length} tracków kamery do wyłączenia`);
-      
-      tracks.forEach((track, index) => {
-        console.log(`📹 Wyłączanie tracku #${index + 1} (${track.kind})`);
-        track.stop();
-        console.log(`✅ Track #${index + 1} wyłączony`);
-      });
-      
-      streamRef.current = null;
-      console.log('✅ Strumień kamery wyczyszczony');
-    } else {
-      console.log('ℹ️ Brak aktywnego strumienia kamery');
-    }
-
-    if (videoRef.current) {
-      console.log('📹 Czyszczenie elementu video...');
-      videoRef.current.srcObject = null;
-      videoRef.current.pause();
-      console.log('✅ Element video wyczyszczony');
-    } else {
-      console.log('ℹ️ Brak referencji do elementu video');
-    }
-
-    setIsInitialized(false);
-    console.log('✅ Stan inicjalizacji zresetowany');
   };
 
   useEffect(() => {
     mountedRef.current = true;
-    console.log('🟢 Montowanie komponentu BarcodeScanner');
-    
-    // Opóźniona inicjalizacja kamery
-    const timer = setTimeout(() => {
-      initializeCamera();
-    }, 100);
+    let cancelled = false;
+
+    const tryInitQuagga = () => {
+      if (!containerRef.current) {
+        setTimeout(tryInitQuagga, 100);
+        return;
+      }
+      if (cancelled) return;
+
+      Quagga.init({
+        inputStream: {
+          type: 'LiveStream',
+          target: containerRef.current,
+          constraints: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          area: {
+            top: '0%',
+            right: '0%',
+            left: '0%',
+            bottom: '0%'
+          },
+          willReadFrequently: true
+        },
+        decoder: {
+          readers: ['code_128_reader'],
+          multiple: false
+        },
+        locate: true,
+        numOfWorkers: 4,
+        frequency: 10
+      }, (err: any) => {
+        if (err) {
+          console.error('❌ Błąd inicjalizacji Quagga:', err);
+          return;
+        }
+        Quagga.start();
+        Quagga.onDetected(handleDetected);
+      });
+    };
+
+    tryInitQuagga();
 
     return () => {
-      console.log('🟡 Odmontowywanie komponentu BarcodeScanner');
+      cancelled = true;
       mountedRef.current = false;
-      clearTimeout(timer);
+      stopQuagga();
       stopCamera();
+      scanBufferRef.current = {};
     };
   }, []);
 
   const handleClose = () => {
-    console.log('🟡 Zamykanie modalu skanera...');
+    stopQuagga();
     stopCamera();
     onClose();
   };
@@ -120,7 +134,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose }) => {
       fullWidth
     >
       <DialogTitle>
-        Skaner kodów kreskowych
+        {title}
         <IconButton
           aria-label="close"
           onClick={handleClose}
@@ -134,28 +148,45 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onClose }) => {
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      
       <Box sx={{ p: 2 }}>
         <Box sx={{ 
           position: 'relative',
           width: '100%',
           height: '300px',
+          maxWidth: 480,
+          margin: '0 auto',
           bgcolor: '#000',
           borderRadius: 1,
           overflow: 'hidden'
         }}>
-          <video
-            ref={videoRef}
+          <div
+            ref={containerRef}
+            className="quagga-video-container"
             style={{
               width: '100%',
               height: '100%',
-              objectFit: 'cover',
-              transform: 'scaleX(-1)' // Odbicie lustrzane dla lepszej ergonomii
+              minWidth: 200,
+              minHeight: 200,
+              position: 'absolute',
+              top: 0,
+              left: 0
             }}
-            autoPlay
-            playsInline
-            muted
           />
+          <Typography
+            variant="body2"
+            sx={{
+              position: 'absolute',
+              bottom: 16,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              color: 'white',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              padding: 1,
+            }}
+          >
+            {subtitle}
+          </Typography>
         </Box>
       </Box>
     </Dialog>

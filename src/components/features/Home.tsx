@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -190,14 +190,46 @@ const HomePage: React.FC = () => {
   const [pyrCodeSuggestions, setPyrCodeSuggestions] = useState<PyrCodeSuggestion[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  const handleBarcodeScan = async (scannedCode: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        getApiUrl(`/assets/pyrcode/${scannedCode.trim()}`),
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.status === 404) {
+        showSnackbar('error', 'Nie znaleziono sprzętu o podanym kodzie.');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Nie udało się pobrać szczegółów sprzętu.');
+      }
+
+      const data = await response.json();
+      setShowScanner(false);
+      navigate(`/equipment/${data.id}?type=${data.category.type || 'asset'}`);
+    } catch (err: any) {
+      showSnackbar('error', err.message || 'Wystąpił nieoczekiwany błąd.');
+    }
+  };
+
   const handleCloseScanner = useCallback(() => {
     setShowScanner(false);
   }, []);
 
   const scannerComponent = useMemo(() => {
     if (!showScanner) return null;
-    return <BarcodeScanner onClose={handleCloseScanner} />;
-  }, [showScanner, handleCloseScanner]);
+    return (
+      <BarcodeScanner
+        onClose={handleCloseScanner}
+        onScan={handleBarcodeScan}
+      />
+    );
+  }, [showScanner, handleCloseScanner, handleBarcodeScan]);
 
   // Fetch user transfers
   useEffect(() => {
@@ -324,14 +356,6 @@ const HomePage: React.FC = () => {
 
     // Przekieruj bezpośrednio do szczegółów sprzętu
     navigate(`/equipment/${value.id}?type=asset`);
-  };
-
-  const handleBarcodeScan = (scannedCode: string) => {
-    if (scannedCode.includes('pyr')) {
-      setPyrcode(scannedCode);
-      handlePyrCodeSearch(scannedCode);
-      setShowScanner(false);
-    }
   };
 
   return (
