@@ -38,6 +38,7 @@ const ArrowBack = lazy(() => import('@mui/icons-material/ArrowBack'));
 const Check = lazy(() => import('@mui/icons-material/Check'));
 const ArrowForward = lazy(() => import('@mui/icons-material/ArrowForward'));
 const Close = lazy(() => import('@mui/icons-material/Close'));
+const QrCodeScanner = lazy(() => import('@mui/icons-material/QrCodeScanner'));
 
 // Przenosimy dane kroków poza komponent, aby nie były odtwarzane przy każdym renderowaniu
 const TUTORIAL_STEPS = [
@@ -160,8 +161,40 @@ const TUTORIAL_STEPS = [
     action: '/transfers',
   },
   {
+    label: 'Skanowanie kodów kreskowych',
+    description: (
+      <Box>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Skanuj kody kreskowe sprzętu, aby błyskawicznie wyszukać lub uzupełnić dane:
+        </Typography>
+        <ul>
+          <li>
+            <b>Wyszukiwanie sprzętu:</b> Na stronie głównej kliknij "Skanuj" (na telefonie), zeskanuj kod – system przekieruje Cię do szczegółów sprzętu.
+          </li>
+          <li>
+            <b>Uzupełnianie numeru seryjnego:</b> W szczegółach sprzętu kliknij "Uzupełnij", zeskanuj kod i zatwierdź.
+          </li>
+        </ul>
+        <Typography variant="body2" color="warning.main" sx={{ mt: 2 }}>
+          Tryb "Wybuchło – bez numeru seryjnego" jest awaryjny! Sprzęt dodany w ten sposób wymaga późniejszego uzupełnienia numeru seryjnego przez skanowanie lub ręcznie.
+        </Typography>
+      </Box>
+    ),
+    icon: <Suspense fallback={null}><QrCodeScanner /></Suspense>,
+    action: '/home',
+  },
+  {
     label: 'Dodawanie nowego sprzętu',
-    description: 'Dodaj nowy sprzęt do systemu skanując jego numer seryjny oraz określając jego kategorię oraz pochodzenie. System automatycznie generuje PYRcode. Możesz dodać wiele przedmiotów naraz.',
+    description: (
+      <Box>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Dodaj nowy sprzęt do systemu skanując jego numer seryjny lub wpisując go ręcznie. System automatycznie generuje PYRcode. Możesz dodać wiele przedmiotów naraz.
+        </Typography>
+        <Typography variant="body2" color="warning.main" sx={{ mt: 2 }}>
+          Jeśli nie masz numeru seryjnego (np. sprzęt "wybuchł" lub jest awaria), użyj trybu awaryjnego "Dodaj sprzęt bez numeru seryjnego". Taki sprzęt będzie wymagał późniejszego uzupełnienia serialu w szczegółach sprzętu (np. przez skanowanie).
+        </Typography>
+      </Box>
+    ),
     icon: <Suspense fallback={null}><AddTask /></Suspense>,
     action: '/add-item',
   },
