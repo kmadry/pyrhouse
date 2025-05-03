@@ -33,13 +33,22 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import EditIcon from '@mui/icons-material/Edit';
 import { useCategories } from '../../hooks/useCategories';
 import * as Icons from '@mui/icons-material';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
+interface Category {
+  id: number;
+  name?: string;
+  label: string;
+  type: 'asset' | 'stock';
+  pyr_id?: string;
+}
+
 const CategoryManagementPage: React.FC = () => {
-  const { categories, loading, error, addCategory, deleteCategory, setError } = useCategories();
+  const { categories, loading, error, addCategory, deleteCategory, updateCategory, setError, refreshCategories } = useCategories();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -53,7 +62,16 @@ const CategoryManagementPage: React.FC = () => {
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
 
+  // State for edit modal
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editFormData, setEditFormData] = useState({ label: '', type: '', pyr_id: '', name: '' });
+
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+
+  // Dodajemy stany na błędy formularza
+  const [addFormErrors, setAddFormErrors] = useState<{ pyr_id?: string }>({});
+  const [editFormErrors, setEditFormErrors] = useState<{ pyr_id?: string }>({});
 
   const handleOpenAddModal = () => {
     setAddModalOpen(true);
@@ -65,11 +83,28 @@ const CategoryManagementPage: React.FC = () => {
     setAddModalOpen(false);
   };
 
+  // Walidacja PyrID przy zmianie w formularzu dodawania
+  const handleAddPyrIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewCategory({ ...newCategory, pyr_id: value });
+    if (value && !/^[a-zA-Z0-9]{1,3}$/.test(value)) {
+      setAddFormErrors({ ...addFormErrors, pyr_id: 'PyrID może mieć maksymalnie 3 znaki alfanumeryczne.' });
+    } else {
+      setAddFormErrors({ ...addFormErrors, pyr_id: undefined });
+    }
+  };
+
   const handleAddCategory = async () => {
     if (!newCategory.label || !newCategory.type) {
       showSnackbar('error', 'Label i Typ są wymagane.');
       return;
     }
+    if (newCategory.pyr_id && !/^[a-zA-Z0-9]{1,3}$/.test(newCategory.pyr_id)) {
+      setAddFormErrors({ ...addFormErrors, pyr_id: 'PyrID może mieć maksymalnie 3 znaki alfanumeryczne.' });
+      return;
+    }
+
+    setAddFormErrors({});
 
     const payload: { label: string; type: 'asset' | 'stock'; name?: string; pyr_id?: string } = {
       label: newCategory.label,
@@ -88,6 +123,21 @@ const CategoryManagementPage: React.FC = () => {
       await addCategory(payload);
       handleCloseAddModal();
     } catch (err: any) {
+      // Obsługa walidacji PyrID z backendu
+      if (err && typeof err === 'object') {
+        if (err.details && typeof err.details === 'string' && err.details.includes("PatchItemCategoryRequest.PyrID")) {
+          setAddFormErrors({ ...addFormErrors, pyr_id: 'PyrID może mieć maksymalnie 3 znaki alfanumeryczne.' });
+          return;
+        }
+        if (err.error && err.code === 'invalid_request_payload') {
+          showSnackbar('error', err.error + (err.details ? `: ${err.details}` : ''));
+          return;
+        }
+        if ('message' in err) {
+          showSnackbar('error', err.message, err.details, null);
+          return;
+        }
+      }
       showSnackbar('error', err.message);
     }
   };
@@ -119,10 +169,102 @@ const CategoryManagementPage: React.FC = () => {
     }
   };
 
-  const filteredCategories = categories.filter(category =>
-    category.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (category.name && category.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (category.pyr_id && category.pyr_id.toLowerCase().includes(searchQuery.toLowerCase()))
+  const handleOpenEditModal = (category: Category) => {
+    setEditingCategory(category);
+    setEditFormData({
+      label: category.label,
+      type: category.type,
+      pyr_id: category.pyr_id || '',
+      name: category.name || ''
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setEditingCategory(null);
+    setEditFormData({ label: '', type: '', pyr_id: '', name: '' });
+  };
+
+  // Walidacja PyrID przy zmianie w formularzu edycji
+  const handleEditPyrIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEditFormData({ ...editFormData, pyr_id: value });
+    if (value && !/^[a-zA-Z0-9]{1,3}$/.test(value)) {
+      setEditFormErrors({ ...editFormErrors, pyr_id: 'PyrID może mieć maksymalnie 3 znaki alfanumeryczne.' });
+    } else {
+      setEditFormErrors({ ...editFormErrors, pyr_id: undefined });
+    }
+  };
+
+  const handleEditCategory = async () => {
+    if (!editingCategory) return;
+
+    if (editFormData.pyr_id && !/^[a-zA-Z0-9]{1,3}$/.test(editFormData.pyr_id)) {
+      setEditFormErrors({ ...editFormErrors, pyr_id: 'PyrID może mieć maksymalnie 3 znaki alfanumeryczne.' });
+      return;
+    }
+
+    setEditFormErrors({});
+
+    try {
+      const updateData: Partial<Category> = {};
+      
+      // Dodaj do updateData tylko te pola, które się zmieniły
+      if (editFormData.label !== editingCategory.label) {
+        updateData.label = editFormData.label;
+      }
+      if (editFormData.type !== editingCategory.type) {
+        updateData.type = editFormData.type as 'asset' | 'stock';
+      }
+      if (editFormData.pyr_id !== editingCategory.pyr_id) {
+        updateData.pyr_id = editFormData.pyr_id;
+      }
+      if (editFormData.name !== editingCategory.name) {
+        updateData.name = editFormData.name;
+      }
+
+      // Wykonaj aktualizację tylko jeśli są jakieś zmiany
+      if (Object.keys(updateData).length > 0) {
+        await updateCategory(editingCategory.id, updateData);
+        await refreshCategories();
+        showSnackbar('success', 'Kategoria została zaktualizowana pomyślnie!', undefined, 3000);
+        handleCloseEditModal();
+      } else {
+        handleCloseEditModal();
+      }
+    } catch (err: any) {
+      // Obsługa walidacji PyrID z backendu
+      if (err && typeof err === 'object') {
+        if (err.details && typeof err.details === 'string' && err.details.includes("PatchItemCategoryRequest.PyrID")) {
+          setEditFormErrors({ ...editFormErrors, pyr_id: 'PyrID może mieć maksymalnie 3 znaki alfanumeryczne.' });
+          return;
+        }
+        if (err.error && err.code === 'invalid_request_payload') {
+          showSnackbar('error', err.error + (err.details ? `: ${err.details}` : ''));
+          return;
+        }
+        if ('message' in err) {
+          showSnackbar('error', err.message, err.details, null);
+          return;
+        }
+      }
+      showSnackbar('error', err.message || 'Wystąpił nieoczekiwany błąd podczas aktualizacji kategorii.', undefined, null);
+    }
+  };
+
+  // Sortowanie kategorii po ID, a w przypadku duplikatów po typie (asset, stock)
+  const sortedCategories = [...categories].sort((a, b) => {
+    if (a.id !== b.id) return a.id - b.id;
+    if (a.type === b.type) return 0;
+    if (a.type === 'asset') return -1;
+    return 1;
+  });
+
+  const filteredCategories = sortedCategories.filter(category =>
+    (category.label || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (category.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (category.pyr_id || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const renderTable = () => (
@@ -185,13 +327,22 @@ const CategoryManagementPage: React.FC = () => {
                 />
               </TableCell>
               <TableCell>
-                <IconButton
-                  color="error"
-                  onClick={() => handleOpenDeleteModal(category.id)}
-                  size="small"
-                >
-                  <DeleteIcon />
-                </IconButton>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleOpenEditModal(category)}
+                    size="small"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    color="error"
+                    onClick={() => handleOpenDeleteModal(category.id)}
+                    size="small"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
               </TableCell>
             </TableRow>
           ))}
@@ -255,6 +406,13 @@ const CategoryManagementPage: React.FC = () => {
                   mt: 2
                 }}
               >
+                <IconButton
+                  color="primary"
+                  onClick={() => handleOpenEditModal(category)}
+                  size="small"
+                >
+                  <EditIcon />
+                </IconButton>
                 <IconButton
                   color="error"
                   onClick={() => handleOpenDeleteModal(category.id)}
@@ -427,8 +585,6 @@ const CategoryManagementPage: React.FC = () => {
           Dodaj Kategorię
         </DialogTitle>
         <DialogContent>
-          {/* Komunikaty o błędach obsługuje snackbar */}
-
           <TextField
             label="Label"
             value={newCategory.label}
@@ -447,8 +603,8 @@ const CategoryManagementPage: React.FC = () => {
             <MenuItem value="" disabled>
               Wybierz typ
             </MenuItem>
-            <MenuItem value="stock">Sprzęt (pyr_code)</MenuItem>
-            <MenuItem value="asset">Zasoby (magazyn)</MenuItem>
+            <MenuItem value="asset">Sprzęt (pyr_code)</MenuItem>
+            <MenuItem value="stock">Zasoby (magazyn)</MenuItem>
           </Select>
 
           <Button
@@ -472,9 +628,11 @@ const CategoryManagementPage: React.FC = () => {
             <TextField
               label="PyrID (Opcjonalne)"
               value={newCategory.pyr_id}
-              onChange={(e) => setNewCategory({ ...newCategory, pyr_id: e.target.value })}
+              onChange={handleAddPyrIdChange}
               fullWidth
               sx={{ mb: 2 }}
+              error={!!addFormErrors.pyr_id}
+              helperText={addFormErrors.pyr_id}
             />
 
             <TextField
@@ -533,6 +691,80 @@ const CategoryManagementPage: React.FC = () => {
             disabled={loading}
           >
             {loading ? <CircularProgress size={20} /> : 'Usuń'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog 
+        open={isEditModalOpen} 
+        onClose={handleCloseEditModal}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxWidth: '500px',
+            width: '100%'
+          }
+        }}
+      >
+        <DialogTitle>
+          Edytuj Kategorię
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Label"
+            value={editFormData.label}
+            onChange={(e) => setEditFormData({ ...editFormData, label: e.target.value })}
+            fullWidth
+            sx={{ mt: 2, mb: 2 }}
+          />
+
+          <Select
+            value={editFormData.type}
+            onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+            displayEmpty
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            <MenuItem value="" disabled>
+              Wybierz typ
+            </MenuItem>
+            <MenuItem value="asset">Sprzęt (pyr_code)</MenuItem>
+            <MenuItem value="stock">Zasoby (magazyn)</MenuItem>
+          </Select>
+
+          <TextField
+            label="PyrID (Opcjonalne)"
+            value={editFormData.pyr_id}
+            onChange={handleEditPyrIdChange}
+            fullWidth
+            sx={{ mb: 2 }}
+            error={!!editFormErrors.pyr_id}
+            helperText={editFormErrors.pyr_id}
+          />
+
+          <TextField
+            label="Name (Opcjonalne)"
+            value={editFormData.name}
+            onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleCloseEditModal}
+            sx={{ borderRadius: 1 }}
+          >
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleEditCategory} 
+            variant="contained" 
+            color="primary"
+            disabled={loading}
+            sx={{ borderRadius: 1 }}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Zapisz'}
           </Button>
         </DialogActions>
       </Dialog>

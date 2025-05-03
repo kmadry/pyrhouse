@@ -97,7 +97,25 @@ export const useCategories = () => {
         },
         body: JSON.stringify(category),
       });
-      if (!response.ok) throw new Error('Failed to update category');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        if (response.status === 400) {
+          throw new Error(errorData.error || 'Nieprawidłowe dane kategorii');
+        }
+        
+        if (response.status === 409) {
+          throw new Error('Nie można zmodyfikować kategorii, ponieważ istnieją już przedmioty z tą kategorią');
+        }
+        
+        if (response.status === 500) {
+          throw new Error('Wystąpił błąd serwera podczas aktualizacji kategorii');
+        }
+        
+        throw new Error(errorData.error || 'Nie udało się zaktualizować kategorii');
+      }
+
       const data = await response.json();
       setCategories(prev => prev.map(cat => cat.id === id ? data : cat));
       return data;

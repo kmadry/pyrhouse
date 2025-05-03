@@ -24,7 +24,8 @@ import {
   AccessTime,
   Inventory,
   ListAlt,
-  AddTask
+  AddTask,
+  QrCodeScanner
 } from '@mui/icons-material';
 import { useTransfers } from '../../hooks/useTransfers';
 import { getApiUrl } from '../../config/api';
@@ -180,6 +181,7 @@ const HomePage: React.FC = () => {
   useTransfers();
   const navigate = useNavigate();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+  const [showScanner, setShowScanner] = useState(false);
 
   const [pyrcode, setPyrcode] = useState<string>('');
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -320,6 +322,7 @@ const HomePage: React.FC = () => {
     if (scannedCode.includes('pyr')) {
       setPyrcode(scannedCode);
       handlePyrCodeSearch(scannedCode);
+      setShowScanner(false);
     }
   };
 
@@ -430,9 +433,24 @@ const HomePage: React.FC = () => {
                         </Button>
                       </Box>
                       <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
-                        <Suspense fallback={null}>
-                          <BarcodeScanner onScan={handleBarcodeScan} />
-                        </Suspense>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => setShowScanner(true)}
+                          startIcon={<QrCodeScanner />}
+                          sx={{
+                            borderRadius: 2,
+                            height: '36px',
+                            minWidth: '100px'
+                          }}
+                        >
+                          Skanuj
+                        </Button>
+                        {showScanner && (
+                          <Suspense fallback={null}>
+                            <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowScanner(false)} />
+                          </Suspense>
+                        )}
                       </Box>
                     </Box>
                   ),

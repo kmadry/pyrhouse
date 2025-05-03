@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
 } from '@mui/material';
 import {
   CheckCircle,
@@ -83,6 +83,9 @@ const EquipmentDetails: React.FC = () => {
   const [editQuantity, setEditQuantity] = useState<number | null>(null);
   const [savingQuantity, setSavingQuantity] = useState(false);
   const [isEditingQuantity, setIsEditingQuantity] = useState(false);
+  const [isEditingSerial, setIsEditingSerial] = useState(false);
+  const [serialInput, setSerialInput] = useState('');
+  const [savingSerial, setSavingSerial] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -328,6 +331,51 @@ const EquipmentDetails: React.FC = () => {
   // Dodaj funkcję sprawdzającą uprawnienia
   const canEditQuantity = userRole === 'admin' || userRole === 'moderator';
 
+  // Funkcja do zapisu numeru seryjnego
+  const handleSaveSerial = async () => {
+    if (!serialInput.trim()) {
+      showSnackbar('error', 'Numer seryjny nie może być pusty');
+      return;
+    }
+    setSavingSerial(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/assets/${details.id}/serial`), {
+        method: 'PATCH',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ serial: serialInput.trim() }),
+      });
+      if (response.status === 400) {
+        const err = await response.json();
+        showSnackbar('error', err.error || 'Nieprawidłowy numer seryjny');
+        return;
+      }
+      if (response.status === 409) {
+        showSnackbar('error', 'Ten numer seryjny jest już zajęty!');
+        return;
+      }
+      if (response.status === 500) {
+        showSnackbar('error', 'Błąd serwera podczas zapisu numeru seryjnego');
+        return;
+      }
+      if (!response.ok) {
+        showSnackbar('error', 'Nie udało się zapisać numeru seryjnego');
+        return;
+      }
+      showSnackbar('success', 'Numer seryjny został zapisany');
+      setIsEditingSerial(false);
+      setSerialInput('');
+      fetchDetails();
+    } catch (err: any) {
+      showSnackbar('error', err.message || 'Błąd podczas zapisu numeru seryjnego');
+    } finally {
+      setSavingSerial(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', mt: 4 }}>
@@ -527,9 +575,55 @@ const EquipmentDetails: React.FC = () => {
                       <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                         Numer seryjny
                       </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                        {details.serial || 'N/A'}
-                      </Typography>
+                      {details.serial === null ? (
+                        isEditingSerial ? (
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <TextField
+                              size="small"
+                              value={serialInput}
+                              onChange={e => setSerialInput(e.target.value)}
+                              label="Nowy numer seryjny"
+                              disabled={savingSerial}
+                              autoFocus
+                            />
+                            <Button
+                              variant="contained"
+                              color="success"
+                              size="small"
+                              onClick={handleSaveSerial}
+                              disabled={savingSerial || !serialInput.trim()}
+                            >
+                              Zapisz
+                            </Button>
+                            <Button
+                              variant="text"
+                              size="small"
+                              color="inherit"
+                              onClick={() => { setIsEditingSerial(false); setSerialInput(''); }}
+                              disabled={savingSerial}
+                            >
+                              Anuluj
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body1" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                              Brak numeru seryjnego
+                            </Typography>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => setIsEditingSerial(true)}
+                            >
+                              Uzupełnij
+                            </Button>
+                          </Box>
+                        )
+                      ) : (
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {details.serial}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 )}

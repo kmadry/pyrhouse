@@ -108,3 +108,24 @@ export const createBulkAssetsAPI = async (payload: any) => {
   if (!response.ok) throw new Error('Failed to create bulk assets');
   return response.json();
 };
+
+export const addAssetsWithoutSerialAPI = async (payload: {
+  quantity: number;
+  category_id: number;
+  origin: string;
+}) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(getApiUrl('/assets/without-serial'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Nie udało się dodać sprzętu bez numeru seryjnego');
+  }
+  return response.json();
+};

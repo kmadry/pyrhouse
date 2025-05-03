@@ -31,7 +31,12 @@ const BreadcrumbsComponent: React.FC<BreadcrumbsComponentProps> = ({ pathnames, 
       <Breadcrumbs aria-label="breadcrumb">
         <Link underline="hover" color="inherit" onClick={() => navigate('/')}>Home</Link>
         {pathnames.length > 0 && pathnames.map((value, index) => {
-          const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+
+          let to = `/${pathnames.slice(0, index + 1).join('/')}`;
+          if (value === 'equipment') {
+            value = 'list';
+            to = '/list';
+          }
           const displayName = combinedTranslations[value.toLowerCase()] || (value.charAt(0).toUpperCase() + value.slice(1));
           return (
             <Link

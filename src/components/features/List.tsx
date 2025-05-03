@@ -22,6 +22,7 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../../hooks/useLocations';
@@ -29,6 +30,8 @@ import { useCategories } from '../../hooks/useCategories';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { getApiUrl } from '../../config/api';
+import { Category } from '@mui/icons-material';
+import WarningIcon from '@mui/icons-material/Warning';
 
 interface Location {
   id: number;
@@ -49,6 +52,7 @@ interface Equipment {
   pyr_code?: string;
   origin: string;
   type: 'asset' | 'stock';
+  serial?: string;
 }
 
 interface QuickFilter {
@@ -57,16 +61,16 @@ interface QuickFilter {
   icon: string;
 }
 
-const CheckCircle = lazy(() => import('@mui/icons-material/CheckCircle'));
-const ErrorOutline = lazy(() => import('@mui/icons-material/ErrorOutline'));
-const LocalShipping = lazy(() => import('@mui/icons-material/LocalShipping'));
-const Home = lazy(() => import('@mui/icons-material/Home'));
-const Inventory2 = lazy(() => import('@mui/icons-material/Inventory2'));
-const ClearAll = lazy(() => import('@mui/icons-material/ClearAll'));
-const Warehouse = lazy(() => import('@mui/icons-material/Warehouse'));
-const Search = lazy(() => import('@mui/icons-material/Search'));
-const LocationOn = lazy(() => import('@mui/icons-material/LocationOn'));
-const Category = lazy(() => import('@mui/icons-material/Category'));
+const CheckCircleIcon = lazy(() => import('@mui/icons-material/CheckCircle'));
+const ErrorOutlineIcon = lazy(() => import('@mui/icons-material/ErrorOutline'));
+const LocalShippingIcon = lazy(() => import('@mui/icons-material/LocalShipping'));
+const HomeIcon = lazy(() => import('@mui/icons-material/Home'));
+const Inventory2Icon = lazy(() => import('@mui/icons-material/Inventory2'));
+const ClearAllIcon = lazy(() => import('@mui/icons-material/ClearAll'));
+const WarehouseIcon = lazy(() => import('@mui/icons-material/Warehouse'));
+const SearchIcon = lazy(() => import('@mui/icons-material/Search'));
+const LocationOnIcon = lazy(() => import('@mui/icons-material/LocationOn'));
+const CategoryIcon = lazy(() => import('@mui/icons-material/Category'));
 
 const EquipmentList: React.FC = () => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -125,6 +129,7 @@ const EquipmentList: React.FC = () => {
         pyr_code: item.pyrcode || undefined,
         origin: item.origin,
         type: item.category?.type || 'asset',
+        serial: item.serial,
       }));
 
       setEquipment(transformedData);
@@ -193,14 +198,14 @@ const EquipmentList: React.FC = () => {
     switch (status) {
       case 'in_stock':
       case 'available':
-        return <Suspense fallback={null}><Home color={color} /></Suspense>;
+        return <Suspense fallback={null}><HomeIcon color={color} /></Suspense>;
       case 'delivered':
       case 'located':
-        return <Suspense fallback={null}><CheckCircle color={'success'} /></Suspense>;
+        return <Suspense fallback={null}><CheckCircleIcon color={'success'} /></Suspense>;
       case 'in_transit':
-        return <Suspense fallback={null}><LocalShipping color={color || 'primary'} /></Suspense>;
+        return <Suspense fallback={null}><LocalShippingIcon color={color || 'primary'} /></Suspense>;
       default:
-        return <Suspense fallback={null}><ErrorOutline color={'error'} /></Suspense>;
+        return <Suspense fallback={null}><ErrorOutlineIcon color={'error'} /></Suspense>;
     }
   };
 
@@ -232,7 +237,7 @@ const EquipmentList: React.FC = () => {
               gap: 1
             }}
           >
-            <Suspense fallback={null}><Inventory2 sx={{ color: item.state === 'in_transit' ? 'primary.main' : undefined }} /></Suspense>
+            <Suspense fallback={null}><Inventory2Icon sx={{ color: item.state === 'in_transit' ? 'primary.main' : undefined }} /></Suspense>
             {item.quantity ?? '-'}
           </Typography>
         </Box>
@@ -329,6 +334,18 @@ const EquipmentList: React.FC = () => {
               <TableCell>
                 <Typography component="div" sx={{ fontWeight: 500 }}>
                   {String(item.id)}
+                  {item.serial === null && (
+                    <Tooltip title="Sprzęt wymaga aktualizacji numeru seryjnego">
+                      <WarningIcon 
+                        sx={{ 
+                          ml: 1, 
+                          color: 'warning.main',
+                          fontSize: '1rem',
+                          verticalAlign: 'middle'
+                        }} 
+                      />
+                    </Tooltip>
+                  )}
                 </Typography>
               </TableCell>
               <TableCell>
@@ -372,7 +389,11 @@ const EquipmentList: React.FC = () => {
             sx={{ 
               borderRadius: 2,
               boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              bgcolor: item.state === 'in_transit' ? 'rgba(222, 198, 49, 0.1)' : 'inherit',
+              bgcolor: item.state === 'in_transit'
+                ? 'rgba(222, 198, 49, 0.1)'
+                : item.serial === null
+                  ? 'rgba(255, 152, 0, 0.05)'
+                  : 'inherit',
               '&:hover': {
                 bgcolor: 'action.hover',
                 cursor: 'pointer',
@@ -384,7 +405,19 @@ const EquipmentList: React.FC = () => {
           >
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="h6" component="div" sx={{ fontWeight: 500 }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 500, display: 'flex', alignItems: 'center' }}>
+                  {item.serial === null && (
+                    <Tooltip title="Sprzęt wymaga aktualizacji numeru seryjnego">
+                      <WarningIcon 
+                        sx={{ 
+                          ml: 1, 
+                          color: 'warning.main',
+                          fontSize: '1.1rem',
+                          verticalAlign: 'middle'
+                        }} 
+                      />
+                    </Tooltip>
+                  )}
                   ID: {String(item.id)}
                 </Typography>
                 <Chip 
@@ -482,7 +515,7 @@ const EquipmentList: React.FC = () => {
         <Button
           variant="outlined"
           size="small"
-          startIcon={<Suspense fallback={null}><ClearAll /></Suspense>}
+          startIcon={<Suspense fallback={null}><ClearAllIcon /></Suspense>}
           onClick={() => {
             setFilter('');
             setSelectedLocations([]);
@@ -547,7 +580,7 @@ const EquipmentList: React.FC = () => {
               <Chip
                 key={filter.id}
                 label={filter.name}
-                icon={<Suspense fallback={null}><Warehouse /></Suspense>}
+                icon={<Suspense fallback={null}><WarehouseIcon /></Suspense>}
                 color={selectedLocations.some((loc) => loc.id === filter.id) ? 'primary' : 'default'}
                 onClick={() =>
                   selectedLocations.some((loc) => loc.id === filter.id)
@@ -596,7 +629,7 @@ const EquipmentList: React.FC = () => {
                 }
               },
               startAdornment: (
-                <Suspense fallback={null}><Search /></Suspense>
+                <Suspense fallback={null}><SearchIcon /></Suspense>
               )
             }}
           />
@@ -631,7 +664,7 @@ const EquipmentList: React.FC = () => {
                   },
                   startAdornment: (
                     <>
-                      <Suspense fallback={null}><LocationOn /></Suspense>
+                      <Suspense fallback={null}><LocationOnIcon /></Suspense>
                     </>
                   ),
                   endAdornment: (
@@ -646,7 +679,7 @@ const EquipmentList: React.FC = () => {
             renderOption={(props, option: Location) => (
               <li {...props} key={option.id}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Suspense fallback={null}><LocationOn /></Suspense>
+                  <Suspense fallback={null}><LocationOnIcon /></Suspense>
                   <Typography component="span">{option.name}</Typography>
                 </Box>
               </li>
@@ -716,7 +749,7 @@ const EquipmentList: React.FC = () => {
                   ...params.InputProps,
                   sx: { borderRadius: 1 },
                   startAdornment: (
-                    <Suspense fallback={null}><Category /></Suspense>
+                    <Suspense fallback={null}><CategoryIcon /></Suspense>
                   ),
                   endAdornment: (
                     <>

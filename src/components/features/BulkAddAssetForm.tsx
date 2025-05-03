@@ -295,6 +295,7 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
       <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
         <Button
           variant="outlined"
+          color="secondary"
           startIcon={<Suspense fallback={null}><AddIcon /></Suspense>}
           onClick={handleAddRow}
         >

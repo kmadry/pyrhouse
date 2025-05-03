@@ -3,6 +3,7 @@ import { Container, Typography, Tabs, Tab, Box, Paper, ButtonGroup, Button } fro
 import { AddAssetForm } from './AddAssetForm';
 import { AddStockForm } from './AddStockForm';
 import { BulkAddAssetForm } from './BulkAddAssetForm';
+import { AddAssetWithoutSerialForm } from './AddAssetWithoutSerialForm';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { useCategories } from '../../hooks/useCategories';
@@ -13,7 +14,7 @@ const Inventory = lazy(() => import('@mui/icons-material/Inventory'));
 
 const AddItemPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0); // 0 = "Wartościowe", 1 = "Zasoby"
-  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [addMode, setAddMode] = useState<'single' | 'bulk' | 'noSerial'>('single');
   const { categories, error, loading } = useCategories();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
@@ -54,27 +55,60 @@ const AddItemPage: React.FC = () => {
 
       {currentTab === 0 && (
         <Paper sx={{ mt: 1, p: { xs: 2, sm: 2 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <ButtonGroup variant="outlined" color="primary">
+          <Box sx={{ mb: 3 }}>
+            <ButtonGroup
+              variant="contained"
+              aria-label="outlined primary button group"
+              orientation="vertical"
+              sx={{
+                width: '100%',
+                '@media (min-width: 600px)': {
+                  width: 'auto',
+                  flexDirection: 'row',
+                }
+              }}
+            >
               <Button
-                variant={!isBulkMode ? 'contained' : 'outlined'}
-                onClick={() => setIsBulkMode(false)}
+                onClick={() => setAddMode('single')}
+                variant={addMode === 'single' ? 'contained' : 'outlined'}
+                sx={{
+                  width: '100%',
+                  '@media (min-width: 600px)': {
+                    width: 'auto',
+                  }
+                }}
               >
                 Pojedynczy
               </Button>
               <Button
-                variant={isBulkMode ? 'contained' : 'outlined'}
-                onClick={() => setIsBulkMode(true)}
+                onClick={() => setAddMode('bulk')}
+                variant={addMode === 'bulk' ? 'contained' : 'outlined'}
+                sx={{
+                  width: '100%',
+                  '@media (min-width: 600px)': {
+                    width: 'auto',
+                  }
+                }}
               >
-                Grupowy - kilka naraz
+                Grupowy
+              </Button>
+              <Button
+                onClick={() => setAddMode('noSerial')}
+                variant={addMode === 'noSerial' ? 'contained' : 'outlined'}
+                sx={{
+                  width: '100%',
+                  '@media (min-width: 600px)': {
+                    width: 'auto',
+                  }
+                }}
+              >
+                Bez numeru seryjnego
               </Button>
             </ButtonGroup>
           </Box>
-          {isBulkMode ? (
-            <BulkAddAssetForm categories={categories} />
-          ) : (
-            <AddAssetForm categories={categories} loading={loading} />
-          )}
+          {addMode === 'single' && <AddAssetForm categories={categories} loading={loading} />}
+          {addMode === 'bulk' && <BulkAddAssetForm categories={categories} />}
+          {addMode === 'noSerial' && <AddAssetWithoutSerialForm categories={categories} />}
         </Paper>
       )}
       {currentTab === 1 && (
