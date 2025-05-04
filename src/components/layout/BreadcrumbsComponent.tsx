@@ -16,6 +16,7 @@ const defaultTranslations: { [key: string]: string } = {
   locations: 'Lokalizacje',
   categories: 'Kategorie',
   transfers: 'Questy',
+  ongoing: 'Aktywne',
   warehouses: 'Magazyny',
   users: 'Użytkownicy',
   list: 'Magazyn',

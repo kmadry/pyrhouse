@@ -3,5 +3,6 @@ export interface Location {
   name: string;
   lat: number;
   lng: number;
+  pavilion: string | null;
   details?: string | null;
 } 

@@ -17,6 +17,7 @@ const UserDetailsPage = lazy(() => import('./components/features/UserDetailsPage
 const CategoryManagementPage = lazy(() => import('./components/features/CategoryManagementPage'));
 const TransfersListPage = lazy(() => import('./components/features/TransferListPage'));
 const TransferDetailsPage = lazy(() => import('./components/features/TransferDetailsPage'));
+const OngoingTransfersPage = lazy(() => import('./components/features/OngoingTransfersPage'));
 const QuestBoard = lazy(() => import('./components/features/QuestBoardPage'));
 const EquipmentDetails = lazy(() => import('./components/features/EquipmentDetails'));
 const LocationsPage = lazy(() => import('./components/features/LocationsPage'));
@@ -99,6 +100,13 @@ function App() {
               <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <TransfersListPage />
+              </Suspense>
+              </ErrorBoundary>
+            } />
+            <Route path="transfers/ongoing" element={
+              <ErrorBoundary>
+              <Suspense fallback={<LoadingSkeleton />}>
+                <OngoingTransfersPage />
               </Suspense>
               </ErrorBoundary>
             } />

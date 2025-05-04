@@ -533,7 +533,7 @@ const TransferDetailsPage: React.FC = () => {
             </Typography>
             <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Suspense fallback={null}><LocationOnIcon fontSize="small" color="action" /></Suspense>
-              {transfer.from_location?.name}
+              {transfer.from_location?.name} {transfer.from_location?.pavilion ? `(${transfer.from_location?.pavilion})` : ''}
             </Typography>
           </Box>
           <Box>
@@ -542,7 +542,7 @@ const TransferDetailsPage: React.FC = () => {
             </Typography>
             <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Suspense fallback={null}><LocationOnIcon fontSize="small" color="action" /></Suspense>
-              {transfer.to_location?.name}
+              {transfer.to_location?.name} {transfer.to_location?.pavilion ? `(${transfer.to_location?.pavilion})` : ''}
             </Typography>
           </Box>
           <Box>

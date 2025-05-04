@@ -44,8 +44,9 @@ const LocationsPage: React.FC = () => {
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
-  const [formData, setFormData] = useState({ name: '', details: '' });
+  const [formData, setFormData] = useState({ name: '', details: '', pavilion: '' });
   const [dialogError, setDialogError] = useState<string | null>(null);
+  const [pavilionError, setPavilionError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -73,11 +74,12 @@ const LocationsPage: React.FC = () => {
       setEditingLocation(location);
       setFormData({ 
         name: location.name,
-        details: location.details || ''
+        details: location.details || '',
+        pavilion: location.pavilion || ''
       });
     } else {
       setEditingLocation(null);
-      setFormData({ name: '', details: '' });
+      setFormData({ name: '', details: '', pavilion: '' });
     }
     setOpenDialog(true);
   };
@@ -85,8 +87,18 @@ const LocationsPage: React.FC = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingLocation(null);
-    setFormData({ name: '', details: '' });
+    setFormData({ name: '', details: '', pavilion: '' });
     setDialogError(null);
+  };
+
+  const handlePavilionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, pavilion: value }));
+    if (value.length > 3) {
+      setPavilionError('Pawilon może mieć maksymalnie 3 znaki');
+    } else {
+      setPavilionError(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -107,6 +119,12 @@ const LocationsPage: React.FC = () => {
           updateData.details = currentDetails;
         }
 
+        const currentPavilion = formData.pavilion || null;
+        const originalPavilion = editingLocation.pavilion || null;
+        if (currentPavilion !== originalPavilion) {
+          updateData.pavilion = currentPavilion;
+        }
+
         // Wykonaj aktualizację tylko jeśli są jakieś zmiany
         if (Object.keys(updateData).length > 0) {
           await updateLocation(editingLocation.id, updateData);
@@ -116,7 +134,8 @@ const LocationsPage: React.FC = () => {
           name: formData.name,
           details: formData.details.trim() || null,
           lat: 0,
-          lng: 0
+          lng: 0,
+          pavilion: formData.pavilion || null,
         });
       }
       handleCloseDialog();
@@ -154,9 +173,9 @@ const LocationsPage: React.FC = () => {
     }
   };
 
-  const filteredLocations = locations.filter(location =>
-    location.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredLocations = locations
+    .filter(location => location.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    // .sort((a, b) => a.id - b.id);
 
   const renderTable = () => (
     <TableContainer 
@@ -170,7 +189,7 @@ const LocationsPage: React.FC = () => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-            {['ID', 'Nazwa', 'Szczegóły', hasAdminAccess() ? 'Akcje' : ''].map((field) => (
+            {['ID', 'Nazwa', 'Pawilon', 'Szczegóły', hasAdminAccess() ? 'Akcje' : ''].map((field) => (
               <TableCell 
                 key={field} 
                 sx={{ 
@@ -205,6 +224,11 @@ const LocationsPage: React.FC = () => {
               <TableCell>
                 <Typography component="div">
                   {location.name}
+                </Typography>
+              </TableCell>
+              <TableCell>
+                <Typography component="div">
+                  {location.pavilion ? location.pavilion : '-'}
                 </Typography>
               </TableCell>
               <TableCell>
@@ -486,8 +510,8 @@ const LocationsPage: React.FC = () => {
         <DialogTitle>
           {editingLocation ? 'Edytuj lokalizację' : 'Dodaj nową lokalizację'}
         </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <DialogContent>
+          <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt:2 }}>
             <TextField
               autoFocus
               label="Nazwa lokalizacji"
@@ -496,6 +520,16 @@ const LocationsPage: React.FC = () => {
               fullWidth
               required
               size="small"
+            />
+            <TextField
+              label="Pawilon (opcjonalne)"
+              value={formData.pavilion}
+              onChange={handlePavilionChange}
+              fullWidth
+              size="small"
+              inputProps={{ maxLength: 3 }}
+              error={!!pavilionError}
+              helperText={pavilionError || 'Maksymalnie 3 znaki'}
             />
             <TextField
               label="Szczegóły (opcjonalne)"
@@ -521,7 +555,7 @@ const LocationsPage: React.FC = () => {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.name.trim()}
+            disabled={!formData.name.trim() || !!pavilionError}
             size="small"
           >
             {editingLocation ? 'Zapisz' : 'Dodaj'}

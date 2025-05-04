@@ -169,7 +169,8 @@ const EquipmentDetails: React.FC = () => {
 
   const getLocationName = (locationId: number) => {
     const location = locations.find(loc => loc.id === locationId);
-    return location ? location.name : `Lokalizacja ${locationId}`;
+    const pavilion = location?.pavilion || '-';
+    return location ? `${location.name} (${pavilion})` : `Lokalizacja ${locationId}`;
   };
 
   const formatLogMessage = (log: AssetLog) => {
@@ -542,7 +543,7 @@ const EquipmentDetails: React.FC = () => {
                     Lokalizacja
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {details.location?.name || 'N/A'}
+                    {details.location?.name || 'N/A'} {details.location?.pavilion ? `(${details.location?.pavilion})` : ''}
                   </Typography>
                 </Box>
               </Box>
@@ -691,9 +692,9 @@ const EquipmentDetails: React.FC = () => {
                           </Box>
                         )
                       ) : (
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
                           {details.serial}
-                        </Typography>
+                      </Typography>
                       )}
                     </Box>
                   </Box>

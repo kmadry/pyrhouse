@@ -2,6 +2,7 @@ import { Location } from '../models/Location';
 import { getApiUrl } from '../config/api';
 
 interface LocationDetailsResponse {
+  pavilion: string | null;
   id: number;
   name: string;
   details: string | null;
@@ -95,6 +96,7 @@ export const updateLocation = async (id: number, data: Partial<Location>): Promi
   const updateData: Partial<Location> = {};
   if (data.name !== undefined) updateData.name = data.name;
   if (data.details !== undefined) updateData.details = data.details;
+  if (data.pavilion !== undefined) updateData.pavilion = data.pavilion;
   if (data.lat !== undefined) updateData.lat = data.lat;
   if (data.lng !== undefined) updateData.lng = data.lng;
 

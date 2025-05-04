@@ -54,6 +54,7 @@ const Animation = lazy(() => import('@mui/icons-material/Animation'));
 const BlockTwoTone = lazy(() => import('@mui/icons-material/BlockTwoTone'));
 const Logout = lazy(() => import('@mui/icons-material/Logout'));
 const Help = lazy(() => import('@mui/icons-material/Help'));
+const LocalShipping = lazy(() => import('@mui/icons-material/LocalShipping'));
 
 interface JwtPayload {
   role: string;
@@ -97,7 +98,8 @@ const Icons = {
   Animation,
   BlockTwoTone,
   Logout,
-  Help
+  Help,
+  LocalShipping
 };
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -286,6 +288,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
     { path: '/transfers/create', label: 'Nowy quest', icon: <Icons.RocketLaunch /> },
     { path: '/transfers', label: 'Questy', icon: <Icons.Quiz /> },
+    { path: '/transfers/ongoing', label: 'Aktywne questy', icon: <Icons.LocalShipping /> },
     { path: '/quests', label: 'Quest Board', icon: <Icons.Castle /> },
     { 
       type: 'divider',

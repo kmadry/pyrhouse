@@ -42,6 +42,10 @@ interface Location {
   name: string;
 }
 
+interface LocationWithPavilion extends Location {
+  pavilion: string | null;
+}
+
 interface Category {
   id: number;
   label: string;
@@ -51,7 +55,7 @@ interface Equipment {
   id: number;
   category: string | { label: string };
   quantity?: number;
-  location: Location;
+  location: LocationWithPavilion;
   state: string;
   pyr_code?: string;
   origin: string;
@@ -404,7 +408,7 @@ const EquipmentList: React.FC = () => {
               </TableCell>
               <TableCell>
                 <Typography component="div">
-                  {item.location.name}
+                  {item.location.name} {item.location.pavilion ? `(${item.location.pavilion})` : ''}
                 </Typography>
               </TableCell>
               <TableCell>
@@ -488,7 +492,7 @@ const EquipmentList: React.FC = () => {
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" color="text.secondary">Lokalizacja:</Typography>
-                  <Typography variant="body2">{item.location.name}</Typography>
+                  <Typography variant="body2">{item.location.name} {item.location.pavilion ? `(${item.location.pavilion})` : ''}</Typography>
                 </Box>
                 
                 {item.type === 'asset' && (
@@ -696,7 +700,7 @@ const EquipmentList: React.FC = () => {
           <Autocomplete<Location, true, false, false>
             multiple
             options={locations}
-            getOptionLabel={(option: Location) => option.name}
+            getOptionLabel={(option: Location) => `${option.name}`}
             value={selectedLocations}
             loading={locationsLoading}
             onChange={(_, value) => setSelectedLocations(value)}

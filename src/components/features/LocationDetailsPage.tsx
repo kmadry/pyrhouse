@@ -83,6 +83,7 @@ const LocationDetailsPage: React.FC = () => {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [locationName, setLocationName] = useState<string>('Szczegóły lokalizacji');
   const [locationDetailsText, setLocationDetailsText] = useState<string>('Brak szczegółów');
+  const [locationPavilion, setLocationPavilion] = useState<string>('Brak pawilonu');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,6 +99,7 @@ const LocationDetailsPage: React.FC = () => {
       setLocationDetails(data);
       setLocationName(data.name);
       setLocationDetailsText(data.details || 'Brak szczegółów');
+      setLocationPavilion(data.pavilion || 'Brak pawilonu');
     } catch (err: any) {
       console.error('Błąd podczas pobierania szczegółów lokalizacji:', err);
       setError(err.message || 'Błąd podczas ładowania danych');
@@ -574,6 +576,20 @@ const LocationDetailsPage: React.FC = () => {
               border: '1px solid',
               borderColor: 'divider'
             }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                  Pawilon
+                </Typography>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: locationPavilion === 'Brak pawilonu' ? 'text.secondary' : 'text.primary',
+                    fontStyle: locationPavilion === 'Brak pawilonu' ? 'italic' : 'normal'
+                  }}
+                >
+                  {locationPavilion}
+                </Typography>
+              </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                   Szczegóły
