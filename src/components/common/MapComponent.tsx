@@ -37,13 +37,12 @@ const MapComponent: React.FC<MapComponentProps> = ({
   return (
     <Box 
       sx={{ 
-        height: '300px', 
-        width: '100%', 
-        borderRadius: 2,
+        height: { xs: '200px', sm: '260px', md: '340px' },
+        width: '100%',
+        maxWidth: { xs: 340, sm: 500, md: 600 },
         overflow: 'hidden',
-        border: '1px solid',
-        borderColor: 'divider',
-        position: 'relative'
+        position: 'relative',
+        mx: 'auto',
       }}
       id="map-container"
     >

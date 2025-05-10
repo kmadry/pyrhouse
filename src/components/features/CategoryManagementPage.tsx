@@ -134,11 +134,11 @@ const CategoryManagementPage: React.FC = () => {
           return;
         }
         if ('message' in err) {
-          showSnackbar('error', err.message, err.details, null);
+          showSnackbar('error', err.message || err.details || 'Wystąpił nieoczekiwany błąd');
           return;
         }
       }
-      showSnackbar('error', err.message);
+      showSnackbar('error', err.message || err.details || 'Wystąpił nieoczekiwany błąd');
     }
   };
 
@@ -245,11 +245,11 @@ const CategoryManagementPage: React.FC = () => {
           return;
         }
         if ('message' in err) {
-          showSnackbar('error', err.message, err.details, null);
+          showSnackbar('error', err.message || err.details || 'Wystąpił nieoczekiwany błąd');
           return;
         }
       }
-      showSnackbar('error', err.message || 'Wystąpił nieoczekiwany błąd podczas aktualizacji kategorii.', undefined, null);
+      showSnackbar('error', err.message || err.details || 'Wystąpił nieoczekiwany błąd');
     }
   };
 

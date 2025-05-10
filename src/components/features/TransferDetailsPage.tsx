@@ -32,6 +32,7 @@ import { MapPosition, locationService } from '../../services/locationService';
 import { useAuth } from '../../hooks/useAuth';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import { useMediaQuery, useTheme } from '@mui/material';
 // Lazy loaded components
 const MapComponent = lazy(() => import('../common/MapComponent'));
 const LocationPicker = lazy(() => import('../common/LocationPicker'));
@@ -60,6 +61,8 @@ const ArrowBackIcon = lazy(() => import('@mui/icons-material/ArrowBack'));
 const TransferDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { userRole } = useAuth();
   const [transfer, setTransfer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -215,6 +218,7 @@ const TransferDetailsPage: React.FC = () => {
         return <LocalShippingIcon />;
       case 'delivered':
       case 'available':
+      case 'completed':
       case 'located':
         return <CheckCircleIcon />;
       case 'returned':
@@ -377,7 +381,7 @@ const TransferDetailsPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 1 }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 0.5, sm: 1 } }}>
       <AppSnackbar
         open={snackbar.open}
         type={snackbar.type}
@@ -391,7 +395,9 @@ const TransferDetailsPage: React.FC = () => {
         display: 'flex', 
         alignItems: 'center', 
         gap: 2,
-        mb: 3 
+        mb: 3,
+        flexDirection: { xs: 'column', sm: 'row' },
+        textAlign: { xs: 'center', sm: 'left' },
       }}>
         <Button
           startIcon={<Suspense fallback={null}><ArrowBackIcon /></Suspense>}
@@ -402,6 +408,8 @@ const TransferDetailsPage: React.FC = () => {
             px: 1.5,
             py: 0.75,
             color: 'text.secondary',
+            width: { xs: '100%', sm: 'auto' },
+            mb: { xs: 1, sm: 0 },
             '&:hover': {
               color: 'primary.main',
               backgroundColor: 'transparent'
@@ -410,20 +418,38 @@ const TransferDetailsPage: React.FC = () => {
         >
           Powrót
         </Button>
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 'medium' }}>
+        <Typography variant="h5" component="h1" sx={{ fontWeight: 'medium', fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>
           Status Quest'a #{id}
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box>
-          <Stepper activeStep={currentStep}>
+      <Paper sx={{ p: { xs: 1.5, sm: 3 }, mb: 3 }}>
+        <Box sx={{ overflowX: 'auto', display: 'flex', flexDirection: { xs: 'column' }, justifyContent: 'center' }}>
+        { !isMobile ? ( 
+          <Stepper 
+            activeStep={currentStep}
+            orientation={isMobile ? 'vertical' : 'horizontal'}
+            sx={{width: '100%' }}
+          >
             {getSteps().map((label) => (
               <Step key={label}>
                 <StepLabel>{label}</StepLabel>
               </Step>
             ))}
           </Stepper>
+        ): 
+        <Chip 
+        label={statusTranslations[transfer.status] || transfer.status} 
+        icon={getStatusIcon(transfer.status)}
+        color={
+          transfer.status === 'completed' ? 'success' : 
+          transfer.status === 'in_transit' ? 'warning' : 
+          transfer.status === 'cancelled' ? 'error' : 'default'
+        }
+        size="small"
+        sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: 1.5 }}
+        />
+        }
         </Box>
         {transfer.status === 'in_transit' && hasAdminAccess() && (
           <Box sx={{ mt: 2 }}>
@@ -444,6 +470,8 @@ const TransferDetailsPage: React.FC = () => {
                   borderRadius: 1.5,
                   fontSize: '0.875rem',
                   boxShadow: 1,
+                  width: { xs: '100%', sm: 'auto' },
+                  mb: { xs: 1, sm: 0 },
                   '&:hover': {
                     boxShadow: 2,
                     backgroundColor: 'success.dark',
@@ -464,6 +492,7 @@ const TransferDetailsPage: React.FC = () => {
                   borderRadius: 1.5,
                   fontSize: '0.875rem',
                   borderWidth: 1.5,
+                  width: { xs: '100%', sm: 'auto' },
                   '&:hover': {
                     borderWidth: 1.5,
                     backgroundColor: 'error.lighter',
@@ -477,14 +506,14 @@ const TransferDetailsPage: React.FC = () => {
         )}
       </Paper>
 
-      <Paper sx={{ mt: 4, p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Paper sx={{ mt: 4, p: { xs: 1.5, sm: 3 } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2, gap: 2 }}>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Suspense fallback={null}><LocalShippingIcon color="primary" /></Suspense>
             Informacje
           </Typography>
           {(transfer.status === 'in_transit' || transfer.status === 'completed') && (
-            <Stack direction="row" spacing={1}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               {transfer.status === 'in_transit' && (
                 <Button
                   variant="outlined"
@@ -498,6 +527,8 @@ const TransferDetailsPage: React.FC = () => {
                     borderRadius: 1.5,
                     fontSize: '0.875rem',
                     borderWidth: 1.5,
+                    width: { xs: '100%', sm: 'auto' },
+                    mb: { xs: 1, sm: 0 },
                     '&:hover': {
                       borderWidth: 1.5,
                       backgroundColor: 'primary.lighter',
@@ -518,6 +549,7 @@ const TransferDetailsPage: React.FC = () => {
                   px: 1.5,
                   borderRadius: 1.5,
                   fontSize: '0.875rem',
+                  width: { xs: '100%', sm: 'auto' },
                 }}
               >
                 Nawiguj
@@ -531,7 +563,7 @@ const TransferDetailsPage: React.FC = () => {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Lokalizacja źródłowa
             </Typography>
-            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
               <Suspense fallback={null}><LocationOnIcon fontSize="small" color="action" /></Suspense>
               {transfer.from_location?.name} {transfer.from_location?.pavilion ? `(${transfer.from_location?.pavilion})` : ''}
             </Typography>
@@ -540,7 +572,7 @@ const TransferDetailsPage: React.FC = () => {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Lokalizacja docelowa
             </Typography>
-            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: { xs: '1rem', sm: '1.1rem' } }}>
               <Suspense fallback={null}><LocationOnIcon fontSize="small" color="action" /></Suspense>
               {transfer.to_location?.name} {transfer.to_location?.pavilion ? `(${transfer.to_location?.pavilion})` : ''}
             </Typography>
@@ -557,13 +589,14 @@ const TransferDetailsPage: React.FC = () => {
                 transfer.status === 'cancelled' ? 'error' : 'default'
               }
               size="small"
+              sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: 1.5 }}
             />
           </Box>
           <Box>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Data transferu
             </Typography>
-            <Typography variant="body1">
+            <Typography variant="body1" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>
               {new Date(transfer.transfer_date).toLocaleString()}
             </Typography>
           </Box>
@@ -571,7 +604,14 @@ const TransferDetailsPage: React.FC = () => {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Gżdacze
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{
+              display: 'flex', 
+              flexDirection: 'row', // zawsze w poziomie
+              flexWrap: 'wrap', // zawijanie do nowej linii jeśli nie mieszczą się
+              gap: 1, // mniejszy odstęp między chipami
+              width: '100%',
+              justifyContent: { xs: 'center', sm: 'flex-start' }
+            }}>
           {transfer.users && transfer.users.length > 0 ? (
             transfer.users.map((user: any) => (
               <Chip
@@ -580,6 +620,7 @@ const TransferDetailsPage: React.FC = () => {
                 icon={<Suspense fallback={null}><PersonIcon /></Suspense>}
                 color="primary"
                 variant="outlined"
+                sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: 1.5, my: 0.5 }}
               />
             ))
           ) : (
@@ -595,7 +636,18 @@ const TransferDetailsPage: React.FC = () => {
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               {transfer.status === 'in_transit' ? 'Aktualna lokalizacja dostawy' : 'Lokalizacja dostawy'}
             </Typography>
-            <Box sx={{ position: 'relative', mb: 1 }}>
+            <Box sx={{
+              position: 'relative',
+              mb: 1,
+              width: '100%',
+              height: { xs: 160, sm: 240, md: 300 },
+              maxWidth: 600,
+              mx: 'auto',
+              borderRadius: 3,
+              overflow: 'hidden',
+              boxShadow: 1,
+              background: '#eee',
+            }}>
               {renderMap()}
             </Box>
             <Typography variant="caption" color="text.secondary" display="block" mt={1}>
@@ -605,14 +657,20 @@ const TransferDetailsPage: React.FC = () => {
         )}
       </Paper>
 
-      <Paper sx={{ mt: 4, p: 3 }}>
+      <Paper sx={{ mt: 4, p: { xs: 1.5, sm: 3 } }}>
         <Typography variant="h6">Sprzęt</Typography>
         {transfer.assets && transfer.assets.length > 0 ? (
-          <List>
+          <List sx={{ width: '100%' }}>
             {transfer.assets.map((asset: any) => (
               <ListItem
                 key={asset.id}
-                sx={{ display: 'flex', alignItems: 'center' }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  gap: 2,
+                  px: 0,
+                }}
                 secondaryAction={
                   transfer.status === 'in_transit' && (
                     <Tooltip title="Przywróć do magazynu">
@@ -620,6 +678,7 @@ const TransferDetailsPage: React.FC = () => {
                         edge="end"
                         aria-label="restore"
                         onClick={() => handleRestoreClick(asset.id, 'asset')}
+                        sx={{ ml: 2 }}
                       >
                         <Suspense fallback={null}><RestoreIcon /></Suspense>
                       </IconButton>
@@ -627,16 +686,17 @@ const TransferDetailsPage: React.FC = () => {
                   )
                 }
               >
-                <ListItemAvatar>
+                <ListItemAvatar sx={{ minWidth: 0 }}>
                   <Chip
                     icon={getStatusIcon(asset.status)}
                     color="success"
-                    sx={{ mr: 2, pl: 1 }}
+                    sx={{ mr: 2, pl: 1, fontSize: { xs: '0.85rem', sm: '1rem' }, minWidth: 44, height: 36 }}
                   />
                 </ListItemAvatar>
                 <ListItemText
-                  primary={`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}
-                  secondary={`Pochodzenie: ${asset.origin || 'N/A'}`}
+                  primary={<Typography sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>{`${asset.category?.label || 'N/A'} ${asset.pyrcode}`}</Typography>}
+                  secondary={<Typography sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>{`Pochodzenie: ${asset.origin || 'N/A'}`}</Typography>}
+                  sx={{ ml: 1 }}
                 />
               </ListItem>
             ))}
@@ -646,14 +706,20 @@ const TransferDetailsPage: React.FC = () => {
         )}
       </Paper>
 
-      <Paper sx={{ mt: 4, p: 3 }}>
+      <Paper sx={{ mt: 4, p: { xs: 1.5, sm: 3 } }}>
         <Typography variant="h6">Zasoby</Typography>
         {transfer.stock_items && transfer.stock_items.length > 0 ? (
-          <List>
+          <List sx={{ width: '100%' }}>
             {transfer.stock_items.map((stock: any) => (
               <ListItem
                 key={stock.id}
-                sx={{ display: 'flex', alignItems: 'center' }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  gap: 2,
+                  px: 0,
+                }}
                 secondaryAction={
                   transfer.status === 'in_transit' && (
                     <Tooltip title="Przywróć do magazynu">
@@ -661,6 +727,7 @@ const TransferDetailsPage: React.FC = () => {
                         edge="end"
                         aria-label="restore"
                         onClick={() => handleRestoreClick(stock.id, 'stock', stock.category.id)}
+                        sx={{ ml: 2 }}
                       >
                         <Suspense fallback={null}><RestoreIcon /></Suspense>
                       </IconButton>
@@ -668,16 +735,17 @@ const TransferDetailsPage: React.FC = () => {
                   )
                 }
               >
-                <ListItemAvatar>
+                <ListItemAvatar sx={{ minWidth: 0 }}>
                   <Chip
                     label={`${stock.quantity}`}
                     color="primary"
-                    sx={{ mr: 2 }}
+                    sx={{ mr: 2, fontSize: { xs: '0.85rem', sm: '1rem' }, minWidth: 44, height: 36 }}
                   />
                 </ListItemAvatar>
                 <ListItemText
-                  primary={`${stock.category?.label || 'N/A'}`}
-                  secondary={`Pochodzenie: ${stock.origin || 'N/A'}`}
+                  primary={<Typography sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>{`${stock.category?.label || 'N/A'}`}</Typography>}
+                  secondary={<Typography sx={{ fontSize: { xs: '0.85rem', sm: '1rem' } }}>{`Pochodzenie: ${stock.origin || 'N/A'}`}</Typography>}
+                  sx={{ ml: 1 }}
                 />
               </ListItem>
             ))}

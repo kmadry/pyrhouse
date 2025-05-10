@@ -10,6 +10,7 @@ import AddItemPage from './components/features/AddItemPage';
 import { ThemeProvider } from './theme/ThemeContext';
 import LoadingSkeleton from './components/ui/LoadingSkeleton';
 import QuestLoadingBar from './components/features/QuestLoadingBar';
+import JiraTicketsPage from './components/features/JiraTicketsPage';
 
 // Lazy loaded components
 const UserManagementPage = lazy(() => import('./components/features/UserManagementPage'));
@@ -17,7 +18,6 @@ const UserDetailsPage = lazy(() => import('./components/features/UserDetailsPage
 const CategoryManagementPage = lazy(() => import('./components/features/CategoryManagementPage'));
 const TransfersListPage = lazy(() => import('./components/features/TransferListPage'));
 const TransferDetailsPage = lazy(() => import('./components/features/TransferDetailsPage'));
-const OngoingTransfersPage = lazy(() => import('./components/features/OngoingTransfersPage'));
 const QuestBoard = lazy(() => import('./components/features/QuestBoardPage'));
 const EquipmentDetails = lazy(() => import('./components/features/EquipmentDetails'));
 const LocationsPage = lazy(() => import('./components/features/LocationsPage'));
@@ -103,13 +103,6 @@ function App() {
               </Suspense>
               </ErrorBoundary>
             } />
-            <Route path="transfers/ongoing" element={
-              <ErrorBoundary>
-              <Suspense fallback={<LoadingSkeleton />}>
-                <OngoingTransfersPage />
-              </Suspense>
-              </ErrorBoundary>
-            } />
             <Route path="transfers/:id" element={
               <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
@@ -149,6 +142,13 @@ function App() {
               <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <TutorialPage />
+              </Suspense>
+              </ErrorBoundary>
+            } />
+            <Route path="servicedesk" element={
+              <ErrorBoundary>
+              <Suspense fallback={<LoadingSkeleton />}>
+                <JiraTicketsPage />
               </Suspense>
               </ErrorBoundary>
             } />

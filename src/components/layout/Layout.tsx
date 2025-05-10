@@ -29,9 +29,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Tooltip from '@mui/material/Tooltip';
 import Switch from '@mui/material/Switch';
 import BreadcrumbsComponent from './BreadcrumbsComponent';
-// Dynamiczne importy dla mniej krytycznych komponentów
-const LazyIcon = lazy(() => import('../ui/LazyIcon'));
-
+import LazyIcon from '../ui/LazyIcon';
 // Lazy loading dla ikon
 const Home = lazy(() => import('@mui/icons-material/Home'));
 const AutoAwesome = lazy(() => import('@mui/icons-material/AutoAwesome'));
@@ -53,9 +51,9 @@ const DarkMode = lazy(() => import('@mui/icons-material/DarkMode'));
 const Animation = lazy(() => import('@mui/icons-material/Animation'));
 const BlockTwoTone = lazy(() => import('@mui/icons-material/BlockTwoTone'));
 const Logout = lazy(() => import('@mui/icons-material/Logout'));
-const Help = lazy(() => import('@mui/icons-material/Help'));
+const MedicalServices = lazy(() => import('@mui/icons-material/MedicalServices'));
 const LocalShipping = lazy(() => import('@mui/icons-material/LocalShipping'));
-
+const Help = lazy(() => import('@mui/icons-material/Help'));
 interface JwtPayload {
   role: string;
   userID: number;
@@ -98,8 +96,9 @@ const Icons = {
   Animation,
   BlockTwoTone,
   Logout,
-  Help,
-  LocalShipping
+  MedicalServices,
+  LocalShipping,
+  Help
 };
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -288,8 +287,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     },
     { path: '/transfers/create', label: 'Nowy quest', icon: <Icons.RocketLaunch /> },
     { path: '/transfers', label: 'Questy', icon: <Icons.Quiz /> },
-    { path: '/transfers/ongoing', label: 'Aktywne questy', icon: <Icons.LocalShipping /> },
     { path: '/quests', label: 'Quest Board', icon: <Icons.Castle /> },
+    { path: '/servicedesk', label: 'Service Desk', icon: <Icons.MedicalServices /> },
     { 
       type: 'divider',
       label: 'Magazyn',
@@ -345,7 +344,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 sx={{
                   borderRadius: '6px',
                   mx: 1.5,
-                  my: 0.3,
+                  my: 0,
                   backgroundColor: activeItem === item.path ? 'primary.light' : 'transparent',
                   color: activeItem === item.path ? 'primary.contrastText' : 'text.primary',
                   '&:hover': {
@@ -353,7 +352,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     transform: 'translateX(4px)',
                   },
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  py: 1.2,
+                  py: 1,
                   pl: 2,
                   fontSize: '0.9rem',
                   position: 'relative',
