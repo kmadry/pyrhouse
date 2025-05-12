@@ -210,6 +210,32 @@ const TUTORIAL_STEPS = [
     icon: <Suspense fallback={null}><ListAlt /></Suspense>,
     action: '/transfers',
   },
+  {
+    label: 'Service Desk i zgłaszanie problemów',
+    description: (
+      <Box>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Jeśli napotkasz problem techniczny, awarię sprzętu lub potrzebujesz wsparcia – skorzystaj z modułu <b>Service Desk</b>.
+        </Typography>
+        <ul>
+          <li>
+            <b>Panel Service Desk (dla zalogowanych):</b> Możesz przeglądać zgłoszenia, filtrować je po statusie (Nowe, W trakcie, Oczekuje, Rozwiązane, Zamknięte), wyszukiwać po tytule, opisie lub lokalizacji oraz dodawać nowe zgłoszenia przez dedykowany formularz.
+          </li>
+          <li>
+            <b>Workflow zgłoszenia:</b> Każde zgłoszenie przechodzi przez statusy: <i>Nowe</i> → <i>W trakcie</i> → <i>Oczekuje</i> → <i>Rozwiązane</i> → <i>Zamknięte</i>. Możesz śledzić postęp i historię zgłoszenia.
+          </li>
+          <li>
+            <b>Publiczny formularz zgłaszania problemów:</b> Jeśli nie masz konta lub jesteś uczestnikiem/prelegentem, możesz zgłosić problem bez logowania przez publiczny formularz: <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>/servicedesk/request</Box>. Po wysłaniu zgłoszenia zobaczysz czytelny ekran potwierdzenia.
+          </li>
+        </ul>
+        <Typography variant="body2" color="success.main" sx={{ mt: 2 }}>
+          Każde zgłoszenie trafia bezpośrednio do zespołu technicznego. Jeśli będziemy potrzebować dodatkowych informacji, skontaktujemy się z Tobą na miejscu.
+        </Typography>
+      </Box>
+    ),
+    icon: <Suspense fallback={null}><Info /></Suspense>,
+    action: '/servicedesk',
+  },
 ];
 
 // Wydzielamy komponenty, aby zmniejszyć złożoność głównego komponentu
