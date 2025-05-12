@@ -10,7 +10,8 @@ import AddItemPage from './components/features/AddItemPage';
 import { ThemeProvider } from './theme/ThemeContext';
 import LoadingSkeleton from './components/ui/LoadingSkeleton';
 import QuestLoadingBar from './components/features/QuestLoadingBar';
-import JiraTicketsPage from './components/features/JiraTicketsPage';
+import ServiceDeskPage from './components/features/ServiceDeskPage';
+import PublicServiceDeskForm from './components/features/PublicServiceDeskForm';
 
 // Lazy loaded components
 const UserManagementPage = lazy(() => import('./components/features/UserManagementPage'));
@@ -43,6 +44,7 @@ function App() {
       <Router future={routerFutureConfig}>
         <Routes>
           <Route path="/login" element={<LoginForm />} />
+          <Route path="/servicedesk/request" element={<PublicServiceDeskForm />} />
           <Route path="/" element={<PrivateRoute><Layout><Outlet /></Layout></PrivateRoute>}>
             <Route index element={<Navigate to="/home" replace />} />
             <Route path="home" element={
@@ -148,7 +150,7 @@ function App() {
             <Route path="servicedesk" element={
               <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
-                <JiraTicketsPage />
+                <ServiceDeskPage />
               </Suspense>
               </ErrorBoundary>
             } />
