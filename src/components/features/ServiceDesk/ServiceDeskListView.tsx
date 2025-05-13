@@ -68,7 +68,7 @@ const ServiceDeskListView: React.FC<ServiceDeskListViewProps> = ({
                 <Chip
                   label={req.status === 'new' ? 'Nowe' : 
                          req.status === 'in_progress' ? 'W trakcie' :
-                         req.status === 'waiting' ? 'Oczekuje' :
+                         req.status === 'waiting' ? 'Zablokowane' :
                          req.status === 'resolved' ? 'Rozwiązane' : 'Zamknięte'}
                   size="small"
                   color={req.status === 'new' ? 'primary' :

@@ -47,7 +47,7 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
     refreshComments
   } = useServiceDeskComments(request?.id);
 
-  const { userId } = useAuth();
+  const { userId, userRole } = useAuth();
   const [commentValue, setCommentValue] = React.useState('');
   const commentInputRef = React.useRef<HTMLInputElement>(null);
   const commentsListRef = React.useRef<HTMLDivElement>(null);
@@ -160,18 +160,39 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                   size="medium"
                   sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1, borderRadius: 2 }}
                 />
-                <Select
-                  value={request.status}
-                  onChange={(e) => onStatusChange(request.id, e.target.value)}
-                  size="small"
-                  sx={{ minWidth: 120, fontWeight: 500, fontSize: 16, borderRadius: 2, bgcolor: 'background.paper' }}
-                >
-                  <MenuItem value="new">Nowe</MenuItem>
-                  <MenuItem value="in_progress">W trakcie</MenuItem>
-                  <MenuItem value="waiting">Oczekuje</MenuItem>
-                  <MenuItem value="resolved">Rozwiązane</MenuItem>
-                  <MenuItem value="closed">Zamknięte</MenuItem>
-                </Select>
+                {(userRole === 'moderator' || userRole === 'admin') ? (
+                  <Select
+                    value={request.status}
+                    onChange={(e) => onStatusChange(request.id, e.target.value)}
+                    size="small"
+                    sx={{ minWidth: 120, fontWeight: 500, fontSize: 16, borderRadius: 2, bgcolor: 'background.paper' }}
+                  >
+                    <MenuItem value="new">Nowe</MenuItem>
+                    <MenuItem value="in_progress">W trakcie</MenuItem>
+                    <MenuItem value="waiting">Zablokowane</MenuItem>
+                    <MenuItem value="resolved">Rozwiązane</MenuItem>
+                    <MenuItem value="closed">Zamknięte</MenuItem>
+                  </Select>
+                ) : (
+                  <Chip
+                    label={
+                      request.status === 'new' ? 'Nowe' :
+                      request.status === 'in_progress' ? 'W trakcie' :
+                      request.status === 'waiting' ? 'Zablokowane' :
+                      request.status === 'resolved' ? 'Rozwiązane' :
+                      request.status === 'closed' ? 'Zamknięte' : request.status
+                    }
+                    color={
+                      request.status === 'new' ? 'default' :
+                      request.status === 'in_progress' ? 'primary' :
+                      request.status === 'waiting' ? 'warning' :
+                      request.status === 'resolved' ? 'success' :
+                      request.status === 'closed' ? 'default' : 'default'
+                    }
+                    size="small"
+                    sx={{ fontWeight: 500 }}
+                  />
+                )}
               </Box>
               <Typography variant="body1" sx={{ mb: 3, color: 'text.primary', wordBreak: 'break-word', fontSize: 15 }}>
                 {request.description || 'Brak opisu'}
@@ -336,18 +357,39 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">Status</Typography>
-                <Select
-                  value={request.status}
-                  onChange={(e) => onStatusChange(request.id, e.target.value)}
-                  size="small"
-                  sx={{ minWidth: 120, fontWeight: 500 }}
-                >
-                  <MenuItem value="new">Nowe</MenuItem>
-                  <MenuItem value="in_progress">W trakcie</MenuItem>
-                  <MenuItem value="waiting">Oczekuje</MenuItem>
-                  <MenuItem value="resolved">Rozwiązane</MenuItem>
-                  <MenuItem value="closed">Zamknięte</MenuItem>
-                </Select>
+                {(userRole === 'moderator' || userRole === 'admin') ? (
+                  <Select
+                    value={request.status}
+                    onChange={(e) => onStatusChange(request.id, e.target.value)}
+                    size="small"
+                    sx={{ minWidth: 120, fontWeight: 500 }}
+                  >
+                    <MenuItem value="new">Nowe</MenuItem>
+                    <MenuItem value="in_progress">W trakcie</MenuItem>
+                    <MenuItem value="waiting">Zablokowane</MenuItem>
+                    <MenuItem value="resolved">Rozwiązane</MenuItem>
+                    <MenuItem value="closed">Zamknięte</MenuItem>
+                  </Select>
+                ) : (
+                  <Chip
+                    label={
+                      request.status === 'new' ? 'Nowe' :
+                      request.status === 'in_progress' ? 'W trakcie' :
+                      request.status === 'waiting' ? 'Zablokowane' :
+                      request.status === 'resolved' ? 'Rozwiązane' :
+                      request.status === 'closed' ? 'Zamknięte' : request.status
+                    }
+                    color={
+                      request.status === 'new' ? 'default' :
+                      request.status === 'in_progress' ? 'primary' :
+                      request.status === 'waiting' ? 'warning' :
+                      request.status === 'resolved' ? 'success' :
+                      request.status === 'closed' ? 'default' : 'default'
+                    }
+                    size="small"
+                    sx={{ fontWeight: 500 }}
+                  />
+                )}
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">Typ</Typography>
@@ -544,18 +586,39 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Select
-                    value={request.status}
-                    onChange={(e) => onStatusChange(request.id, e.target.value)}
-                    size="small"
-                    sx={{ minWidth: 120, fontWeight: 500 }}
-                  >
-                    <MenuItem value="new">Nowe</MenuItem>
-                    <MenuItem value="in_progress">W trakcie</MenuItem>
-                    <MenuItem value="waiting">Oczekuje</MenuItem>
-                    <MenuItem value="resolved">Rozwiązane</MenuItem>
-                    <MenuItem value="closed">Zamknięte</MenuItem>
-                  </Select>
+                  {(userRole === 'moderator' || userRole === 'admin') ? (
+                    <Select
+                      value={request.status}
+                      onChange={(e) => onStatusChange(request.id, e.target.value)}
+                      size="small"
+                      sx={{ minWidth: 120, fontSize: 14, fontWeight: 500, maxHeight: 25 }}
+                    >
+                      <MenuItem value="new">Nowe</MenuItem>
+                      <MenuItem value="in_progress">W trakcie</MenuItem>
+                      <MenuItem value="waiting">Zablokowane</MenuItem>
+                      <MenuItem value="resolved">Rozwiązane</MenuItem>
+                      <MenuItem value="closed">Zamknięte</MenuItem>
+                    </Select>
+                  ) : (
+                    <Chip
+                      label={
+                        request.status === 'new' ? 'Nowe' :
+                        request.status === 'in_progress' ? 'W trakcie' :
+                        request.status === 'waiting' ? 'Zablokowane' :
+                        request.status === 'resolved' ? 'Rozwiązane' :
+                        request.status === 'closed' ? 'Zamknięte' : request.status
+                      }
+                      color={
+                        request.status === 'new' ? 'default' :
+                        request.status === 'in_progress' ? 'primary' :
+                        request.status === 'waiting' ? 'warning' :
+                        request.status === 'resolved' ? 'success' :
+                        request.status === 'closed' ? 'default' : 'default'
+                      }
+                      size="small"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  )}
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">Typ</Typography>

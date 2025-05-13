@@ -145,55 +145,50 @@ const ServiceDeskPage: React.FC = () => {
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 0.5, sm: 1, md: 4 } }}>
-      <Box sx={{ 
-        display: 'flex', 
+      <Box sx={{
+        display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },
-        alignItems: { xs: 'stretch', sm: 'center' },
-        justifyContent: 'space-between', 
-        mb: 3,
-        gap: { xs: 2, sm: 2 },
+        alignItems: { xs: 'flex-start', sm: 'center' },
+        justifyContent: 'space-between',
+        mb: 2,
+        gap: { xs: 1, sm: 2 },
       }}>
-        <Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Typography variant="h4" fontWeight={700} color="primary.main" sx={{ fontSize: { xs: 26, sm: 32 } }}>
             Service Desk
           </Typography>
-          <Button
-            variant="text"
-            color="primary"
-            startIcon={<OpenInNewIcon sx={{ color: theme => theme.palette.primary.main }} />}
-            onClick={() => window.open('/servicedesk/request', '_blank', 'noopener,noreferrer')}
-            sx={{ 
-              mt: 1,
-              mb: 2,
-              fontWeight: 500,
-              fontSize: { xs: '1rem', sm: '1.1rem' },
-              px: 1.5,
-              py: 1,
-              color: theme => theme.palette.primary.main,
-              background: 'none',
-              boxShadow: 'none',
-              textTransform: 'none',
-              alignItems: 'center',
-              gap: 1.5,
-              width: { xs: '100%', sm: 'auto' },
-              '&:hover': {
-                textDecoration: 'underline',
-                background: 'none',
-                color: theme => theme.palette.primary.dark,
-              },
-            }}
-          >
-            Otwórz publiczny formularz
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <OpenInNewIcon sx={{ color: theme => theme.palette.primary.main, fontSize: 20 }} />
+            <a
+              href="/servicedesk/request"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: 'inherit',
+                fontWeight: 500,
+                fontSize: '1rem',
+                letterSpacing: 0.1,
+                cursor: 'pointer',
+                transition: 'color 0.2s, text-decoration 0.2s',
+                textDecoration: 'none',
+              }}
+              onMouseOver={e => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseOut={e => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              Otwórz publiczny formularz
+            </a>
+          </Box>
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
           <Button variant="contained" color="primary" onClick={() => setOpenForm(true)}
             sx={{
               width: { xs: '100%', sm: 'auto' },
-              fontSize: { xs: '1.1rem', sm: '1rem' },
-              py: { xs: 1.5, sm: 1 },
+              fontSize: { xs: '1rem', sm: '0.98rem' },
+              py: { xs: 0.9, sm: 0.7 },
               borderRadius: 1,
               fontWeight: 600,
+              minWidth: 160,
+              boxShadow: 'none',
             }}
           >
             + Nowe zgłoszenie
@@ -201,35 +196,44 @@ const ServiceDeskPage: React.FC = () => {
           <Button variant="outlined" startIcon={<RefreshIcon />} onClick={refresh} disabled={loading}
             sx={{
               width: { xs: '100%', sm: 'auto' },
-              fontSize: { xs: '1.1rem', sm: '1rem' },
-              py: { xs: 1.2, sm: 1 },
+              fontSize: { xs: '1rem', sm: '0.98rem' },
+              py: { xs: 0.8, sm: 0.6 },
               borderRadius: 1,
               fontWeight: 500,
+              minWidth: 120,
+              boxShadow: 'none',
             }}
           >
             Odśwież
           </Button>
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={handleViewModeChange}
-            aria-label="tryb widoku"
-            size="small"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            <ToggleButton value="cards" aria-label="widok kart" sx={{ width: { xs: '50%', sm: 'auto' } }}>
-              <ViewModuleIcon />
-            </ToggleButton>
-            <ToggleButton value="list" aria-label="widok listy" sx={{ width: { xs: '50%', sm: 'auto' } }}>
-              <ViewListIcon />
-            </ToggleButton>
-          </ToggleButtonGroup>
         </Box>
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1, mt: { xs: 0.5, sm: 0 }, pr: { xs: 0, sm: 0.5 } }}>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={handleViewModeChange}
+          aria-label="tryb widoku"
+          size="small"
+          sx={{
+            background: theme => theme.palette.background.paper,
+            borderRadius: 1,
+            boxShadow: 'none',
+            gap: 0,
+          }}
+        >
+          <ToggleButton value="cards" aria-label="widok kart" sx={{ borderRadius: '8px 0 0 8px', px: 1.5, py: 0.7 }}>
+            <ViewModuleIcon />
+          </ToggleButton>
+          <ToggleButton value="list" aria-label="widok listy" sx={{ borderRadius: '0 8px 8px 0', px: 1.5, py: 0.7 }}>
+            <ViewListIcon />
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
       <Tabs value={status} onChange={handleTabChange} sx={{ mb: 2 }} variant="scrollable" scrollButtons="auto">
         <Tab label="Nowe" value="new" />
         <Tab label="W trakcie" value="in_progress" />
-        <Tab label="Oczekuje" value="waiting" />
+        <Tab label="Zablokowane" value="waiting" />
         <Tab label="Rozwiązane" value="resolved" />
         <Tab label="Zamknięte" value="closed" />
         <Tab label="Wszystkie" value="all" />
@@ -360,8 +364,8 @@ const ServiceDeskPage: React.FC = () => {
           gap: 2,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <TaskIcon color="warning" sx={{ fontSize: 36, mr: 1 }} />
-            <Typography variant="h5" fontWeight={700} color="primary.main">
+            <TaskIcon color="warning" sx={{ fontSize: 24, mr: 1 }} />
+            <Typography variant="h6" fontWeight={600} color="primary.main">
               Nowe zgłoszenie
             </Typography>
           </Box>

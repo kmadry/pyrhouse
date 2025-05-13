@@ -219,21 +219,21 @@ const TUTORIAL_STEPS = [
         </Typography>
         <ul>
           <li>
-            <b>Panel Service Desk (dla zalogowanych):</b> Możesz przeglądać zgłoszenia, filtrować je po statusie (Nowe, W trakcie, Oczekuje, Rozwiązane, Zamknięte), wyszukiwać po tytule, opisie lub lokalizacji oraz dodawać nowe zgłoszenia przez dedykowany formularz.
+            <b>Panel Service Desk (dla zalogowanych):</b> Możesz przeglądać zgłoszenia, filtrować je po statusie (<b>Nowe</b>, <b>W trakcie</b>, <b>Zablokowane</b>, <b>Rozwiązane</b>, <b>Zamknięte</b>), wyszukiwać po tytule, opisie lub lokalizacji oraz dodawać nowe zgłoszenia przez dedykowany formularz.
           </li>
           <li>
-            <b>Workflow zgłoszenia:</b> Każde zgłoszenie przechodzi przez statusy: <i>Nowe</i> → <i>W trakcie</i> → <i>Oczekuje</i> → <i>Rozwiązane</i> → <i>Zamknięte</i>. Możesz śledzić postęp i historię zgłoszenia.
+            <b>Workflow zgłoszenia:</b> Każde zgłoszenie przechodzi przez statusy: <i>Nowe</i> → <i>W trakcie</i> → <i>Zablokowane</i> → <i>Rozwiązane</i> → <i>Zamknięte</i>. Możesz śledzić postęp i historię zgłoszenia. <b>Status "Zablokowane" zastępuje dawny "Oczekuje".</b>
+          </li>
+          <li>
+            <b>Uprawnienia do zmiany statusu:</b> <span style={{ color: '#1976d2', fontWeight: 600 }}>Tylko użytkownicy z rolą <b>moderator</b> lub <b>admin</b> mogą zmieniać status zgłoszenia</span>. Pozostali widzą status jako nieedytowalny.
           </li>
           <li>
             <b>Publiczny formularz zgłaszania problemów:</b> Jeśli nie masz konta lub jesteś uczestnikiem/prelegentem, możesz zgłosić problem bez logowania przez publiczny formularz: <Box component="span" sx={{ fontWeight: 700, color: 'primary.main' }}>/servicedesk/request</Box>. Po wysłaniu zgłoszenia zobaczysz czytelny ekran potwierdzenia.
           </li>
         </ul>
-        <Typography variant="body2" color="success.main" sx={{ mt: 2 }}>
-          Każde zgłoszenie trafia bezpośrednio do zespołu technicznego. Jeśli będziemy potrzebować dodatkowych informacji, skontaktujemy się z Tobą na miejscu.
-        </Typography>
       </Box>
     ),
-    icon: <Suspense fallback={null}><Info /></Suspense>,
+    icon: <Suspense fallback={null}><ListAlt /></Suspense>,
     action: '/servicedesk',
   },
 ];
