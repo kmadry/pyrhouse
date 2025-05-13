@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Card, Box, Typography, Chip, Avatar, IconButton, Tooltip, Menu, MenuItem } from '@mui/material';
+import { Grid, Card, Box, Typography, Chip, Avatar, IconButton, Tooltip } from '@mui/material';
 import RoomIcon from '@mui/icons-material/Room';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -22,116 +22,88 @@ interface ServiceDeskCardsViewProps {
 const ServiceDeskCardsView: React.FC<ServiceDeskCardsViewProps> = ({
   requests,
   types,
-  users,
-  isMobile,
   onOpenDetails,
-  onAssign,
-  assignDropdownOpenId,
   assignButtonRefs,
-  menuWidth,
   handleAssignDropdownOpen,
-  handleAssignDropdownClose,
   isEditable
 }) => {
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={1.5}>
       {requests.length === 0 ? (
         <Grid item xs={12}><Typography variant="body2">Brak zgłoszeń.</Typography></Grid>
       ) : requests.map(req => (
-        <Grid item xs={12} sm={6} md={4} key={req.id}>
+        <Grid item xs={12} sm={6} md={3} key={req.id}>
           <Card 
             sx={{ 
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
-              borderRadius: 3,
-              boxShadow: 6,
+              borderRadius: 1,
+              boxShadow: 4,
               bgcolor: theme => theme.palette.background.paper,
               transition: 'box-shadow 0.2s, transform 0.2s',
-              p: 0,
+              p: 1,
+              minHeight: 110,
               '&:hover': {
-                boxShadow: 12,
-                transform: 'translateY(-4px) scale(1.02)',
+                boxShadow: 8,
+                transform: 'translateY(-2px) scale(1.01)',
               },
               cursor: 'pointer',
             }}
             onClick={() => onOpenDetails(req)}
           >
-            <Box sx={{ p: 2, pb: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Typography variant="h6" fontWeight={700} sx={{ flex: 1, color: theme => theme.palette.text.primary, fontSize: 20, lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{req.title}</Typography>
+            <Box sx={{ p: 0.5, pb: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.2 }}>
+                <Typography variant="h6" fontWeight={800} sx={{ flex: 1, color: theme => theme.palette.text.primary, fontSize: 18, lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{req.title}</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0 }}>
-                <Typography variant="caption" sx={{ color: theme => theme.palette.text.secondary, fontStyle: 'italic' }}>
+                <Typography variant="caption" sx={{ color: theme => theme.palette.text.secondary, fontStyle: 'italic', fontSize: 12 }}>
                   {new Date(req.created_at).toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ color: theme => theme.palette.text.secondary, mb: 2, minHeight: 40, maxHeight: 48, overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+              <Typography variant="body2" sx={{ color: theme => theme.palette.text.secondary, mb: 1, minHeight: 28, maxHeight: 32, overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 14, fontWeight: 500, flex: 1 }}>
                 {req.description}
               </Typography>
-              <Box sx={{ gap: 0.5, mb: 1 }}>
-                <Chip label={req.priority === 'high' ? 'Wysoki priorytet' : req.priority === 'medium' ? 'Średni priorytet' : 'Niski priorytet'} color={req.priority === 'high' ? 'error' : req.priority === 'medium' ? 'warning' : 'default'} size="small" sx={{ fontWeight: 600 }} />
-                {req.type && types[req.type] && (
-                  <Chip 
-                    label={types[req.type].name} variant="outlined" size="small" sx={{ bgcolor: theme => theme.palette.background.default, color: theme => theme.palette.text.primary, borderColor: theme => theme.palette.divider }} />
-                )}
-                <Chip 
-                  label={req.location || 'Brak lokalizacji'} 
-                  variant="outlined"
-                  size="small" 
-                  icon={<RoomIcon sx={{ color: theme => theme.palette.primary.main, fontSize: 18 }} />}
-                  sx={{ 
-                    bgcolor: theme => theme.palette.background.default, 
-                    color: theme => theme.palette.text.primary, 
-                    borderColor: theme => theme.palette.divider 
-                  }}
-                />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 0.5 }}>
+                {req.priority && <Chip label={req.priority === 'high' ? 'Wysoki priorytet' : req.priority === 'medium' ? 'Średni priorytet' : 'Niski priorytet'} size="small" color={req.priority === 'high' ? 'error' : req.priority === 'medium' ? 'warning' : 'default'} sx={{ height: 22, fontSize: 12, px: 1, borderRadius: 1 }} />}
+                {req.type && types[req.type] && <Chip label={types[req.type].name} size="small" sx={{ height: 22, fontSize: 12, px: 1, borderRadius: 1 }} />}
+                {req.location && <Chip label={req.location} size="small" sx={{ height: 22, fontSize: 12, px: 1, borderRadius: 1, bgcolor: 'background.default' }} icon={<RoomIcon sx={{ fontSize: 16 }} />} />}
+                {req.status && <Chip label={
+                  req.status === 'new' ? 'Nowe' :
+                  req.status === 'in_progress' ? 'W trakcie' :
+                  req.status === 'waiting' ? 'Zablokowane' :
+                  req.status === 'resolved' ? 'Ukończone' :
+                  req.status === 'closed' ? 'Anulowane' : req.status
+                } size="small" variant="outlined" color={
+                  req.status === 'new' ? 'primary' :
+                  req.status === 'in_progress' ? 'info' :
+                  req.status === 'waiting' ? 'warning' :
+                  req.status === 'resolved' ? 'success' :
+                  'default'
+                } sx={{ fontSize: 13, fontWeight: 600 }} />}
               </Box>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1, borderTop: theme => `1px solid ${theme.palette.divider}`, mt: 'auto' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5, mt: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Avatar sx={{ width: 24, height: 24, fontSize: 13, bgcolor: theme => theme.palette.background.default, color: theme => theme.palette.text.primary }}>{req.created_by_user?.username?.[0] || '?'}</Avatar>
-                  <Typography variant="caption" sx={{ color: theme => theme.palette.text.secondary }}>Zgłosił: {req.created_by_user?.username || req.created_by}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 0.5, py: 0.5, borderTop: theme => `1px solid ${theme.palette.divider}`, mt: 'auto' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.3, mt: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Avatar sx={{ width: 22, height: 22, fontSize: 12, bgcolor: theme => theme.palette.background.default, color: theme => theme.palette.text.primary }}>{req.created_by_user?.username?.[0] || '?'}</Avatar>
+                  <Typography variant="caption" sx={{ color: theme => theme.palette.text.secondary, fontSize: 13, fontWeight: 500 }}>Zgłosił: {req.created_by_user?.username || req.created_by}</Typography>
                 </Box>
                 <Box
                   ref={el => { if (req.id) assignButtonRefs.current[req.id] = el as HTMLDivElement | null; }}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, cursor: isEditable ? 'pointer' : 'not-allowed', opacity: isEditable ? 1 : 0.7, borderRadius: 2, px: 1, py: 0.5, '&:hover': isEditable ? { bgcolor: 'action.hover' } : {}, transition: 'background 0.2s' }}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: isEditable ? 'pointer' : 'not-allowed', opacity: isEditable ? 1 : 0.7, borderRadius: 1, px: 0.5, py: 0.2, '&:hover': isEditable ? { bgcolor: 'action.hover' } : {}, transition: 'background 0.2s' }}
                   onClick={e => { e.stopPropagation(); if (isEditable) handleAssignDropdownOpen(req.id); }}
                   tabIndex={isEditable ? 0 : -1}
                   aria-disabled={!isEditable}
                   role="button"
                 >
-                  <Avatar sx={{ width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
+                  <Avatar sx={{ width: 22, height: 22, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600, fontSize: 12 }}>
                     {req.assigned_to_user ? req.assigned_to_user.username[0]?.toUpperCase() : <PersonAddIcon fontSize="small" />}
                   </Avatar>
-                  <Typography variant="body2" fontWeight={500} color="text.secondary">
+                  <Typography variant="body2" fontWeight={500} color="text.secondary" sx={{ fontSize: 12 }}>
                     {req.assigned_to_user ? req.assigned_to_user.username : 'Nie przypisano'}
                   </Typography>
                 </Box>
-                <Menu
-                  anchorEl={req?.id ? assignButtonRefs.current[req.id] ?? undefined : undefined}
-                  open={assignDropdownOpenId === req.id}
-                  onClose={handleAssignDropdownClose}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                  PaperProps={{ sx: { minWidth: menuWidth } }}
-                >
-                  {users.map(user => (
-                    <MenuItem
-                      key={user.id}
-                      selected={req.assigned_to_user?.id === user.id}
-                      onClick={() => {
-                        onAssign(req.id, user);
-                        handleAssignDropdownClose();
-                      }}
-                      disabled={!isEditable}
-                    >
-                      <Avatar sx={{ width: 24, height: 24, mr: 1 }}>{user.username[0]?.toUpperCase()}</Avatar>
-                      {user.username}
-                    </MenuItem>
-                  ))}
-                </Menu>
               </Box>
               <Box>
                 <Tooltip title="Szczegóły">

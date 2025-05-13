@@ -14,6 +14,7 @@ import { useServiceDeskUsers } from '../../hooks/useServiceDeskUsers';
 import ServiceDeskCardsView from './ServiceDesk/ServiceDeskCardsView';
 import ServiceDeskListView from './ServiceDesk/ServiceDeskListView';
 import ServiceDeskDetailsModal from './ServiceDesk/ServiceDeskDetailsModal';
+import { addUserPointsAPI } from '../../services/userService';
 
 const ServiceDeskPage: React.FC = () => {
   const [status, setStatus] = useState('new');
@@ -75,11 +76,21 @@ const ServiceDeskPage: React.FC = () => {
     }
   };
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    changeStatus(id, newStatus, () => {
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    const request = requests.find(r => r.id === id);
+    const assignedUserId = request?.assigned_to_user?.id;
+    await changeStatus(id, newStatus, async () => {
       refresh();
       if (selectedRequest) {
         setSelectedRequest((prev: any) => ({ ...prev, status: newStatus }));
+      }
+      if (newStatus === 'resolved' && assignedUserId) {
+        try {
+          await addUserPointsAPI(assignedUserId, 10);
+          showSnackbar('success', `Przypisano 10 punktów użytkownikowi za rozwiązanie zgłoszenia!`);
+        } catch (e: any) {
+          showSnackbar('error', 'Nie udało się dodać punktów użytkownikowi', e?.message || '');
+        }
       }
     });
   };
@@ -234,8 +245,8 @@ const ServiceDeskPage: React.FC = () => {
         <Tab label="Nowe" value="new" />
         <Tab label="W trakcie" value="in_progress" />
         <Tab label="Zablokowane" value="waiting" />
-        <Tab label="Rozwiązane" value="resolved" />
-        <Tab label="Zamknięte" value="closed" />
+        <Tab label="Ukończone" value="resolved" />
+        <Tab label="Anulowane" value="closed" />
         <Tab label="Wszystkie" value="all" />
       </Tabs>
       <TextField

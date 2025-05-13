@@ -170,8 +170,8 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                     <MenuItem value="new">Nowe</MenuItem>
                     <MenuItem value="in_progress">W trakcie</MenuItem>
                     <MenuItem value="waiting">Zablokowane</MenuItem>
-                    <MenuItem value="resolved">Rozwiązane</MenuItem>
-                    <MenuItem value="closed">Zamknięte</MenuItem>
+                    <MenuItem value="resolved">Ukończone</MenuItem>
+                    <MenuItem value="closed">Anulowane</MenuItem>
                   </Select>
                 ) : (
                   <Chip
@@ -179,17 +179,18 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                       request.status === 'new' ? 'Nowe' :
                       request.status === 'in_progress' ? 'W trakcie' :
                       request.status === 'waiting' ? 'Zablokowane' :
-                      request.status === 'resolved' ? 'Rozwiązane' :
-                      request.status === 'closed' ? 'Zamknięte' : request.status
+                      request.status === 'resolved' ? 'Ukończone' :
+                      request.status === 'closed' ? 'Anulowane' : request.status
                     }
                     color={
-                      request.status === 'new' ? 'default' :
+                      request.status === 'new' ? 'primary' :
                       request.status === 'in_progress' ? 'primary' :
                       request.status === 'waiting' ? 'warning' :
                       request.status === 'resolved' ? 'success' :
                       request.status === 'closed' ? 'default' : 'default'
                     }
                     size="small"
+                    variant="outlined"
                     sx={{ fontWeight: 500 }}
                   />
                 )}
@@ -367,8 +368,8 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                     <MenuItem value="new">Nowe</MenuItem>
                     <MenuItem value="in_progress">W trakcie</MenuItem>
                     <MenuItem value="waiting">Zablokowane</MenuItem>
-                    <MenuItem value="resolved">Rozwiązane</MenuItem>
-                    <MenuItem value="closed">Zamknięte</MenuItem>
+                    <MenuItem value="resolved">Ukończone</MenuItem>
+                    <MenuItem value="closed">Anulowane</MenuItem>
                   </Select>
                 ) : (
                   <Chip
@@ -376,17 +377,18 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                       request.status === 'new' ? 'Nowe' :
                       request.status === 'in_progress' ? 'W trakcie' :
                       request.status === 'waiting' ? 'Zablokowane' :
-                      request.status === 'resolved' ? 'Rozwiązane' :
-                      request.status === 'closed' ? 'Zamknięte' : request.status
+                      request.status === 'resolved' ? 'Ukończone' :
+                      request.status === 'closed' ? 'Anulowane' : request.status
                     }
                     color={
-                      request.status === 'new' ? 'default' :
+                      request.status === 'new' ? 'primary' :
                       request.status === 'in_progress' ? 'primary' :
                       request.status === 'waiting' ? 'warning' :
                       request.status === 'resolved' ? 'success' :
                       request.status === 'closed' ? 'default' : 'default'
                     }
                     size="small"
+                    variant="outlined"
                     sx={{ fontWeight: 500 }}
                   />
                 )}
@@ -596,8 +598,8 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                       <MenuItem value="new">Nowe</MenuItem>
                       <MenuItem value="in_progress">W trakcie</MenuItem>
                       <MenuItem value="waiting">Zablokowane</MenuItem>
-                      <MenuItem value="resolved">Rozwiązane</MenuItem>
-                      <MenuItem value="closed">Zamknięte</MenuItem>
+                      <MenuItem value="resolved">Ukończone</MenuItem>
+                      <MenuItem value="closed">Anulowane</MenuItem>
                     </Select>
                   ) : (
                     <Chip
@@ -605,17 +607,18 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                         request.status === 'new' ? 'Nowe' :
                         request.status === 'in_progress' ? 'W trakcie' :
                         request.status === 'waiting' ? 'Zablokowane' :
-                        request.status === 'resolved' ? 'Rozwiązane' :
-                        request.status === 'closed' ? 'Zamknięte' : request.status
+                        request.status === 'resolved' ? 'Ukończone' :
+                        request.status === 'closed' ? 'Anulowane' : request.status
                       }
                       color={
-                        request.status === 'new' ? 'default' :
+                        request.status === 'new' ? 'primary' :
                         request.status === 'in_progress' ? 'primary' :
                         request.status === 'waiting' ? 'warning' :
                         request.status === 'resolved' ? 'success' :
                         request.status === 'closed' ? 'default' : 'default'
                       }
                       size="small"
+                      variant="outlined"
                       sx={{ fontWeight: 500 }}
                     />
                   )}
