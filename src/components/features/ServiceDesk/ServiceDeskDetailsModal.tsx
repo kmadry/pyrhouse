@@ -1,6 +1,8 @@
 import React from 'react';
-import { Dialog, Box, Typography, IconButton, Chip, Select, MenuItem, Avatar, Divider, Grid, Menu } from '@mui/material';
+import { Dialog, Box, Typography, IconButton, Chip, Select, MenuItem, Avatar, Divider, Grid, Menu, CircularProgress, TextField, Button, Fade } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { useServiceDeskComments } from '../../../hooks/useServiceDeskComments';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface ServiceDeskDetailsModalProps {
   open: boolean;
@@ -35,12 +37,47 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
   isEditable,
   onStatusChange
 }) => {
+  const {
+    comments,
+    loading: commentsLoading,
+    error: commentsError,
+    addComment,
+    adding: addingComment,
+    addError,
+    refreshComments
+  } = useServiceDeskComments(request?.id);
+
+  const { userId } = useAuth();
+  const [commentValue, setCommentValue] = React.useState('');
+  const commentInputRef = React.useRef<HTMLInputElement>(null);
+  const commentsListRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (open && request?.id) {
+      refreshComments();
+    }
+  }, [open, request?.id, refreshComments]);
+
+  React.useEffect(() => {
+    if (!commentsLoading && commentsListRef.current) {
+      commentsListRef.current.scrollTop = commentsListRef.current.scrollHeight;
+    }
+  }, [comments, commentsLoading]);
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentValue.trim() || commentValue.length > 1000) return;
+    await addComment(commentValue.trim());
+    setCommentValue('');
+    commentInputRef.current?.focus();
+  };
+
   if (!request) return null;
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       fullScreen={isMobile}
       PaperProps={{
@@ -51,9 +88,10 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
           backdropFilter: 'blur(10px)',
           boxShadow: isMobile ? 0 : 24,
           p: 0,
-          maxWidth: isMobile ? '100vw' : 900,
+          maxWidth: isMobile ? '100vw' : 1100,
           mx: 'auto',
           overflow: 'visible',
+          minHeight: isMobile ? '100vh' : 600,
         })
       }}
     >
@@ -138,56 +176,158 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
               <Typography variant="body1" sx={{ mb: 3, color: 'text.primary', wordBreak: 'break-word', fontSize: 15 }}>
                 {request.description || 'Brak opisu'}
               </Typography>
-              <Box sx={{ bgcolor: 'background.default', borderRadius: 3, minHeight: 60, color: 'text.secondary', fontStyle: 'italic', textAlign: 'center', fontSize: 13, mb: 3, p: 2 }}>
-                Aktywność / komentarze (wkrótce)
-              </Box>
-              {/* Przypisanie użytkownika */}
-              <Box
-                ref={el => { if (request.id) assignButtonRefs.current[request.id] = el as HTMLDivElement | null; }}
-                sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, cursor: isEditable ? 'pointer' : 'not-allowed', opacity: isEditable ? 1 : 0.7, borderRadius: 2, px: 1, py: 0.5, '&:hover': isEditable ? { bgcolor: 'action.hover' } : {}, transition: 'background 0.2s' }}
-                onClick={() => isEditable && handleAssignDropdownOpen(request.id)}
-                tabIndex={isEditable ? 0 : -1}
-                aria-disabled={!isEditable}
-                role="button"
-              >
-                <Avatar sx={{ width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
-                  {request.assigned_to_user ? request.assigned_to_user.username[0]?.toUpperCase() : <PersonAddIcon fontSize="small" />}
-                </Avatar>
-                <Typography variant="body2" fontWeight={500} color="text.secondary">
-                  {request.assigned_to_user ? request.assigned_to_user.username : 'Nie przypisano'}
-                </Typography>
-              </Box>
-              <Menu
-                anchorEl={request?.id ? assignButtonRefs.current[request.id] ?? undefined : undefined}
-                open={assignDropdownOpenId === request.id}
-                onClose={handleAssignDropdownClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                PaperProps={{ sx: { minWidth: menuWidth } }}
-              >
-                {users.map(user => (
-                  <MenuItem
-                    key={user.id}
-                    selected={request.assigned_to_user?.id === user.id}
-                    onClick={() => {
-                      onAssign(request.id, user);
-                      handleAssignDropdownClose();
-                    }}
-                    disabled={!isEditable}
+              <Box sx={{ bgcolor: 'background.default', borderRadius: 3, minHeight: 80, color: 'text.secondary', fontStyle: 'italic', textAlign: 'center', fontSize: 15, mb: 3, p: 2 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.primary', fontWeight: 600, textAlign: 'left' }}>Komentarze</Typography>
+                <form onSubmit={handleAddComment} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <TextField
+                    inputRef={commentInputRef}
+                    value={commentValue}
+                    onChange={e => setCommentValue(e.target.value)}
+                    placeholder="Dodaj komentarz..."
+                    size="small"
+                    fullWidth
+                    multiline
+                    maxRows={4}
+                    inputProps={{ maxLength: 1000 }}
+                    sx={{ flex: 1, bgcolor: 'background.paper', borderRadius: 2 }}
+                    disabled={addingComment}
+                    onFocus={e => e.target.placeholder = ''}
+                    onBlur={e => e.target.placeholder = 'Dodaj komentarz...'}
+                  />
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={!commentValue.trim() || commentValue.length > 1000 || addingComment}
+                    sx={{ minWidth: 80, borderRadius: 2, fontWeight: 600 }}
                   >
-                    <Avatar sx={{ width: 24, height: 24, mr: 1 }}>{user.username[0]?.toUpperCase()}</Avatar>
-                    {user.username}
-                  </MenuItem>
-                ))}
-              </Menu>
-              {/* Zgłaszający */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
-                  {request.created_by_user?.username?.[0]?.toUpperCase() || '?'}
-                </Avatar>
-                <Typography variant="body2" fontWeight={500}>
-                  {request.created_by_user?.username || request.created_by}
+                    {addingComment ? <CircularProgress size={18} /> : 'Wyślij'}
+                  </Button>
+                </form>
+                {addError && <Typography color="error" sx={{ fontSize: 13, mt: 0.5 }}>{addError}</Typography>}
+                <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', textAlign: 'right', mt: 0.5 }}>{commentValue.length}/1000</Typography>
+                {commentsLoading ? (
+                  <Box sx={{ textAlign: 'center', py: 2 }}><CircularProgress size={22} /></Box>
+                ) : commentsError ? (
+                  <Typography color="error" sx={{ fontSize: 14 }}>{commentsError}</Typography>
+                ) : comments.length === 0 ? (
+                  <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 2 }}>Brak komentarzy.</Typography>
+                ) : (
+                  <Box ref={commentsListRef} sx={{ maxHeight: 400, overflowY: 'auto', mt: 1, pr: 1 }}>
+                    {comments.map(c => (
+                      <Fade in timeout={400} key={c.id}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            gap: 1.5,
+                            mb: 1.5,
+                            flexDirection: c.user?.id === userId ? 'row-reverse' : 'row',
+                            justifyContent: c.user?.id === userId ? 'flex-end' : 'flex-start',
+                          }}
+                        >
+                          <Avatar sx={{ width: 32, height: 32, fontSize: 16, bgcolor: c.user?.id === userId ? 'primary.light' : 'primary.main', color: 'white', fontWeight: 700 }}>
+                            {c.user?.username?.[0]?.toUpperCase() || '?'}
+                          </Avatar>
+                          <Box
+                            sx={{
+                              flex: 1,
+                              bgcolor: c.user?.id === userId ? 'primary.light' : 'background.paper',
+                              borderRadius: 3,
+                              px: 2,
+                              py: 1,
+                              boxShadow: 2,
+                              ml: c.user?.id === userId ? 0 : 1,
+                              mr: c.user?.id === userId ? 1 : 0,
+                              minWidth: 0,
+                              maxWidth: '80%',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: 14 }}>
+                              {c.user?.username || 'Użytkownik'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 13, mb: 0.5, wordBreak: 'break-word' }}>
+                              {c.content}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 11 }}>
+                              {new Date(c.created_at).toLocaleString('pl-PL')}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Fade>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+              {/* Przypisany */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, pl: 0, pr: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 90 }}>
+                  Przypisany
                 </Typography>
+                <Box
+                  ref={el => { if (request.id) assignButtonRefs.current[request.id] = el as HTMLDivElement | null; }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    cursor: isEditable ? 'pointer' : 'not-allowed',
+                    opacity: isEditable ? 1 : 0.7,
+                    borderRadius: 2,
+                    px: 1,
+                    py: 0.5,
+                    '&:hover': isEditable ? { bgcolor: 'action.hover' } : {},
+                    transition: 'background 0.2s'
+                  }}
+                  onClick={() => isEditable && handleAssignDropdownOpen(request.id)}
+                  tabIndex={isEditable ? 0 : -1}
+                  aria-disabled={!isEditable}
+                  role="button"
+                >
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
+                    {request.assigned_to_user ? request.assigned_to_user.username[0]?.toUpperCase() : <PersonAddIcon fontSize="small" />}
+                  </Avatar>
+                  <Typography variant="body2" fontWeight={500} color="text.secondary">
+                    {request.assigned_to_user ? request.assigned_to_user.username : 'Nie przypisano'}
+                  </Typography>
+                </Box>
+                <Menu
+                  anchorEl={request?.id ? assignButtonRefs.current[request.id] ?? undefined : undefined}
+                  open={assignDropdownOpenId === request.id}
+                  onClose={handleAssignDropdownClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  PaperProps={{ sx: { minWidth: menuWidth } }}
+                >
+                  {users.map(user => (
+                    <MenuItem
+                      key={user.id}
+                      selected={request.assigned_to_user?.id === user.id}
+                      onClick={() => {
+                        onAssign(request.id, user);
+                        handleAssignDropdownClose();
+                      }}
+                      disabled={!isEditable}
+                    >
+                      <Avatar sx={{ width: 24, height: 24, mr: 1 }}>{user.username[0]?.toUpperCase()}</Avatar>
+                      {user.username}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </Box>
+              {/* Zgłaszający */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, pl: 0, pr: 0 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ minWidth: 90 }}>
+                  Zgłaszający
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
+                    {request.created_by_user?.username?.[0]?.toUpperCase() || '?'}
+                  </Avatar>
+                  <Typography variant="body2" fontWeight={500}>
+                    {request.created_by_user?.username || request.created_by}
+                  </Typography>
+                </Box>
               </Box>
               {/* Pozostałe szczegóły ... */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -235,7 +375,88 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                   {request.description || 'Brak opisu'}
                 </Typography>
                 <Box sx={{ bgcolor: 'background.default', borderRadius: 3, minHeight: 80, color: 'text.secondary', fontStyle: 'italic', textAlign: 'center', fontSize: 15, mb: 3, p: 2 }}>
-                  Aktywność / komentarze (wkrótce)
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.primary', fontWeight: 600, textAlign: 'left' }}>Komentarze</Typography>
+                  <form onSubmit={handleAddComment} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <TextField
+                      inputRef={commentInputRef}
+                      value={commentValue}
+                      onChange={e => setCommentValue(e.target.value)}
+                      placeholder="Dodaj komentarz..."
+                      size="small"
+                      fullWidth
+                      multiline
+                      maxRows={4}
+                      inputProps={{ maxLength: 1000 }}
+                      sx={{ flex: 1, bgcolor: 'background.paper', borderRadius: 2 }}
+                      disabled={addingComment}
+                      onFocus={e => e.target.placeholder = ''}
+                      onBlur={e => e.target.placeholder = 'Dodaj komentarz...'}
+                    />
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      disabled={!commentValue.trim() || commentValue.length > 1000 || addingComment}
+                      sx={{ minWidth: 80, borderRadius: 2, fontWeight: 600 }}
+                    >
+                      {addingComment ? <CircularProgress size={18} /> : 'Wyślij'}
+                    </Button>
+                  </form>
+                  {addError && <Typography color="error" sx={{ fontSize: 13, mt: 0.5 }}>{addError}</Typography>}
+                  <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block', textAlign: 'right', mt: 0.5 }}>{commentValue.length}/1000</Typography>
+                  {commentsLoading ? (
+                    <Box sx={{ textAlign: 'center', py: 2 }}><CircularProgress size={22} /></Box>
+                  ) : commentsError ? (
+                    <Typography color="error" sx={{ fontSize: 14 }}>{commentsError}</Typography>
+                  ) : comments.length === 0 ? (
+                    <Typography sx={{ fontSize: 14, color: 'text.secondary', mt: 2 }}>Brak komentarzy.</Typography>
+                  ) : (
+                    <Box ref={commentsListRef} sx={{ maxHeight: 400, overflowY: 'auto', mt: 1, pr: 1 }}>
+                      {comments.map(c => (
+                        <Fade in timeout={400} key={c.id}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'flex-end',
+                              gap: 1.5,
+                              mb: 1.5,
+                              flexDirection: c.user?.id === userId ? 'row-reverse' : 'row',
+                              justifyContent: c.user?.id === userId ? 'flex-end' : 'flex-start',
+                            }}
+                          >
+                            <Avatar sx={{ width: 32, height: 32, fontSize: 16, bgcolor: c.user?.id === userId ? 'primary.light' : 'primary.main', color: 'white', fontWeight: 700 }}>
+                              {c.user?.username?.[0]?.toUpperCase() || '?'}
+                            </Avatar>
+                            <Box
+                              sx={{
+                                flex: 1,
+                                bgcolor: c.user?.id === userId ? 'primary.light' : 'background.paper',
+                                borderRadius: 3,
+                                px: 2,
+                                py: 1,
+                                boxShadow: 2,
+                                ml: c.user?.id === userId ? 0 : 1,
+                                mr: c.user?.id === userId ? 1 : 0,
+                                minWidth: 0,
+                                maxWidth: '80%',
+                                textAlign: 'left',
+                              }}
+                            >
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: 14 }}>
+                                {c.user?.username || 'Użytkownik'}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 13, mb: 0.5, wordBreak: 'break-word' }}>
+                                {c.content}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: 11 }}>
+                                {new Date(c.created_at).toLocaleString('pl-PL')}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Fade>
+                      ))}
+                    </Box>
+                  )}
                 </Box>
               </Grid>
               {/* Divider pionowy */}
@@ -247,53 +468,74 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2, color: 'text.secondary', letterSpacing: 1, fontSize: 16 }}>
                   Szczegóły
                 </Typography>
-                {/* Przypisanie użytkownika */}
-                <Box
-                  ref={el => { if (request.id) assignButtonRefs.current[request.id] = el as HTMLDivElement | null; }}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, cursor: isEditable ? 'pointer' : 'not-allowed', opacity: isEditable ? 1 : 0.7, borderRadius: 2, px: 1, py: 0.5, '&:hover': isEditable ? { bgcolor: 'action.hover' } : {}, transition: 'background 0.2s' }}
-                  onClick={() => isEditable && handleAssignDropdownOpen(request.id)}
-                  tabIndex={isEditable ? 0 : -1}
-                  aria-disabled={!isEditable}
-                  role="button"
-                >
-                  <Avatar sx={{ width: isMobile ? 36 : 32, height: isMobile ? 36 : 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
-                    {request.assigned_to_user ? request.assigned_to_user.username[0]?.toUpperCase() : <PersonAddIcon fontSize="small" />}
-                  </Avatar>
-                  <Typography variant="body2" fontWeight={500} color="text.secondary">
-                    {request.assigned_to_user ? request.assigned_to_user.username : 'Nie przypisano'}
+                {/* Przypisany */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, pl: 0, pr: 0 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 90 }}>
+                    Przypisany
                   </Typography>
+                  <Box
+                    ref={el => { if (request.id) assignButtonRefs.current[request.id] = el as HTMLDivElement | null; }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      cursor: isEditable ? 'pointer' : 'not-allowed',
+                      opacity: isEditable ? 1 : 0.7,
+                      borderRadius: 2,
+                      px: 1,
+                      py: 0.5,
+                      '&:hover': isEditable ? { bgcolor: 'action.hover' } : {},
+                      transition: 'background 0.2s'
+                    }}
+                    onClick={() => isEditable && handleAssignDropdownOpen(request.id)}
+                    tabIndex={isEditable ? 0 : -1}
+                    aria-disabled={!isEditable}
+                    role="button"
+                  >
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
+                      {request.assigned_to_user ? request.assigned_to_user.username[0]?.toUpperCase() : <PersonAddIcon fontSize="small" />}
+                    </Avatar>
+                    <Typography variant="body2" fontWeight={500} color="text.secondary">
+                      {request.assigned_to_user ? request.assigned_to_user.username : 'Nie przypisano'}
+                    </Typography>
+                  </Box>
+                  <Menu
+                    anchorEl={request?.id ? assignButtonRefs.current[request.id] ?? undefined : undefined}
+                    open={assignDropdownOpenId === request.id}
+                    onClose={handleAssignDropdownClose}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                    PaperProps={{ sx: { minWidth: menuWidth } }}
+                  >
+                    {users.map(user => (
+                      <MenuItem
+                        key={user.id}
+                        selected={request.assigned_to_user?.id === user.id}
+                        onClick={() => {
+                          onAssign(request.id, user);
+                          handleAssignDropdownClose();
+                        }}
+                        disabled={!isEditable}
+                      >
+                        <Avatar sx={{ width: 24, height: 24, mr: 1 }}>{user.username[0]?.toUpperCase()}</Avatar>
+                        {user.username}
+                      </MenuItem>
+                    ))}
+                  </Menu>
                 </Box>
-                <Menu
-                  anchorEl={request?.id ? assignButtonRefs.current[request.id] ?? undefined : undefined}
-                  open={assignDropdownOpenId === request.id}
-                  onClose={handleAssignDropdownClose}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                  PaperProps={{ sx: { minWidth: menuWidth } }}
-                >
-                  {users.map(user => (
-                    <MenuItem
-                      key={user.id}
-                      selected={request.assigned_to_user?.id === user.id}
-                      onClick={() => {
-                        onAssign(request.id, user);
-                        handleAssignDropdownClose();
-                      }}
-                      disabled={!isEditable}
-                    >
-                      <Avatar sx={{ width: 24, height: 24, mr: 1 }}>{user.username[0]?.toUpperCase()}</Avatar>
-                      {user.username}
-                    </MenuItem>
-                  ))}
-                </Menu>
                 {/* Zgłaszający */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
-                    {request.created_by_user?.username?.[0]?.toUpperCase() || '?'}
-                  </Avatar>
-                  <Typography variant="body2" fontWeight={500}>
-                    {request.created_by_user?.username || request.created_by}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, pl: 0, pr: 0 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 90 }}>
+                    Zgłaszający
                   </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'background.default', color: 'text.primary', fontWeight: 600 }}>
+                      {request.created_by_user?.username?.[0]?.toUpperCase() || '?'}
+                    </Avatar>
+                    <Typography variant="body2" fontWeight={500}>
+                      {request.created_by_user?.username || request.created_by}
+                    </Typography>
+                  </Box>
                 </Box>
                 {/* Pozostałe szczegóły ... */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
