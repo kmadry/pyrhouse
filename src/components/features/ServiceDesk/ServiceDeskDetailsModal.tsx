@@ -19,6 +19,7 @@ interface ServiceDeskDetailsModalProps {
   handleAssignDropdownClose: () => void;
   isEditable: boolean;
   onStatusChange: (id: string, newStatus: string) => void;
+  onPriorityChange: (id: string, newPriority: string) => void;
 }
 
 const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
@@ -35,7 +36,8 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
   handleAssignDropdownOpen,
   handleAssignDropdownClose,
   isEditable,
-  onStatusChange
+  onStatusChange,
+  onPriorityChange
 }) => {
   const {
     comments,
@@ -51,6 +53,17 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
   const [commentValue, setCommentValue] = React.useState('');
   const commentInputRef = React.useRef<HTMLInputElement>(null);
   const commentsListRef = React.useRef<HTMLDivElement>(null);
+  const [priorityMenuAnchor, setPriorityMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const priorityMenuOpen = Boolean(priorityMenuAnchor);
+
+  const handlePriorityChipClick = (e: React.MouseEvent<HTMLElement>) => {
+    if ((userRole === 'moderator' || userRole === 'admin') && isEditable) setPriorityMenuAnchor(e.currentTarget);
+  };
+  const handlePriorityMenuClose = () => setPriorityMenuAnchor(null);
+  const handlePrioritySelect = (priority: string) => {
+    onPriorityChange(request.id, priority);
+    handlePriorityMenuClose();
+  };
 
   React.useEffect(() => {
     if (open && request?.id) {
@@ -158,8 +171,20 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                   label={request.priority === 'high' ? 'Wysoki' : request.priority === 'medium' ? 'Średni' : 'Niski'}
                   color={request.priority === 'high' ? 'error' : request.priority === 'medium' ? 'warning' : 'default'}
                   size="medium"
-                  sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1, borderRadius: 2 }}
+                  sx={{ fontWeight: 600, fontSize: 16, px: 2, py: 1, borderRadius: 2, cursor: (userRole === 'moderator' || userRole === 'admin') && isEditable ? 'pointer' : 'default', opacity: (userRole === 'moderator' || userRole === 'admin') && isEditable ? 1 : 0.85 }}
+                  onClick={handlePriorityChipClick}
                 />
+                <Menu
+                  anchorEl={priorityMenuAnchor}
+                  open={priorityMenuOpen}
+                  onClose={handlePriorityMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                >
+                  <MenuItem selected={request.priority === 'high'} onClick={() => handlePrioritySelect('high')}>Wysoki</MenuItem>
+                  <MenuItem selected={request.priority === 'medium'} onClick={() => handlePrioritySelect('medium')}>Średni</MenuItem>
+                  <MenuItem selected={request.priority === 'low'} onClick={() => handlePrioritySelect('low')}>Niski</MenuItem>
+                </Menu>
                 {(userRole === 'moderator' || userRole === 'admin') ? (
                   <Select
                     value={request.status}
@@ -354,7 +379,24 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
               {/* Pozostałe szczegóły ... */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">Priorytet</Typography>
-                <Chip label={request.priority === 'high' ? 'Wysoki' : request.priority === 'medium' ? 'Średni' : 'Niski'} color={request.priority === 'high' ? 'error' : request.priority === 'medium' ? 'warning' : 'default'} size="small" />
+                <Chip
+                  label={request.priority === 'high' ? 'Wysoki' : request.priority === 'medium' ? 'Średni' : 'Niski'}
+                  color={request.priority === 'high' ? 'error' : request.priority === 'medium' ? 'warning' : 'default'}
+                  size="small"
+                  sx={{ cursor: (userRole === 'moderator' || userRole === 'admin') && isEditable ? 'pointer' : 'default', opacity: (userRole === 'moderator' || userRole === 'admin') && isEditable ? 1 : 0.85 }}
+                  onClick={handlePriorityChipClick}
+                />
+                <Menu
+                  anchorEl={priorityMenuAnchor}
+                  open={priorityMenuOpen}
+                  onClose={handlePriorityMenuClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                >
+                  <MenuItem selected={request.priority === 'high'} onClick={() => handlePrioritySelect('high')}>Wysoki</MenuItem>
+                  <MenuItem selected={request.priority === 'medium'} onClick={() => handlePrioritySelect('medium')}>Średni</MenuItem>
+                  <MenuItem selected={request.priority === 'low'} onClick={() => handlePrioritySelect('low')}>Niski</MenuItem>
+                </Menu>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="body2" color="text.secondary">Status</Typography>
@@ -584,7 +626,24 @@ const ServiceDeskDetailsModal: React.FC<ServiceDeskDetailsModalProps> = ({
                 {/* Pozostałe szczegóły ... */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">Priorytet</Typography>
-                  <Chip label={request.priority === 'high' ? 'Wysoki' : request.priority === 'medium' ? 'Średni' : 'Niski'} color={request.priority === 'high' ? 'error' : request.priority === 'medium' ? 'warning' : 'default'} size="small" />
+                  <Chip
+                    label={request.priority === 'high' ? 'Wysoki' : request.priority === 'medium' ? 'Średni' : 'Niski'}
+                    color={request.priority === 'high' ? 'error' : request.priority === 'medium' ? 'warning' : 'default'}
+                    size="small"
+                    sx={{ cursor: (userRole === 'moderator' || userRole === 'admin') && isEditable ? 'pointer' : 'default', opacity: (userRole === 'moderator' || userRole === 'admin') && isEditable ? 1 : 0.85 }}
+                    onClick={handlePriorityChipClick}
+                  />
+                  <Menu
+                    anchorEl={priorityMenuAnchor}
+                    open={priorityMenuOpen}
+                    onClose={handlePriorityMenuClose}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                  >
+                    <MenuItem selected={request.priority === 'high'} onClick={() => handlePrioritySelect('high')}>Wysoki</MenuItem>
+                    <MenuItem selected={request.priority === 'medium'} onClick={() => handlePrioritySelect('medium')}>Średni</MenuItem>
+                    <MenuItem selected={request.priority === 'low'} onClick={() => handlePrioritySelect('low')}>Niski</MenuItem>
+                  </Menu>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="body2" color="text.secondary">Status</Typography>

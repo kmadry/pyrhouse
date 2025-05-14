@@ -154,6 +154,34 @@ const ServiceDeskPage: React.FC = () => {
 
   const handleAssignDropdownClose = () => setAssignDropdownOpenId(null);
 
+  const changePriority = async (id: string, newPriority: string, onSuccess?: () => void) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(getApiUrl(`/service-desk/requests/${id}/priority`), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ priority: newPriority }),
+      });
+      if (!res.ok) throw new Error('Błąd zmiany priorytetu');
+      showSnackbar('success', 'Priorytet zmieniony pomyślnie');
+      onSuccess?.();
+    } catch (e) {
+      showSnackbar('error', 'Nie udało się zmienić priorytetu');
+    }
+  };
+
+  const handlePriorityChange = async (id: string, newPriority: string) => {
+    await changePriority(id, newPriority, () => {
+      refresh();
+      if (selectedRequest) {
+        setSelectedRequest((prev: any) => ({ ...prev, priority: newPriority }));
+      }
+    });
+  };
+
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 0.5, sm: 1, md: 4 } }}>
       <Box sx={{
@@ -339,6 +367,7 @@ const ServiceDeskPage: React.FC = () => {
         handleAssignDropdownClose={handleAssignDropdownClose}
         isEditable={isEditable}
         onStatusChange={handleStatusChange}
+        onPriorityChange={handlePriorityChange}
       />
       <Dialog 
         open={openForm} 
