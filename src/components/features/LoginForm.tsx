@@ -14,7 +14,8 @@ import {
   Fade,
   Divider,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Alert
 } from '@mui/material';
 import { 
   Visibility, 
@@ -31,6 +32,7 @@ import { hyperJumpAnimation, starStreakAnimation } from '../../animations/keyfra
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { jwtDecode } from 'jwt-decode';
+import { registerUser } from '../../services/userService';
 
 // Mapowanie komunikatów błędów na polskie tłumaczenia
 const errorMessages: Record<string, string> = {
@@ -49,6 +51,11 @@ const LoginForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isHyperJumping, setIsHyperJumping] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [fullname, setFullname] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [registerError, setRegisterError] = useState('');
   const navigate = useNavigate();
   const theme = useTheme();
   const { setToken, setUsername: setStoredUsername } = useStorage();
@@ -140,6 +147,27 @@ const LoginForm: React.FC = () => {
 
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setRegisterLoading(true);
+    setRegisterError('');
+    setRegisterSuccess(false);
+    try {
+      await registerUser(username, password, fullname);
+      setRegisterSuccess(true);
+      setIsRegistering(false);
+      setFullname('');
+      setUsername('');
+      setPassword('');
+      showSnackbar('success', 'Zarejestrowano pomyślnie. Możesz się teraz zalogować.');
+    } catch (err: any) {
+      setRegisterError(err.message || 'Wystąpił błąd');
+      showSnackbar('error', err.message || 'Wystąpił błąd');
+    } finally {
+      setRegisterLoading(false);
+    }
   };
 
   return (
@@ -259,7 +287,20 @@ const LoginForm: React.FC = () => {
               </Typography>
             </Box>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={isRegistering ? handleRegister : handleSubmit}>
+              {isRegistering && (
+                <TextField
+                  label="Imię (i nazwisko jeśli chcesz)"
+                  variant="outlined"
+                  fullWidth
+                  value={fullname}
+                  onChange={e => setFullname(e.target.value)}
+                  required
+                  sx={{ mb: 3, mt: 1 }}
+                  inputProps={{ maxLength: 60, minLength: 2 }}
+                  disabled={registerLoading}
+                />
+              )}
               <TextField
                 id="username-field"
                 label="Nazwa użytkownika"
@@ -272,26 +313,12 @@ const LoginForm: React.FC = () => {
                 autoCorrect="off"
                 inputProps={{
                   autoComplete: 'username',
-                  spellCheck: 'false'
+                  spellCheck: 'false',
+                  maxLength: 32,
+                  minLength: 3
                 }}
-                sx={{ 
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.palette.primary.main,
-                      }
-                    },
-                    '&.Mui-focused': {
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderWidth: 2,
-                      }
-                    }
-                  }
-                }}
-                disabled={isLoading}
+                sx={{ mb: 3 }}
+                disabled={isLoading || registerLoading}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -308,24 +335,9 @@ const LoginForm: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                sx={{ 
-                  mb: 3,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: theme.palette.primary.main,
-                      }
-                    },
-                    '&.Mui-focused': {
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderWidth: 2,
-                      }
-                    }
-                  }
-                }}
-                disabled={isLoading}
+                sx={{ mb: 3 }}
+                inputProps={{ minLength: 4, maxLength: 64, autoComplete: 'current-password' }}
+                disabled={isLoading || registerLoading}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -338,6 +350,7 @@ const LoginForm: React.FC = () => {
                         aria-label="toggle password visibility"
                         onClick={handleTogglePasswordVisibility}
                         edge="end"
+                        disabled={isLoading || registerLoading}
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
@@ -345,32 +358,38 @@ const LoginForm: React.FC = () => {
                   ),
                 }}
               />
-              <Button 
-                variant="contained" 
-                color="primary" 
-                type="submit" 
-                fullWidth
-                disabled={isLoading}
-                sx={{ 
-                  py: 1.5,
-                  borderRadius: 1,
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  textTransform: 'none',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    boxShadow: prefersAnimations ? '0 6px 16px rgba(0, 0, 0, 0.2)' : '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    transform: prefersAnimations ? 'translateY(-2px)' : 'none',
-                  },
-                  '&:active': {
-                    transform: 'translateY(0)',
-                  }
-                }}
-                startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
-              >
-                {isLoading ? 'Logowanie...' : 'Zaloguj się'}
-              </Button>
+              {isRegistering && registerError && (
+                <Alert severity="error" sx={{ mb: 2 }}>{registerError}</Alert>
+              )}
+              {isRegistering && registerSuccess && (
+                <Alert severity="success" sx={{ mb: 2 }}>Zarejestrowano pomyślnie! Możesz się teraz zalogować.</Alert>
+              )}
+              {!isRegistering && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  fullWidth
+                  disabled={isLoading}
+                  sx={{ py: 1.5, borderRadius: 1, fontWeight: 600, fontSize: '1rem', textTransform: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', mb: 1 }}
+                  startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
+                >
+                  {isLoading ? 'Logowanie...' : 'Zaloguj się'}
+                </Button>
+              )}
+              {isRegistering && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  fullWidth
+                  disabled={registerLoading}
+                  sx={{ py: 1.5, borderRadius: 1, fontWeight: 600, fontSize: '1rem', textTransform: 'none', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', mb: 1 }}
+                  startIcon={registerLoading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
+                >
+                  {registerLoading ? 'Rejestracja...' : 'Zarejestruj się'}
+                </Button>
+              )}
             </form>
 
             <Divider sx={{ my: 3 }} />
@@ -396,6 +415,25 @@ const LoginForm: React.FC = () => {
                   </Box>
                 }
               />
+            </Box>
+
+            <Box sx={{ textAlign: 'center', mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                {isRegistering ? 'Masz już konto?' : 'Nie masz konta?'}{' '}
+                <Button
+                  variant="text"
+                  color="primary"
+                  sx={{ fontWeight: 600, textTransform: 'none', ml: 0.5, p: 0, minWidth: 0 }}
+                  onClick={() => {
+                    setIsRegistering(!isRegistering);
+                    setRegisterError('');
+                    setRegisterSuccess(false);
+                  }}
+                  disableRipple
+                >
+                  {isRegistering ? 'Zaloguj się' : 'Zarejestruj się'}
+                </Button>
+              </Typography>
             </Box>
 
             <Box sx={{ textAlign: 'center' }}>

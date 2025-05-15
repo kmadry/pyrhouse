@@ -508,7 +508,7 @@ const UserDetailsPage: React.FC = () => {
                     margin="normal"
                   />
                   <TextField
-                    label="Nazwa użytkownika"
+                    label="Nazwa użytkownika / Pseudonim"
                     name="username"
                     value={editedUser.username}
                     onChange={handleInputChange}

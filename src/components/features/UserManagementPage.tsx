@@ -25,11 +25,14 @@ import {
   useTheme,
   Divider,
   Chip,
+  Switch,
+  Tooltip,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { getApiUrl } from '../../config/api';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { AppSnackbar } from '../ui/AppSnackbar';
+import { jwtDecode } from 'jwt-decode';
 const AddIcon = lazy(() => import('@mui/icons-material/Add'));
 const PersonIcon = lazy(() => import('@mui/icons-material/Person'));
 const AdminPanelSettingsIcon = lazy(() => import('@mui/icons-material/AdminPanelSettings'));
@@ -52,6 +55,7 @@ const UserManagementPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+  const [loadingIds, setLoadingIds] = useState<number[]>([]);
 
   useEffect(() => {
     fetchUsers();
@@ -150,6 +154,124 @@ const UserManagementPage: React.FC = () => {
     user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const getCurrentUserId = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    try {
+      const decoded = jwtDecode(token) as any;
+      return decoded.userID;
+    } catch {
+      return null;
+    }
+  };
+
+  const getCurrentUserRole = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    try {
+      const decoded = jwtDecode(token) as any;
+      return decoded.role;
+    } catch {
+      return null;
+    }
+  };
+
+  const isAdmin = getCurrentUserRole() === 'admin';
+  const currentUserId = getCurrentUserId();
+
+  const handleToggleActive = async (user: any) => {
+    if (!isAdmin) return;
+    if (user.id === currentUserId) {
+      showSnackbar('warning', 'Nie możesz dezaktywować własnego konta!');
+      return;
+    }
+    setLoadingIds(ids => [...ids, user.id]);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/users/${user.id}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ active: !user.active }),
+      });
+      if (!response.ok) throw new Error('Nie udało się zmienić statusu aktywności');
+      showSnackbar('success', `Użytkownik został ${user.active ? 'dezaktywowany' : 'aktywowany'}`);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, active: !user.active } : u));
+    } catch (err: any) {
+      showSnackbar('error', err.message || 'Błąd podczas zmiany aktywności');
+    } finally {
+      setLoadingIds(ids => ids.filter(id => id !== user.id));
+    }
+  };
+
+  const renderMobileCards = () => (
+    <Grid container spacing={2}>
+      {filteredUsers.map((user) => (
+        <Grid item xs={12} key={user.id}>
+          <Card 
+            onClick={() => navigate(`/users/${user.id}`, { state: { from: '/users' } })}
+            sx={{ 
+              borderRadius: 2,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: 'action.hover',
+              },
+              transition: 'background-color 0.2s ease'
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 500 }}>
+                  ID: {user.id}
+                </Typography>
+                <Chip 
+                  icon={getRoleIcon(user.role)}
+                  label={user.role} 
+                  color={getRoleColor(user.role)}
+                  size="small"
+                />
+              </Box>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Nazwa użytkownika / Pseudonim:</Typography>
+                  <Typography variant="body2">{user.username}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" color="text.secondary">Imię i nazwisko:</Typography>
+                  <Typography variant="body2">{user.fullname}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">Aktywny:</Typography>
+                  {isAdmin ? (
+                    <Switch
+                      checked={user.active}
+                      color={user.active ? 'primary' : 'default'}
+                      disabled={!isAdmin || user.id === currentUserId || loadingIds.includes(user.id)}
+                      onClick={e => e.stopPropagation()}
+                      onChange={() => handleToggleActive(user)}
+                      inputProps={{ 'aria-label': 'toggle active' }}
+                    />
+                  ) : (
+                    <Chip
+                      label={user.active ? 'Aktywny' : 'Nieaktywny'}
+                      color={user.active ? 'primary' : 'default'}
+                      size="small"
+                      variant="outlined"
+                    />
+                  )}
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+
   const renderTable = () => (
     <TableContainer 
       component={Paper} 
@@ -162,7 +284,7 @@ const UserManagementPage: React.FC = () => {
       <Table>
         <TableHead>
           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-            {['ID', 'Ksywa', 'Imię i Nazwisko', 'Rola'].map((field) => (
+            {["ID", "Ksywa", "Imię i Nazwisko", "Rola", "Aktywny"].map((field) => (
               <TableCell 
                 key={field} 
                 sx={{ 
@@ -212,59 +334,34 @@ const UserManagementPage: React.FC = () => {
                   size="small"
                 />
               </TableCell>
+              <TableCell>
+                {isAdmin ? (
+                  <Tooltip title={user.active ? 'Aktywny' : 'Nieaktywny'}>
+                    <span>
+                      <Switch
+                        checked={user.active}
+                        color={user.active ? 'primary' : 'default'}
+                        disabled={!isAdmin || user.id === currentUserId || loadingIds.includes(user.id)}
+                        onClick={e => e.stopPropagation()}
+                        onChange={() => handleToggleActive(user)}
+                        inputProps={{ 'aria-label': 'toggle active' }}
+                      />
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <Chip
+                    label={user.active ? 'Aktywny' : 'Nieaktywny'}
+                    color={user.active ? 'primary' : 'default'}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </TableContainer>
-  );
-
-  const renderMobileCards = () => (
-    <Grid container spacing={2}>
-      {filteredUsers.map((user) => (
-        <Grid item xs={12} key={user.id}>
-          <Card 
-            onClick={() => navigate(`/users/${user.id}`, { state: { from: '/users' } })}
-            sx={{ 
-              borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-              cursor: 'pointer',
-              '&:hover': {
-                bgcolor: 'action.hover',
-              },
-              transition: 'background-color 0.2s ease'
-            }}
-          >
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="h6" component="div" sx={{ fontWeight: 500 }}>
-                  ID: {user.id}
-                </Typography>
-                <Chip 
-                  icon={getRoleIcon(user.role)}
-                  label={user.role} 
-                  color={getRoleColor(user.role)}
-                  size="small"
-                />
-              </Box>
-              
-              <Divider sx={{ my: 1 }} />
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Nick:</Typography>
-                  <Typography variant="body2">{user.username}</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">Imię i nazwisko:</Typography>
-                  <Typography variant="body2">{user.fullname}</Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
-    </Grid>
   );
 
   if (error) {

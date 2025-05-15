@@ -12,6 +12,7 @@ import LoadingSkeleton from './components/ui/LoadingSkeleton';
 import QuestLoadingBar from './components/features/QuestLoadingBar';
 import ServiceDeskPage from './components/features/ServiceDeskPage';
 import PublicServiceDeskForm from './components/features/PublicServiceDeskForm';
+import RequireRole from './components/features/RequireRole';
 
 // Lazy loaded components
 const UserManagementPage = lazy(() => import('./components/features/UserManagementPage'));
@@ -78,11 +79,13 @@ function App() {
             
             {/* Lazy loaded routes */}
             <Route path="users" element={
-              <ErrorBoundary>
-              <Suspense fallback={<LoadingSkeleton />}>
-                <UserManagementPage />
-              </Suspense>
-              </ErrorBoundary>
+              <RequireRole allowed={['admin', 'moderator']}>
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingSkeleton />}>
+                    <UserManagementPage />
+                  </Suspense>
+                </ErrorBoundary>
+              </RequireRole>
             } />
             <Route path="users/:id" element={
               <ErrorBoundary>
