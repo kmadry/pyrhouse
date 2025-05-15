@@ -17,9 +17,9 @@ import { useStorage } from '../../hooks/useStorage';
 import { getApiUrl } from '../../config/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import QuestLoadingBar from './QuestLoadingBar';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
+import LoadingSkeleton from '../ui/LoadingSkeleton';
 
 interface Quest {
   recipient: string;
@@ -312,7 +312,11 @@ const QuestBoardPage: React.FC = () => {
   );
 
   if (loading) {
-    return <QuestLoadingBar />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+        <LoadingSkeleton />
+      </Box>
+    );
   }
 
   if (error) {

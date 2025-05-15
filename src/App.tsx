@@ -9,7 +9,6 @@ import TransferPage from './components/features/TransferPage';
 import AddItemPage from './components/features/AddItemPage';
 import { ThemeProvider } from './theme/ThemeContext';
 import LoadingSkeleton from './components/ui/LoadingSkeleton';
-import QuestLoadingBar from './components/features/QuestLoadingBar';
 import ServiceDeskPage from './components/features/ServiceDeskPage';
 import PublicServiceDeskForm from './components/features/PublicServiceDeskForm';
 import RequireRole from './components/features/RequireRole';
@@ -117,7 +116,7 @@ function App() {
             } />
             <Route path="quests" element={
               <ErrorBoundary>
-              <Suspense fallback={<QuestLoadingBar />}>
+              <Suspense fallback={<LoadingSkeleton />}>
                 <QuestBoard />
               </Suspense>
               </ErrorBoundary>
