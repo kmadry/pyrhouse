@@ -9,7 +9,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  CircularProgress,
   Button,
   Chip,
   TextField,
@@ -19,12 +18,20 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
+  MenuItem,
+  Select,
+  FormControl,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTransfers } from '../../hooks/useTransfers';
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import debounce from 'lodash/debounce';
+import LoadingSkeleton from '../ui/LoadingSkeleton';
+import Autocomplete from '@mui/material/Autocomplete';
+import { Location } from '../../models/Location';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
 
 const LocalShippingIcon = lazy(() => import('@mui/icons-material/LocalShipping'));
 const CheckCircleIcon = lazy(() => import('@mui/icons-material/CheckCircle'));
@@ -36,9 +43,22 @@ const TransfersListPage: React.FC = () => {
   const { transfers, loading, error, refreshTransfers } = useTransfers();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [fromLocationFilter, setFromLocationFilter] = useState<Location | null>(null);
+  const [toLocationFilter, setToLocationFilter] = useState<Location | null>(null);
+  const [dateFilter, setDateFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const allLocations = React.useMemo(() => {
+    const froms = transfers.map(t => t.from_location);
+    const tos = transfers.map(t => t.to_location);
+    const all = [...froms, ...tos];
+    // Unikalne lokalizacje po id
+    return all.filter((loc, idx, arr) => arr.findIndex(l => l.id === loc.id) === idx);
+  }, [transfers]);
 
   // Pobierz dane tylko raz przy montowaniu komponentu
   useEffect(() => {
@@ -51,6 +71,48 @@ const TransfersListPage: React.FC = () => {
     }
   }, [error]);
 
+  // Przy starcie: ustaw filtry na podstawie query params
+  useEffect(() => {
+    const fromId = searchParams.get('from');
+    const toId = searchParams.get('to');
+    const date = searchParams.get('date') || '';
+    const status = searchParams.get('status') || '';
+    const q = searchParams.get('q') || '';
+
+    if (fromId && allLocations.length) {
+      const found = allLocations.find(l => String(l.id) === fromId);
+      if (
+        found
+      ) {
+        setFromLocationFilter(found as Location);
+      }
+    }
+    if (toId && allLocations.length) {
+      const found = allLocations.find(l => String(l.id) === toId);
+      if (
+        found
+      ) {
+        setToLocationFilter(found as Location);
+      }
+    }
+    setDateFilter(date);
+    setStatusFilter(status);
+    setSearchQuery(q);
+    // eslint-disable-next-line
+  }, [allLocations]);
+
+  // Aktualizuj query params przy każdej zmianie filtrów
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (fromLocationFilter) params.from = String(fromLocationFilter.id);
+    if (toLocationFilter) params.to = String(toLocationFilter.id);
+    if (dateFilter) params.date = dateFilter;
+    if (statusFilter) params.status = statusFilter;
+    if (searchQuery) params.q = searchQuery;
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line
+  }, [fromLocationFilter, toLocationFilter, dateFilter, statusFilter, searchQuery]);
+
   // Zoptymalizowane wyszukiwanie z debounce
   const debouncedSearch = useCallback(
     debounce((query: string) => {
@@ -59,31 +121,57 @@ const TransfersListPage: React.FC = () => {
     []
   );
 
+  const allDates = React.useMemo(() => {
+    return Array.from(new Set(transfers.map(t => new Date(t.transfer_date).toLocaleDateString('pl-PL'))));
+  }, [transfers]);
+
   // Sort transfers by date (newest first) and then by status
   const sortedTransfers = React.useMemo(() => {
     return [...transfers]
       .sort((a, b) => {
-        // First sort by date (newest first)
         const dateComparison = new Date(b.transfer_date).getTime() - new Date(a.transfer_date).getTime();
         if (dateComparison !== 0) return dateComparison;
-        
-        // If dates are equal, sort by status
         if (a.status === 'in_transit' && b.status !== 'in_transit') return -1;
         if (a.status !== 'in_transit' && b.status === 'in_transit') return 1;
         return 0;
       })
-      .filter(transfer => 
+      .filter(transfer =>
         transfer.id.toString().includes(searchQuery.toLowerCase()) ||
         transfer.from_location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.to_location.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.status.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-  }, [transfers, searchQuery]);
+      )
+      .filter(transfer => {
+        if (fromLocationFilter) {
+          return transfer.from_location.id === fromLocationFilter.id;
+        }
+        return true;
+      })
+      .filter(transfer => {
+        if (toLocationFilter) {
+          return transfer.to_location.id === toLocationFilter.id;
+        }
+        return true;
+      })
+      .filter(transfer => {
+        if (dateFilter) {
+          const transferDate = new Date(transfer.transfer_date).toLocaleDateString('pl-PL');
+          return transferDate === dateFilter;
+        }
+        return true;
+      })
+      .filter(transfer => {
+        if (statusFilter) {
+          return transfer.status === statusFilter;
+        }
+        return true;
+      });
+  }, [transfers, searchQuery, fromLocationFilter, toLocationFilter, dateFilter, statusFilter]);
 
   const getStatusChip = (status: string) => {
     switch (status) {
       case 'in_transit':
-        return <Chip icon={<LocalShippingIcon />} label="W trasie" color="warning" />;
+        return <Chip icon={<LocalShippingIcon />} label="W trasie" color="warning" sx={{ animation: 'pulse 2s infinite' }} />;
       case 'completed':
         return <Chip icon={<CheckCircleIcon />} label="Dostarczony" color="success" />;
       case 'created':
@@ -266,42 +354,104 @@ const TransfersListPage: React.FC = () => {
         </Button>
       </Box>
 
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', md: 'row' }, 
-        gap: 2, 
-        marginBottom: 3,
-        backgroundColor: 'background.default',
-        p: 2,
-        borderRadius: 1
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1.5,
+          alignItems: 'center',
+          mb: 2,
+          backgroundColor: 'background.default',
+          borderRadius: 1,
+          p: { xs: 1, sm: 1.5 },
+          boxShadow: '0 1px 4px rgba(0,0,0,0.03)'
+        }}
+      >
         <TextField
-          label="Szukaj transferów..."
+          size="small"
           variant="outlined"
-          onChange={(e) => debouncedSearch(e.target.value)}
-          fullWidth
-          placeholder="Wyszukaj po ID, lokalizacji lub statusie..."
-          sx={{ flex: 1 }}
+          placeholder="Szukaj po ID, lokalizacji lub statusie..."
+          onChange={e => debouncedSearch(e.target.value)}
           InputProps={{
+            startAdornment: (
+              <SearchIcon sx={{ color: 'action.active', mr: 1, fontSize: 20 }} />
+            ),
             sx: { borderRadius: 1 }
           }}
+          sx={{ minWidth: 150, maxWidth: 220, flex: 2 }}
         />
+        <Autocomplete
+          size="small"
+          options={allLocations}
+          getOptionLabel={option => option.name}
+          value={fromLocationFilter}
+          onChange={(_, value) => setFromLocationFilter(value as Location | null)}
+          isOptionEqualToValue={(option, value) => option.id === value?.id}
+          renderInput={params => (
+            <TextField {...params} label="Z lokalizacji" variant="outlined" size="small" />
+          )}
+          sx={{ minWidth: 150, flex: 1 }}
+        />
+        <Autocomplete
+          size="small"
+          options={allLocations}
+          getOptionLabel={option => option.name}
+          value={toLocationFilter}
+          onChange={(_, value) => setToLocationFilter(value as Location | null)}
+          isOptionEqualToValue={(option, value) => option.id === value?.id}
+          renderInput={params => (
+            <TextField {...params} label="Do lokalizacji" variant="outlined" size="small" />
+          )}
+          sx={{ minWidth: 150, flex: 1 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+          <Select
+            value={dateFilter}
+            onChange={e => setDateFilter(e.target.value)}
+            displayEmpty
+            sx={{ borderRadius: 0 }}
+          >
+            <MenuItem value="">Data</MenuItem>
+            {allDates.map(date => (
+              <MenuItem key={date} value={date}>{date}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 120, flex: 1 }}>
+          <Select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            displayEmpty
+            sx={{ borderRadius: 0 }}
+          >
+            <MenuItem value="">Status</MenuItem>
+            <MenuItem value="in_transit">W trasie</MenuItem>
+            <MenuItem value="completed">Dostarczony</MenuItem>
+            <MenuItem value="created">Utworzony</MenuItem>
+            <MenuItem value="cancelled">Anulowany</MenuItem>
+          </Select>
+        </FormControl>
+        {(fromLocationFilter || toLocationFilter || dateFilter || statusFilter || searchQuery) && (
+          <Button
+            size="small"
+            variant="outlined"
+            color="secondary"
+            onClick={() => {
+              setFromLocationFilter(null);
+              setToLocationFilter(null);
+              setDateFilter('');
+              setStatusFilter('');
+              setSearchQuery('');
+            }}
+            sx={{ ml: 1, minWidth: 36, px: 1 }}
+          >
+            <ClearAllIcon fontSize="small" />
+          </Button>
+        )}
       </Box>
 
       {loading ? (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          p: 5,
-          flexDirection: 'column',
-          gap: 2
-        }}>
-          <CircularProgress size={40} />
-          <Typography variant="body1" color="text.secondary">
-            Ładowanie questów...
-          </Typography>
-        </Box>
+        <LoadingSkeleton />
       ) : sortedTransfers.length === 0 ? (
         <Box sx={{ 
           textAlign: 'center', 

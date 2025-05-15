@@ -336,6 +336,21 @@ const EquipmentDetails: React.FC = () => {
   // Dodaj funkcję sprawdzającą uprawnienia
   const canEditQuantity = userRole === 'admin' || userRole === 'moderator';
 
+  const getStatusChip = (status: string) => {
+    switch (status) {
+      case 'in_stock':
+      case 'available':
+        return <Chip label="Na Stanie" color="success" />;
+      case 'in_transit':
+        return <Chip label="W trasie" color="warning" sx={{ animation: 'pulse 2s infinite' }} />;
+      case 'delivered':
+      case 'located':
+        return <Chip label="W lokacji" color="success" />;
+      default:
+        return <Chip label="Nieznany" color="default" />;
+    }
+  };
+
   // Funkcja do zapisu numeru seryjnego
   const handleSaveSerial = async () => {
     if (!serialInput.trim()) {
@@ -818,12 +833,7 @@ const EquipmentDetails: React.FC = () => {
                     Status
                   </Typography>
                 </Box>
-                <Chip
-                  label={details.status === 'in_stock' ? 'W magazynie' : 'W transporcie'}
-                  color={details.status === 'in_stock' ? 'success' : 'warning'}
-                  size="small"
-                  sx={{ fontWeight: 600 }}
-                />
+                {getStatusChip(details.status)}
               </Box>
             )}
             {type === 'asset' && details.pyrcode && (

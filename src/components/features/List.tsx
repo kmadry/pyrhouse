@@ -24,6 +24,10 @@ import {
   Divider,
   Tooltip,
   IconButton,
+  Checkbox,
+  ListItemText,
+  InputLabel,
+  FormControl,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useLocations } from '../../hooks/useLocations';
@@ -77,7 +81,6 @@ const Inventory2Icon = lazy(() => import('@mui/icons-material/Inventory2'));
 const ClearAllIcon = lazy(() => import('@mui/icons-material/ClearAll'));
 const WarehouseIcon = lazy(() => import('@mui/icons-material/Warehouse'));
 const SearchIcon = lazy(() => import('@mui/icons-material/Search'));
-const LocationOnIcon = lazy(() => import('@mui/icons-material/LocationOn'));
 const CategoryIcon = lazy(() => import('@mui/icons-material/Category'));
 
 const EquipmentList: React.FC = () => {
@@ -90,7 +93,7 @@ const EquipmentList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  const { locations, loading: locationsLoading, refetch: fetchLocations } = useLocations();
+  const { locations, refetch: fetchLocations } = useLocations();
   const { categories, loading: categoriesLoading } = useCategories();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
 
@@ -673,7 +676,8 @@ const EquipmentList: React.FC = () => {
           p: 1.5,
           borderTop: '1px solid',
           borderColor: 'divider',
-          backgroundColor: 'background.paper'
+          backgroundColor: 'background.paper',
+          alignItems: { xs: 'stretch', md: 'flex-end' },
         }}>
           <TextField
             label="Filtruj po PYR_CODE"
@@ -681,7 +685,12 @@ const EquipmentList: React.FC = () => {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             size="small"
-            sx={{ flex: 1 }}
+            sx={{ 
+              minWidth: { xs: '100%', md: 220 },
+              maxWidth: 300,
+              flexBasis: 0,
+              flexGrow: 1,
+            }}
             aria-label="Filtruj po kodzie PYR"
             InputProps={{
               sx: { 
@@ -697,106 +706,33 @@ const EquipmentList: React.FC = () => {
               )
             }}
           />
-          <Autocomplete<Location, true, false, false>
-            multiple
-            options={locations}
-            getOptionLabel={(option: Location) => `${option.name}`}
-            value={selectedLocations}
-            loading={locationsLoading}
-            onChange={(_, value) => setSelectedLocations(value)}
-            size="small"
-            limitTags={isMobile ? 1 : 2}
-            renderInput={(params) => (
-              <TextField 
-                {...params} 
-                label={selectedLocations.length > 0 ? `Wybrano ${selectedLocations.length} lokalizacji` : "Filtruj po lokalizacjach"}
-                variant="outlined"
-                InputProps={{
-                  ...params.InputProps,
-                  sx: { 
-                    borderRadius: 1,
-                    minHeight: '36px',
-                    height: 'auto',
-                    padding: '4px',
-                    '& .MuiAutocomplete-input': {
-                      height: '28px',
-                      padding: '0 8px',
-                    },
-                    '& .MuiInputAdornment-root': {
-                      height: '36px',
-                    }
-                  },
-                  startAdornment: (
-                    <>
-                      <Suspense fallback={null}><LocationOnIcon /></Suspense>
-                    </>
-                  ),
-                  endAdornment: (
-                    <>
-                      {locationsLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                }}
-              />
-            )}
-            renderOption={(props, option: Location) => (
-              <li {...props} key={option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Suspense fallback={null}><LocationOnIcon /></Suspense>
-                  <Typography component="span">{option.name}</Typography>
-                </Box>
-              </li>
-            )}
-            renderTags={(tagValue, getTagProps) =>
-              tagValue.map((option, index) => {
-                const { key, ...rest } = getTagProps({ index });
-                return (
-                  <Chip
-                    label={option.name}
-                    {...rest}
-                    key={key}
-                    size="small"
-                    sx={{
-                      m: 0.25,
-                      height: '24px',
-                      maxWidth: { xs: '120px', sm: '150px' },
-                      '& .MuiChip-label': {
-                        px: 1,
-                        fontSize: '0.75rem',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      },
-                      '& .MuiChip-deleteIcon': {
-                        fontSize: '16px',
-                        margin: '0 2px',
-                        color: 'inherit',
-                        '&:hover': {
-                          color: 'error.main',
-                        },
-                      },
-                    }}
-                  />
-                );
-              })
-            }
-            isOptionEqualToValue={(option: Location, value: Location) => option.id === value.id}
-            sx={{ 
-              flex: 1,
-              '& .MuiAutocomplete-tag': {
-                margin: '2px',
-              },
-              '& .MuiInputBase-root': {
-                flexWrap: 'wrap',
-                gap: 0.5,
-                padding: '2px 4px',
-                minHeight: '36px',
-                height: 'auto',
-              },
-            }}
-            aria-label="Wybierz lokalizacje"
-          />
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 220 }, maxWidth: 300, flexBasis: 0, flexGrow: 1 }}>
+            <InputLabel id="location-select-label">Filtruj po lokalizacjach</InputLabel>
+            <Select
+              labelId="location-select-label"
+              multiple
+              value={selectedLocations.map(l => l.id)}
+              onChange={e => {
+                const ids = e.target.value as number[];
+                setSelectedLocations(locations.filter(loc => ids.includes(loc.id)));
+              }}
+              label="Filtruj po lokalizacjach"
+              renderValue={(selected) => {
+                const ids = selected as number[];
+                const names = locations.filter(loc => ids.includes(loc.id)).map(loc => loc.name);
+                return names.join(', ');
+              }}
+              sx={{ minWidth: { xs: '100%', md: 220 }, maxWidth: 300, flexBasis: 0, flexGrow: 1, borderRadius: 0 }}
+              aria-label="Wybierz lokalizacje"
+            >
+              {locations.map((loc) => (
+                <MenuItem key={loc.id} value={loc.id}>
+                  <Checkbox checked={selectedLocations.some(l => l.id === loc.id)} />
+                  <ListItemText primary={loc.name} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <Autocomplete<Category, false, false, false>
             options={categories}
             getOptionLabel={(option: Category) => option.label}
@@ -830,7 +766,8 @@ const EquipmentList: React.FC = () => {
               </li>
             )}
             isOptionEqualToValue={(option: Category | null, value: Category | null) => option?.id === value?.id}
-            sx={{ flex: 1 }}
+            sx={{ flex: 1, minWidth: { xs: '100%', md: 220 }, maxWidth: 300, flexBasis: 0, flexGrow: 1 }}
+            
             aria-label="Wybierz kategorię"
           />
           <Select

@@ -30,7 +30,7 @@ export const addUserPointsAPI = async (userId: number, points: number) => {
   }
 
   return response.json();
-};
+}; 
 
 export const registerUser = async (username: string, password: string, fullname: string) => {
   const response = await fetch(getApiUrl('/users/register'), {
