@@ -177,10 +177,15 @@ const UserManagementPage: React.FC = () => {
   };
 
   const isAdmin = getCurrentUserRole() === 'admin';
+  const isModerator = getCurrentUserRole() === 'moderator';
   const currentUserId = getCurrentUserId();
 
   const handleToggleActive = async (user: any) => {
-    if (!isAdmin) return;
+    if (!isAdmin && !isModerator) return;
+    if (isModerator && user.role !== 'user') {
+      showSnackbar('warning', 'Moderator może zmieniać status tylko użytkownikom z rolą "user"');
+      return;
+    }
     if (user.id === currentUserId) {
       showSnackbar('warning', 'Nie możesz dezaktywować własnego konta!');
       return;
@@ -246,11 +251,11 @@ const UserManagementPage: React.FC = () => {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">Aktywny:</Typography>
-                  {isAdmin ? (
+                  {isAdmin || isModerator ? (
                     <Switch
                       checked={user.active}
                       color={user.active ? 'primary' : 'default'}
-                      disabled={!isAdmin || user.id === currentUserId || loadingIds.includes(user.id)}
+                      disabled={!isAdmin && !isModerator || user.id === currentUserId || loadingIds.includes(user.id)}
                       onClick={e => e.stopPropagation()}
                       onChange={() => handleToggleActive(user)}
                       inputProps={{ 'aria-label': 'toggle active' }}
@@ -335,13 +340,13 @@ const UserManagementPage: React.FC = () => {
                 />
               </TableCell>
               <TableCell>
-                {isAdmin ? (
+                {isAdmin || isModerator ? (
                   <Tooltip title={user.active ? 'Aktywny' : 'Nieaktywny'}>
                     <span>
                       <Switch
                         checked={user.active}
                         color={user.active ? 'primary' : 'default'}
-                        disabled={!isAdmin || user.id === currentUserId || loadingIds.includes(user.id)}
+                        disabled={!isAdmin && !isModerator || user.id === currentUserId || loadingIds.includes(user.id)}
                         onClick={e => e.stopPropagation()}
                         onChange={() => handleToggleActive(user)}
                         inputProps={{ 'aria-label': 'toggle active' }}

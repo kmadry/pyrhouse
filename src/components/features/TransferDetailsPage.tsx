@@ -24,10 +24,13 @@ import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 
 // Services and hooks
-import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI } from '../../services/transferService';
+import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI, updateTransferUsersAPI } from '../../services/transferService';
 import { useLocations } from '../../hooks/useLocations';
+import { useServiceDeskUsers } from '../../hooks/useServiceDeskUsers';
 import { MapPosition, locationService } from '../../services/locationService';
 import { useAuth } from '../../hooks/useAuth';
 import { AppSnackbar } from '../ui/AppSnackbar';
@@ -57,6 +60,7 @@ const MyLocationIcon = lazy(() => import('@mui/icons-material/MyLocation'));
 const LocationOnIcon = lazy(() => import('@mui/icons-material/LocationOn'));
 const NavigationIcon = lazy(() => import('@mui/icons-material/Navigation'));
 const ArrowBackIcon = lazy(() => import('@mui/icons-material/ArrowBack'));
+const EditIcon = lazy(() => import('@mui/icons-material/Edit'));
 
 const TransferDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +81,9 @@ const TransferDetailsPage: React.FC = () => {
   const { locations, refetch: fetchLocations } = useLocations();
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
+  const [editUsersDialogOpen, setEditUsersDialogOpen] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const { users, loading: usersLoading } = useServiceDeskUsers();
 
   const numericId = Number(id);
 
@@ -130,6 +137,12 @@ const TransferDetailsPage: React.FC = () => {
       showSnackbar('error', error);
     }
   }, [error]);
+
+  useEffect(() => {
+    if (transfer?.users) {
+      setSelectedUserIds(transfer.users.map((user: any) => user.id));
+    }
+  }, [transfer?.users]);
 
   const handleConfirmTransfer = async () => {
     setLoading(true);
@@ -337,6 +350,22 @@ const TransferDetailsPage: React.FC = () => {
     if (transfer?.delivery_location?.lat && transfer?.delivery_location?.lng) {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${transfer.delivery_location.lat},${transfer.delivery_location.lng}`;
       window.open(url, '_blank');
+    }
+  };
+
+  const handleUpdateUsers = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await updateTransferUsersAPI(numericId, selectedUserIds);
+      await fetchTransferDetails();
+      setEditUsersDialogOpen(false);
+      showSnackbar('success', 'Lista Gżdaczy została zaktualizowana');
+    } catch (err: any) {
+      setError(err.message || 'Nie udało się zaktualizować listy Gżdaczy');
+      showSnackbar('error', err.message || 'Nie udało się zaktualizować listy Gżdaczy');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -601,34 +630,49 @@ const TransferDetailsPage: React.FC = () => {
             </Typography>
           </Box>
           <Box>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Gżdacze
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between'
+            }}>
+              <span>Gżdacze</span>
+              {hasAdminAccess() && (
+                <Tooltip title="Edytuj listę Gżdaczy">
+                  <IconButton
+                    size="small"
+                    onClick={() => setEditUsersDialogOpen(true)}
+                    aria-label="edit users"
+                    sx={{ ml: 1 }}
+                  >
+                    <Suspense fallback={null}><EditIcon fontSize="small" /></Suspense>
+                  </IconButton>
+                </Tooltip>
+              )}
             </Typography>
             <Box sx={{
               display: 'flex', 
-              flexDirection: 'row', // zawsze w poziomie
-              flexWrap: 'wrap', // zawijanie do nowej linii jeśli nie mieszczą się
-              gap: 1, // mniejszy odstęp między chipami
+              flexDirection: 'row', 
+              flexWrap: 'wrap', 
+              gap: 1, 
               width: '100%',
               justifyContent: { xs: 'center', sm: 'flex-start' }
             }}>
-          {transfer.users && transfer.users.length > 0 ? (
-            transfer.users.map((user: any) => (
-              <Chip
-                key={user.id}
-                label={user.username}
-                icon={<Suspense fallback={null}><PersonIcon /></Suspense>}
-                color="primary"
-                variant="outlined"
-                sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: 1.5, my: 0.5 }}
-              />
-            ))
-          ) : (
-            <Typography color="text.secondary">-</Typography>
-          )}
-        </Box>
-        </Box>
-
+              {transfer.users && transfer.users.length > 0 ? (
+                transfer.users.map((user: any) => (
+                  <Chip
+                    key={user.id}
+                    label={user.username}
+                    icon={<Suspense fallback={null}><PersonIcon /></Suspense>}
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontSize: { xs: '0.85rem', sm: '1rem' }, px: 1.5, my: 0.5 }}
+                  />
+                ))
+              ) : (
+                <Typography color="text.secondary">Brak przypisanych Gżdaczy</Typography>
+              )}
+            </Box>
+          </Box>
         </Box>
 
         {(transfer.status === 'in_transit' || transfer.status === 'completed') && transfer.delivery_location && (
@@ -640,8 +684,8 @@ const TransferDetailsPage: React.FC = () => {
               position: 'relative',
               mb: 1,
               width: '100%',
-              height: { xs: 160, sm: 240, md: 300 },
-              maxWidth: 600,
+              height: { xs: 200, sm: 260, md: 340 },
+              maxWidth: {xs: 340, sm: 400, md: 800},
               mx: 'auto',
               borderRadius: 3,
               overflow: 'hidden',
@@ -762,7 +806,7 @@ const TransferDetailsPage: React.FC = () => {
             onClose={() => setRestoreDialogOpen(false)}
             onConfirm={handleRestoreConfirm}
             locations={locations || []}
-            itemType={selectedItem.type}
+            itemType={selectedItem?.type}
             currentQuantity={
               selectedItem.type === 'stock' 
                 ? transfer?.stock_items.find((item: any) => item.id === selectedItem.originalId)?.quantity 
@@ -839,6 +883,77 @@ const TransferDetailsPage: React.FC = () => {
             />
           </Suspense>
         </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={editUsersDialogOpen}
+        onClose={() => setEditUsersDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Suspense fallback={null}><PersonIcon color="primary" /></Suspense>
+            <Typography variant="h6">Edytuj listę Gżdaczy</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {usersLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Wybierz Gżdaczy, którzy brali udział w transferze:
+              </Typography>
+              <Autocomplete
+                multiple
+                id="tags-outlined"
+                options={users.map((option: any) => option.fullname + ' (' + option.username + ')')}
+                value={selectedUserIds.map((id: number) => users.find(user => user.id === id)?.fullname || '')}
+                onChange={(_, newValue) => {
+                  const newSelectedUserIds = newValue.map((name: string) => users.find(user => user.fullname === name)?.id || 0);
+                  setSelectedUserIds(newSelectedUserIds);
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Wybierz Gżdaczy" />
+                )}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button 
+            onClick={() => setEditUsersDialogOpen(false)}
+            sx={{ 
+              fontSize: '0.875rem',
+              py: 0.75,
+              px: 1.5,
+            }}
+          >
+            Anuluj
+          </Button>
+          <Button 
+            onClick={handleUpdateUsers} 
+            color="primary" 
+            variant="contained"
+            disabled={loading}
+            sx={{ 
+              fontSize: '0.875rem',
+              py: 0.75,
+              px: 1.5,
+              borderRadius: 1.5,
+            }}
+          >
+            {loading ? <CircularProgress size={20} /> : 'Zapisz zmiany'}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Container>
   );

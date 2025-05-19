@@ -114,7 +114,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, initi
       // Wycentruj mapę na nowej lokalizacji
       if (map) {
         map.panTo(position);
-        map.setZoom(15);
+        map.setZoom(17);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Wystąpił błąd podczas pobierania lokalizacji';

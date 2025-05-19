@@ -39,7 +39,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
       sx={{ 
         height: { xs: '200px', sm: '260px', md: '340px' },
         width: '100%',
-        maxWidth: { xs: 340, sm: 500, md: 600 },
+        maxWidth: { xs: 340, sm: 500, md: 800 },
         overflow: 'hidden',
         position: 'relative',
         mx: 'auto',
@@ -115,7 +115,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
           severity="success" 
           sx={{ 
             position: 'absolute',
-            bottom: locationError ? 60 : 10,
+            bottom: locationError ? 60 : 30,
             left: 10,
             right: 10,
             zIndex: 1

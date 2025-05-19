@@ -248,4 +248,26 @@ export const getUserTransfersAPI = async (userId: number, status: 'in_transit' |
 
   return response.json();
 };
+
+export const updateTransferUsersAPI = async (transferId: number, userIds: number[]): Promise<any> => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(
+    getApiUrl(`/transfers/${transferId}/users`),
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ users: userIds }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(errorResponse.message || 'Nie udało się zaktualizować listy użytkowników');
+  }
+
+  return response.json();
+};
   
