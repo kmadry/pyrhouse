@@ -24,8 +24,8 @@ import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
-import Autocomplete from '@mui/material/Autocomplete';
-import TextField from '@mui/material/TextField';
+import Checkbox from '@mui/material/Checkbox';
+import Avatar from '@mui/material/Avatar';
 
 // Services and hooks
 import { getTransferDetailsAPI, confirmTransferAPI, restoreAssetToLocationAPI, restoreStockToLocationAPI, cancelTransferAPI, updateTransferUsersAPI } from '../../services/transferService';
@@ -806,7 +806,7 @@ const TransferDetailsPage: React.FC = () => {
             onClose={() => setRestoreDialogOpen(false)}
             onConfirm={handleRestoreConfirm}
             locations={locations || []}
-            itemType={selectedItem?.type}
+            itemType={selectedItem.type}
             currentQuantity={
               selectedItem.type === 'stock' 
                 ? transfer?.stock_items.find((item: any) => item.id === selectedItem.originalId)?.quantity 
@@ -912,19 +912,38 @@ const TransferDetailsPage: React.FC = () => {
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Wybierz Gżdaczy, którzy brali udział w transferze:
               </Typography>
-              <Autocomplete
-                multiple
-                id="tags-outlined"
-                options={users.map((option: any) => option.fullname + ' (' + option.username + ')')}
-                value={selectedUserIds.map((id: number) => users.find(user => user.id === id)?.fullname || '')}
-                onChange={(_, newValue) => {
-                  const newSelectedUserIds = newValue.map((name: string) => users.find(user => user.fullname === name)?.id || 0);
-                  setSelectedUserIds(newSelectedUserIds);
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} label="Wybierz Gżdaczy" />
-                )}
-              />
+              <List sx={{ width: '100%', maxHeight: '300px', minHeight: '600px', overflow: 'auto' }}>
+                {users.map((user: any) => (
+                  <ListItem
+                    key={user.id}
+                    dense
+                    secondaryAction={
+                      <Checkbox
+                        edge="end"
+                        checked={selectedUserIds.includes(user.id)}
+                        onChange={() => {
+                          if (selectedUserIds.includes(user.id)) {
+                            setSelectedUserIds(selectedUserIds.filter(id => id !== user.id));
+                          } else {
+                            setSelectedUserIds([...selectedUserIds, user.id]);
+                          }
+                        }}
+                      />
+                    }
+                  >
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                        <Suspense fallback={null}><PersonIcon /></Suspense>
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={user.username}
+                      secondary={user.fullname}
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
             </Box>
           )}
         </DialogContent>
