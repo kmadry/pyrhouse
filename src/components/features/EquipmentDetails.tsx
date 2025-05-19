@@ -32,7 +32,6 @@ import {
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { deleteAsset } from '../../services/assetService';
 import { BarcodeGenerator } from '../common/BarcodeGenerator';
-import { useLocations } from '../../hooks/useLocations';
 import { getApiUrl } from '../../config/api';
 import { useTheme } from '@mui/material/styles';
 import { locationService } from '../../services/locationService';
@@ -54,7 +53,9 @@ interface AssetLog {
     msg: string;
     quantity?: number;
     from_location_id?: number;
+    from_location_name?: string | null;
     to_location_id?: number;
+    to_location_name?: string | null;
     location?: {
       latitude: number;
       longitude: number;
@@ -71,7 +72,6 @@ const EquipmentDetails: React.FC = () => {
   const [searchParams] = useSearchParams();
   const type = searchParams.get('type') || 'asset';
   const navigate = useNavigate();
-  const { locations } = useLocations();
   const theme = useTheme();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbarMessage();
   const { userRole } = useAuth();
@@ -167,27 +167,25 @@ const EquipmentDetails: React.FC = () => {
     }
   };
 
-  const getLocationName = (locationId: number) => {
-    const location = locations.find(loc => loc.id === locationId);
-    const pavilion = location?.pavilion || '-';
-    return location ? `${location.name} (${pavilion})` : `Lokalizacja ${locationId}`;
-  };
-
   const formatLogMessage = (log: AssetLog) => {
     return log.data?.msg || 'Brak wiadomości';
   };
 
   const getLocationInfo = (log: AssetLog) => {
     if (log.action === 'in_transfer' || log.action === 'delivered') {
-      const fromLocation = log.data.from_location_id ? getLocationName(log.data.from_location_id) : 'Nieznana';
-      const toLocation = log.data.to_location_id ? getLocationName(log.data.to_location_id) : 'Nieznana';
+      const fromLocation = '#' + (log.data.from_location_id ? log.data.from_location_id : 'Nieznana');
+      const fromLocationName = log.data.from_location_name ? log.data.from_location_name : 'Brak logu nazwy';
+      const toLocation = '#' + (log.data.to_location_id ? log.data.to_location_id : 'Nieznana');
+      const toLocationName = log.data.to_location_name ? log.data.to_location_name : 'Brak logu nazwy';
       
       // Sprawdź, czy to_location_id to 1 (magazyn)
       const isReturnedToWarehouse = log.data.to_location_id === 1;
       
       return { 
         fromLocation, 
+        fromLocationName,
         toLocation,
+        toLocationName,
         isReturnedToWarehouse
       };
     }
@@ -980,7 +978,7 @@ const EquipmentDetails: React.FC = () => {
                               Z:
                             </Typography>
                             <Typography variant="body2">
-                              {locationInfo.fromLocation}
+                              {locationInfo.fromLocation} {locationInfo.fromLocationName}
                             </Typography>
                           </Box>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -988,7 +986,7 @@ const EquipmentDetails: React.FC = () => {
                               Do:
                             </Typography>
                             <Typography variant="body2">
-                              {locationInfo.toLocation}
+                              {locationInfo.toLocation} {locationInfo.toLocationName}
                             </Typography>
                           </Box>
                         </Box>
