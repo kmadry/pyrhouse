@@ -489,7 +489,7 @@ const TransferPage: React.FC = () => {
         )}
 
         <Typography variant="h5" gutterBottom>
-          Nowy transfer
+          Nowy Quest dostawy
         </Typography>
 
         <form onSubmit={handleSubmit(handleFormSubmit)}>

@@ -385,9 +385,12 @@ const ServiceDeskPage: React.FC = () => {
             maxWidth: 520,
             mx: 'auto',
             overflow: 'visible',
+            maxHeight: '100dvh',
+            overflowY: 'auto',
+            minHeight: 0,
           })
         }}
-            sx={{ 
+        sx={{ 
           '& .MuiDialog-container': {
             alignItems: 'center',
             justifyContent: 'center',
@@ -402,6 +405,9 @@ const ServiceDeskPage: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           gap: 2,
+          minWidth: 0,
+          width: '100%',
+          pb: { xs: 6, sm: 2 },
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <TaskIcon color="warning" sx={{ fontSize: 24, mr: 1 }} />
@@ -409,9 +415,6 @@ const ServiceDeskPage: React.FC = () => {
               Nowe zgłoszenie
           </Typography>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>
-            Utwórz zgłoszenie jako zalogowany użytkownik
-          </Typography>
           <ServiceDeskForm
             title=""
             subtitle=""

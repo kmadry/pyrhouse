@@ -207,7 +207,7 @@ const TransferPage: React.FC = () => {
         <QuestSection questData={location.state?.questData} />
 
         <Typography variant="h5" gutterBottom>
-          Nowy transfer
+          Nowy Quest dostawy
         </Typography>
 
         {submitError && (

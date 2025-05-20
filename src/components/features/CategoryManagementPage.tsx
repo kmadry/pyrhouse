@@ -586,7 +586,7 @@ const CategoryManagementPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <TextField
-            label="Label"
+            label="Nazwa"
             value={newCategory.label}
             onChange={(e) => setNewCategory({ ...newCategory, label: e.target.value })}
             fullWidth
@@ -636,7 +636,7 @@ const CategoryManagementPage: React.FC = () => {
             />
 
             <TextField
-              label="Name (Opcjonalne)"
+              label="Alternatywna nazwa kategorii (Opcjonalne)"
               value={newCategory.name}
               onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
               fullWidth

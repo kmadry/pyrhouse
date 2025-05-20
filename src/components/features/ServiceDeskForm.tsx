@@ -88,7 +88,7 @@ const ServiceDeskForm: React.FC<ServiceDeskFormProps> = ({
         </Box>
       ) : (
         <StyledPaper isPublic={hidePriority} className={className}>
-          <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ mb: { xs: 0, sm: 1 } }}>
             <Typography variant="h5" fontWeight={700} color="primary.main">{title}</Typography>
             {subtitle && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{subtitle}</Typography>

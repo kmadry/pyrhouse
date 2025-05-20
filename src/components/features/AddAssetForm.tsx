@@ -134,7 +134,7 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
         displayEmpty
         fullWidth
         required
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, borderRadius: 0 }}
       >
         <MenuItem value="" disabled>
           Wybierz kategorię
@@ -153,7 +153,7 @@ export const AddAssetForm: React.FC<{ categories: any[]; loading: boolean }> = (
         displayEmpty
         fullWidth
         required
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, borderRadius: 0 }}
       >
         <MenuItem value="" disabled>
           Wybierz pochodzenie

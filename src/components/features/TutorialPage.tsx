@@ -244,9 +244,10 @@ interface StepNavigationProps {
   totalSteps: number;
   onBack: () => void;
   onNext: () => void;
+  onSkip: () => void;
 }
 
-const StepNavigation: React.FC<StepNavigationProps> = ({ activeStep, totalSteps, onBack, onNext }) => (
+const StepNavigation: React.FC<StepNavigationProps> = ({ activeStep, totalSteps, onBack, onNext, onSkip }) => (
   <Box sx={{ display: 'flex', gap: 2 }}>
     <Button
       disabled={activeStep === 0}
@@ -257,11 +258,10 @@ const StepNavigation: React.FC<StepNavigationProps> = ({ activeStep, totalSteps,
     </Button>
     <Button
       variant="contained"
-      onClick={onNext}
-      disabled={activeStep === totalSteps - 1}
+      onClick={activeStep === totalSteps - 1 ? onSkip : onNext}
       endIcon={activeStep === totalSteps - 1 ? <Suspense fallback={null}><Check /></Suspense> : <Suspense fallback={null}><ArrowForward /></Suspense>}
     >
-      {activeStep === totalSteps - 1 ? 'Zakończ' : 'Dalej'}
+      {activeStep === totalSteps - 1 ? 'Koniec' : 'Dalej'}
     </Button>
   </Box>
 );
@@ -401,6 +401,7 @@ const TutorialPage: React.FC = () => {
                   totalSteps={TUTORIAL_STEPS.length} 
                   onBack={handleBack} 
                   onNext={handleNext} 
+                  onSkip={handleSkip}
                 />
               </Box>
             </Box>
