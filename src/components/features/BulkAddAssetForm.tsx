@@ -230,7 +230,7 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
           <FormControl fullWidth>
             <InputLabel>Kategoria</InputLabel>
             <Select
-              value={categoryId}
+              value={categoryId || ''}
               onChange={(e) => setCategoryId(Number(e.target.value))}
               label="Kategoria"
             >
@@ -246,7 +246,7 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
           <FormControl fullWidth>
             <InputLabel>Pochodzenie</InputLabel>
             <Select
-              value={origin}
+              value={origin || ''}
               onChange={(e) => setOrigin(e.target.value)}
               label="Pochodzenie"
             >

@@ -14,7 +14,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useTheme, useMediaQuery } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Layout.styles';
 import pyrkonLogo from '../../assets/images/p-logo.svg';
 import { useThemeMode } from '../../theme/ThemeContext';
@@ -103,6 +103,7 @@ const Icons = {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isTokenValid } = useTokenValidation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -211,9 +212,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Ustaw aktywny element na podstawie aktualnej ścieżki
   useEffect(() => {
-    const path = window.location.pathname;
+    const path = location.pathname;
     setActiveItem(path);
-  }, []);
+  }, [location.pathname]);
 
   const handleDrawerToggle = () => {
     if (isMobile) {
@@ -225,7 +226,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Jeśli token jest nieważny, nie renderuj komponentu
   if (!isTokenValid) {
-    return null;
+    handleLogout();
   }
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
