@@ -30,7 +30,12 @@ const BreadcrumbsComponent: React.FC<BreadcrumbsComponentProps> = ({ pathnames, 
   return (
     <Box sx={{ mb: 2 }}>
       <Breadcrumbs aria-label="breadcrumb">
-        <Link underline="hover" color="inherit" onClick={() => navigate('/')}>Home</Link>
+        <Link 
+          underline="hover" 
+          color="inherit" 
+          onClick={() => navigate('/')}
+          sx={{ cursor: 'pointer' }}
+        >Home</Link>
         {pathnames.length > 0 && pathnames.map((value, index) => {
 
           let to = `/${pathnames.slice(0, index + 1).join('/')}`;
@@ -45,6 +50,7 @@ const BreadcrumbsComponent: React.FC<BreadcrumbsComponentProps> = ({ pathnames, 
               color="inherit"
               key={to}
               onClick={() => navigate(to)}
+              sx={{ cursor: 'pointer' }}
             >
               {displayName}
             </Link>
