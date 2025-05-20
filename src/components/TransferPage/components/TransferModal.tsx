@@ -189,11 +189,16 @@ export const TransferModal: React.FC<TransferModalProps> = ({
                       size="small"
                       value={stockQuantities[stockId] || ''}
                       onChange={(e) => {
-                        const value = e.target.value === '' ? '' : Number(e.target.value);
-                        handleQuantityChange(stockId, value === '' ? 1 : value);
+                        // const value = e.target.value === '' ? '' : Number(e.target.value);
+                        handleQuantityChange(stockId, Number(e.target.value));
                       }}
-                      inputProps={{ 
-                        min: 1, 
+                      helperText=""
+                      error={
+                        !/^[1-9][0-9]*$/.test(stockQuantities[stockId]?.toString() || '') ||
+                        Number(stockQuantities[stockId]) > Number(stockItem?.quantity || 1)
+                      }
+                      inputProps={{
+                        min: 1,
                         max: stockItem?.quantity || 1,
                         inputMode: 'numeric',
                         pattern: '[0-9]*'

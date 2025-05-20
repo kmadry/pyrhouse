@@ -25,6 +25,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  Tooltip,
 } from '@mui/material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { useLocations } from '../../hooks/useLocations';
@@ -652,8 +653,8 @@ const TransferPage: React.FC = () => {
                 <TableRow>
                   <TableCell width="20%">Typ</TableCell>
                   <TableCell width="40%">ID / Kategoria</TableCell>
-                  <TableCell width="20%">Ilość/Typ</TableCell>
-                  <TableCell width="10%">Status</TableCell>
+                  <TableCell width="25%">Ilość/Typ</TableCell>
+                  <TableCell width="5%">Status</TableCell>
                   <TableCell width="10%">Akcje</TableCell>
                 </TableRow>
               </TableHead>
@@ -780,7 +781,7 @@ const TransferPage: React.FC = () => {
                                 Wybierz zasób
                               </MenuItem>
                               {stocks.map((stock: Stock) => (
-                                <MenuItem key={stock.id} value={stock.id}>
+                                <MenuItem key={stock.id} value={stock.id} disabled={stock.quantity === 0}>
                                   {stock.category.label} ({stock.origin}) [Dostępne: {stock.quantity}]
                                 </MenuItem>
                               ))}
@@ -799,24 +800,68 @@ const TransferPage: React.FC = () => {
                             const maxQuantity = selectedStock?.quantity || 0;
                             
                             return (
-                              <TextField
-                                {...field}
-                                size="small"
-                                type="text"
-                                label="Ilość"
-                                fullWidth
-                                error={Number(field.value) > maxQuantity}
-                                helperText={Number(field.value) > maxQuantity ? `Maksymalna dostępna ilość: ${maxQuantity}` : ''}
-                                inputProps={{ 
-                                  max: maxQuantity,
-                                  inputMode: 'numeric',
-                                  pattern: '[0-9]*'
+                              <Tooltip
+                                title={
+                                  !/^[1-9][0-9]*$/.test(field.value?.toString())
+                                    ? 'Musi być liczbą większą od zera'
+                                    : Number(field.value) > maxQuantity
+                                    ? `Maksymalna ilość: ${maxQuantity}`
+                                    : ''
+                                }
+                                open={
+                                  (!!field.value) &&
+                                  (!/^[1-9][0-9]*$/.test(field.value?.toString()) || Number(field.value) > maxQuantity)
+                                }
+                                placement="top"
+                                arrow
+                                slotProps={{
+                                  tooltip: {
+                                    sx: {
+                                      fontSize: '1.05em',
+                                      bgcolor: 'error.main',
+                                      color: 'common.white',
+                                      fontWeight: 500,
+                                      px: 2,
+                                      py: 1,
+                                      borderRadius: 1,
+                                      maxWidth: 260,
+                                    }
+                                  },
+                                  arrow: {
+                                    sx: {
+                                      color: 'error.main'
+                                    }
+                                  }
                                 }}
-                                onChange={(e) => {
-                                  const value = Math.min(Number(e.target.value), maxQuantity);
-                                  field.onChange(value);
-                                }}
-                              />
+                              >
+                                <TextField
+                                  {...field}
+                                  size="small"
+                                  type="number"
+                                  label="Ilość"
+                                  fullWidth
+                                  error={
+                                    !/^[1-9][0-9]*$/.test(field.value?.toString()) ||
+                                    Number(field.value) > maxQuantity
+                                  }
+                                  helperText=""
+                                  inputProps={{
+                                    min: 1,
+                                    max: maxQuantity,
+                                    inputMode: 'numeric',
+                                    pattern: '[0-9]*'
+                                  }}
+                                  InputProps={{
+                                    endAdornment:
+                                      (!/^[1-9][0-9]*$/.test(field.value?.toString()) || Number(field.value) > maxQuantity)
+                                        ? <ErrorIcon color="error" fontSize="small" />
+                                        : null
+                                  }}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                  }}
+                                />
+                              </Tooltip>
                             );
                           }}
                         />
