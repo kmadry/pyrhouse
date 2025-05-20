@@ -133,10 +133,17 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
       return;
     }
 
-    // Filter out empty serial numbers
     const validAssets = assets.filter(asset => asset.serial.trim() !== '');
     if (validAssets.length === 0) {
       showSnackbar('error', 'Dodaj co najmniej jeden numer seryjny');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const serials = validAssets.map(a => a.serial.trim());
+    const duplicates = serials.filter((item, idx) => serials.indexOf(item) !== idx);
+    if (duplicates.length > 0) {
+      showSnackbar('error', 'Występują powtarzające się numery seryjne!');
       setIsSubmitting(false);
       return;
     }
@@ -167,10 +174,20 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
         setCreatedAssets(response.created);
         setShowBarcodes(true);
       } else {
-        showSnackbar('error', 'Niepoprawna odpowiedź z API');
+        if (response && response.errors && Array.isArray(response.errors)) {
+          showSnackbar('error', response.errors.join('\n'));
+        } else {
+          showSnackbar('error', 'Niepoprawna odpowiedź z API');
+        }
       }
     } catch (err: any) {
-      showSnackbar('error', err.message || 'Wystąpił błąd podczas dodawania zasobów');
+      if (err && err.errors && Array.isArray(err.errors)) {
+        showSnackbar('error', err.errors.join('\n'));
+      } else if (err && err.message) {
+        showSnackbar('error', err.message);
+      } else {
+        showSnackbar('error', 'Wystąpił błąd podczas dodawania zasobów');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -262,32 +279,40 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
             </tr>
           </thead>
           <tbody>
-            {assets.map((asset, index) => (
-              <tr key={asset.id}>
-                <td style={{ padding: '8px' }}>
-                  <TextField
-                    fullWidth
-                    value={asset.serial}
-                    onChange={(e) => handleSerialChange(index, e.target.value)}
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleKeyDown(e, index)}
-                    placeholder="Wprowadź numer seryjny"
-                    size="small"
-                    inputRef={(el) => (inputRefs.current[index] = el)}
-                  />
-                </td>
-                <td style={{ padding: '8px' }}>
-                  <IconButton
-                    onClick={() => handleDeleteRow(index)}
-                    disabled={assets.length === 1}
-                    size="small"
-                  >
-                    <Suspense fallback={null}>
-                      <DeleteIcon />
-                    </Suspense>
-                  </IconButton>
-                </td>
-              </tr>
-            ))}
+            {assets.map((asset, index) => {
+              const serialTrimmed = asset.serial.trim();
+              const isDuplicate =
+                serialTrimmed !== '' &&
+                assets.filter((a, i) => a.serial.trim() === serialTrimmed && i !== index).length > 0;
+              return (
+                <tr key={asset.id}>
+                  <td style={{ padding: '8px' }}>
+                    <TextField
+                      fullWidth
+                      value={asset.serial}
+                      onChange={(e) => handleSerialChange(index, e.target.value)}
+                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleKeyDown(e, index)}
+                      placeholder="Wprowadź numer seryjny"
+                      size="small"
+                      inputRef={(el) => (inputRefs.current[index] = el)}
+                      error={isDuplicate}
+                      helperText={isDuplicate ? 'Duplikat numeru seryjnego' : ''}
+                    />
+                  </td>
+                  <td style={{ padding: '8px' }}>
+                    <IconButton
+                      onClick={() => handleDeleteRow(index)}
+                      disabled={assets.length === 1}
+                      size="small"
+                    >
+                      <Suspense fallback={null}>
+                        <DeleteIcon />
+                      </Suspense>
+                    </IconButton>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Box>

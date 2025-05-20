@@ -42,6 +42,9 @@ export const bulkAddAssetsAPI = async (assets: BulkAddAssetRequest[]): Promise<a
 
     if (!response.ok) {
       const error = await response.json();
+      if (error.errors) {
+        throw error;
+      }
       throw new Error(error.message || 'Wystąpił błąd podczas dodawania zasobów');
     }
 
