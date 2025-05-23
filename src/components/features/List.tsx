@@ -70,7 +70,6 @@ interface Equipment {
 interface QuickFilter {
   id: number;
   name: string;
-  icon: string;
 }
 
 const CheckCircleIcon = lazy(() => import('@mui/icons-material/CheckCircle'));
@@ -79,7 +78,6 @@ const LocalShippingIcon = lazy(() => import('@mui/icons-material/LocalShipping')
 const HomeIcon = lazy(() => import('@mui/icons-material/Home'));
 const Inventory2Icon = lazy(() => import('@mui/icons-material/Inventory2'));
 const ClearAllIcon = lazy(() => import('@mui/icons-material/ClearAll'));
-const WarehouseIcon = lazy(() => import('@mui/icons-material/Warehouse'));
 const SearchIcon = lazy(() => import('@mui/icons-material/Search'));
 const CategoryIcon = lazy(() => import('@mui/icons-material/Category'));
 
@@ -311,8 +309,8 @@ const EquipmentList: React.FC = () => {
   };
 
   const quickFilters: QuickFilter[] = [
-    { id: 1, name: 'Magazyn Techniczny', icon: 'warehouse' },
-    { id: 3, name: 'Brak lokalizacji', icon: 'location_off' }
+    { id: 1, name: 'Magazyn Techniczny'},
+    { id: 3, name: 'Brak lokalizacji'}
   ];
 
   const applyQuickFilter = (filter: QuickFilter) => {
@@ -549,7 +547,7 @@ const EquipmentList: React.FC = () => {
         flexDirection: { xs: 'column', sm: 'row' },
         justifyContent: 'space-between', 
         alignItems: { xs: 'flex-start', sm: 'center' }, 
-        marginBottom: 3,
+        mb: 0,
         gap: 2,
         pb: 1
       }}>
@@ -626,7 +624,7 @@ const EquipmentList: React.FC = () => {
         </Box>
         
         {/* Szybkie filtry */}
-        <Box sx={{ p: 1.5 }}>
+        <Box sx={{ pt: 1, pb: 1, pl: 1.5, pr: 1.5 }}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
             Szybkie filtry
           </Typography>
@@ -647,7 +645,6 @@ const EquipmentList: React.FC = () => {
               <Chip
                 key={filter.id}
                 label={filter.name}
-                icon={<Suspense fallback={null}><WarehouseIcon /></Suspense>}
                 color={selectedLocations.some((loc) => loc.id === filter.id) ? 'primary' : 'default'}
                 onClick={() =>
                   selectedLocations.some((loc) => loc.id === filter.id)

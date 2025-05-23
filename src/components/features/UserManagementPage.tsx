@@ -388,7 +388,7 @@ const UserManagementPage: React.FC = () => {
   return (
     <Box sx={{ 
       margin: '0 auto', 
-      padding: { xs: 2, sm: 3, md: 4 },
+      padding: { xs: 2, sm: 3, md: 3 },
       maxWidth: '1400px',
       backgroundColor: 'background.paper',
       borderRadius: 2,
