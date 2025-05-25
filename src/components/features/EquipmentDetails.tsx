@@ -343,14 +343,14 @@ const EquipmentDetails: React.FC = () => {
     switch (status) {
       case 'in_stock':
       case 'available':
-        return <Chip label="Na Stanie" color="success" />;
+        return <Chip label="Na Stanie" color="success" sx={{ fontWeight: 600, fontSize: '1rem' }} />;
       case 'in_transit':
-        return <Chip label="W trasie" color="warning" sx={{ animation: 'pulse 2s infinite' }} />;
+        return <Chip label="W trasie" color="warning" sx={{ fontWeight: 600, fontSize: '1rem', animation: 'pulse 2s infinite' }} />;
       case 'delivered':
       case 'located':
-        return <Chip label="W lokacji" color="success" />;
+        return <Chip label="W lokacji" color="success" sx={{ fontWeight: 600, fontSize: '1rem' }} />;
       default:
-        return <Chip label="Nieznany" color="default" />;
+        return <Chip label="Nieznany" color="default" sx={{ fontWeight: 600, fontSize: '1rem' }} />;
     }
   };
 
@@ -827,9 +827,14 @@ const EquipmentDetails: React.FC = () => {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
+              gridTemplateColumns: {
+                xs: '1fr',      // <700px: 1 kolumna
+                sm: '1fr 1fr', // 700px-1099px: 2 kolumny
+                md: '1fr 1fr', // 1100px-: 2 kolumny (przygotowanie do 4 kolumn powyżej)
+                lg: 'repeat(4, 1fr)' // >1400px: 4 kolumny
+              },
               gap: 2,
-              mt: 4,
+              mt: 2,
               mb: 2,
             }}
           >
