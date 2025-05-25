@@ -413,8 +413,8 @@ const ServiceDeskPage: React.FC = () => {
             <TaskIcon color="warning" sx={{ fontSize: 24, mr: 1 }} />
             <Typography variant="h6" fontWeight={600} color="primary.main">
               Nowe zgłoszenie
-            </Typography>
-          </Box>
+          </Typography>
+        </Box>
           <ServiceDeskForm
             title=""
             subtitle=""

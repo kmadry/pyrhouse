@@ -221,6 +221,32 @@ class LocationService {
   getGoogleMapsApiKey(): string {
     return this.googleMapsApiKey;
   }
+
+  async updateAssetLocation(assetId: number, location: MapPosition): Promise<void> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(
+      getApiUrl(`/assets/${assetId}/logs/location`),
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          {
+            delivery_location: {
+              ...location,
+              timestamp: new Date().toISOString(),
+            }
+          }
+        ),
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error('Nie udało się zaktualizować lokalizacji');
+    }
+  }
 }
 
 export const locationService = new LocationService(); 

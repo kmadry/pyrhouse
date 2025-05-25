@@ -28,6 +28,7 @@ import {
   Warehouse,
   GpsFixed,
   Navigation,
+  MonitorHeart,
 } from '@mui/icons-material';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { deleteAsset } from '../../services/assetService';
@@ -41,6 +42,8 @@ import { AppSnackbar } from '../ui/AppSnackbar';
 import { useAuth } from '../../hooks/useAuth';
 import BarcodeScanner from '../common/BarcodeScanner';
 import QrCodeScanner from '@mui/icons-material/QrCodeScanner';
+import LocationPicker from '../common/LocationPicker';
+import { MapPosition } from '../../services/locationService';
 
 interface AssetLog {
   id: number;
@@ -90,6 +93,8 @@ const EquipmentDetails: React.FC = () => {
   const [savingSerial, setSavingSerial] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showSerialModal, setShowSerialModal] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const fetchDetails = async () => {
     try {
@@ -394,6 +399,20 @@ const EquipmentDetails: React.FC = () => {
     }
   };
 
+  // Dodaj funkcję do obsługi aktualizacji lokalizacji
+  const handleLocationUpdate = async (location: MapPosition) => {
+    if (!id) return;
+    try {
+      await locationService.updateAssetLocation(Number(id), location);
+      showSnackbar('success', 'Lokalizacja została zaktualizowana');
+      setLocationDialogOpen(false);
+      fetchDetails(); // Odśwież dane
+    } catch (err: any) {
+      setLocationError(err.message || 'Wystąpił błąd podczas aktualizacji lokalizacji');
+      showSnackbar('error', err.message || 'Wystąpił błąd podczas aktualizacji lokalizacji');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', mt: 4 }}>
@@ -555,9 +574,11 @@ const EquipmentDetails: React.FC = () => {
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                     Lokalizacja
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {details.location?.name || 'N/A'} {details.location?.pavilion ? `(${details.location?.pavilion})` : ''}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                      {details.location?.name || 'N/A'} {details.location?.pavilion ? `(${details.location?.pavilion})` : ''}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
             </Box>
@@ -802,94 +823,153 @@ const EquipmentDetails: React.FC = () => {
             </Box>
           </Box>
 
-          {/* Status i dodatkowe informacje */}
-          <Box sx={{ 
-            display: 'grid',
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              sm: 'repeat(2, 1fr)', 
-              md: 'repeat(2, 1fr)',
-              lg: 'repeat(3, 1fr)'
-            },
-            gap: { xs: 2, sm: 2 },
-            mt: 1
-          }}>
-            {type === 'asset' && (
-              <Box sx={{ 
+          {/* Sekcja akcji pod podstawowymi informacjami */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' },
+              gap: 2,
+              mt: 4,
+              mb: 2,
+            }}
+          >
+            {/* Status */}
+            <Box
+              sx={{
+                bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                borderRadius: 3,
+                p: 2,
+                minHeight: 170,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                p: { xs: 1.5, sm: 2 },
-                bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                gridColumn: { xs: '1 / -1', sm: 'auto', lg: 'auto' }
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Status
-                  </Typography>
-                </Box>
-                {getStatusChip(details.status)}
-              </Box>
-            )}
-            {type === 'asset' && details.pyrcode && (
-              <Box sx={{ 
+                justifyContent: 'center',
+                boxShadow: 2,
+                transition: 'box-shadow 0.2s, background 0.2s',
+                '&:hover': {
+                  boxShadow: 6,
+                  bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                },
+              }}
+            >
+              <MonitorHeart sx={{ fontSize: 38, color: 'primary.main', mb: 1 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Status
+              </Typography>
+              {getStatusChip(details.status)}
+            </Box>
+
+            {/* Kod kreskowy */}
+            <Box
+              sx={{
+                bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                borderRadius: 3,
+                p: 2,
+                minHeight: 170,
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                p: { xs: 1.5, sm: 2 },
-                bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                gridColumn: { xs: '1 / -1', sm: 'auto', lg: 'auto' }
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Kod kreskowy
-                  </Typography>
-                </Box>
+                justifyContent: 'center',
+                boxShadow: 2,
+                transition: 'box-shadow 0.2s, background 0.2s',
+                '&:hover': {
+                  boxShadow: 6,
+                  bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                },
+              }}
+            >
+              <QrCodeScanner sx={{ fontSize: 38, color: 'warning.main', mb: 1 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Kod kreskowy
+              </Typography>
+              <Button
+                variant="contained"
+                color="warning"
+                size="small"
+                onClick={() => setShowBarcode(true)}
+                sx={{ borderRadius: 2, px: 3, fontWeight: 600, mt: 1 }}
+              >
+                Pokaż kod
+              </Button>
+            </Box>
+
+            {/* Dodaj pinezkę (tylko dla asset) */}
+            {type === 'asset' ? (
+              <Box
+                sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                  borderRadius: 3,
+                  p: 2,
+                  minHeight: 170,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: 2,
+                  transition: 'box-shadow 0.2s, background 0.2s',
+                  '&:hover': {
+                    boxShadow: 6,
+                    bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                  },
+                }}
+              >
+                <LocationOn sx={{ fontSize: 38, color: 'primary.main', mb: 1 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Oznacz lokalizację
+                </Typography>
                 <Button
-                  variant="outlined"
+                  variant="contained"
+                  color="primary"
                   size="small"
-                  onClick={() => setShowBarcode(true)}
-                  sx={{ minWidth: 130 }}
+                  startIcon={<LocationOn />}
+                  onClick={() => setLocationDialogOpen(true)}
+                  sx={{ borderRadius: 2, px: 3, fontWeight: 600, mt: 1 }}
                 >
-                  Pokaż kod
+                  Taguj
                 </Button>
               </Box>
+            ) : (
+              <Box />
             )}
-            {type === 'asset' && (
-              <Box sx={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                p: { xs: 1.5, sm: 2 },
-                bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
-                gridColumn: { xs: '1 / -1', sm: 'auto', lg: 'auto' }
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Usuń zasób
-                  </Typography>
-                </Box>
+
+            {/* Usuń zasób (tylko dla asset) */}
+            {type === 'asset' ? (
+              <Box
+                sx={{
+                  bgcolor: theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100',
+                  borderRadius: 3,
+                  p: 2,
+                  minHeight: 170,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: 2,
+                  transition: 'box-shadow 0.2s, background 0.2s',
+                  '&:hover': {
+                    boxShadow: 6,
+                    bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.200',
+                  },
+                }}
+              >
+                <DeleteIcon sx={{ fontSize: 38, color: 'error.main', mb: 1 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Usuń zasób
+                </Typography>
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   color="error"
                   size="small"
                   startIcon={<DeleteIcon />}
                   onClick={() => setShowDeleteConfirmation(true)}
                   disabled={isDeleting}
-                  sx={{ minWidth: 130 }}
+                  sx={{ borderRadius: 2, px: 3, fontWeight: 600, mt: 1 }}
                 >
                   {isDeleting ? 'Usuwanie...' : 'Usuń'}
                 </Button>
               </Box>
+            ) : (
+              <Box />
             )}
           </Box>
         </Box>
@@ -1098,6 +1178,18 @@ const EquipmentDetails: React.FC = () => {
           subtitle="Zeskanuj kod z urządzenia"
         />
       )}
+
+      {/* Location Dialog */}
+      <Dialog open={locationDialogOpen} onClose={() => setLocationDialogOpen(false)}>
+        <DialogTitle>Oznacz lokalizację</DialogTitle>
+        <DialogContent>
+          <LocationPicker onLocationSelect={handleLocationUpdate} />
+          {locationError && <Typography color="error">{locationError}</Typography>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLocationDialogOpen(false)}>Anuluj</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
