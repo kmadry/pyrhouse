@@ -54,6 +54,7 @@ const Logout = lazy(() => import('@mui/icons-material/Logout'));
 const MedicalServices = lazy(() => import('@mui/icons-material/MedicalServices'));
 const LocalShipping = lazy(() => import('@mui/icons-material/LocalShipping'));
 const Help = lazy(() => import('@mui/icons-material/Help'));
+const Event = lazy(() => import('@mui/icons-material/Event'));
 interface JwtPayload {
   role: string;
   userID: number;
@@ -98,7 +99,8 @@ const Icons = {
   Logout,
   MedicalServices,
   LocalShipping,
-  Help
+  Help,
+  Event
 };
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -649,6 +651,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                       sx: { color: 'text.secondary' }
                     }}
                   />
+                </MenuItem>
+                <MenuItem 
+                  onClick={() => navigate('/duty-schedule')} 
+                  sx={{ 
+                    borderRadius: 1,
+                    mb: 1,
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    }
+                  }}
+                >
+                  <ListItemIcon>
+                    <LazyIcon>
+                      <Icons.Event sx={{ color: 'primary.main' }} />
+                    </LazyIcon>
+                  </ListItemIcon>
+                  <ListItemText primary="Grafik" />
                 </MenuItem>
 
                 <Typography variant="overline" sx={{ px: 1, color: 'text.secondary', display: 'block', mt: 2 }}>

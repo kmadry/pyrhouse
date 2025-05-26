@@ -49,6 +49,7 @@ import {
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { addUserPointsAPI } from '../../services/userService';
+import { useDutySchedule } from '../../hooks/useDutySchedule';
 
 interface Transfer {
   ID: number;
@@ -92,6 +93,7 @@ const UserDetailsPage: React.FC = () => {
   const [isPointsDialogOpen, setIsPointsDialogOpen] = useState(false);
   const [pointsValue, setPointsValue] = useState('');
   const [isPointsLoading, setIsPointsLoading] = useState(false);
+  const { data: dutyScheduleData, loading: dutyScheduleLoading } = useDutySchedule();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -584,150 +586,225 @@ const UserDetailsPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      <Card sx={{ mt: 4 }}>
-        <CardHeader 
-          title="Questy użytkownika"
-          sx={{
-            pb: { xs: 1, sm: 2 },
-            '& .MuiCardHeader-title': {
-              fontSize: { xs: '1.1rem', sm: '1.25rem' }
-            }
-          }}
-        />
-        <Box sx={{ px: 2, pb: 1 }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={(_, newValue) => setTabValue(newValue)}
-            variant="fullWidth"
-            sx={{ 
-              '& .MuiTab-root': {
-                minWidth: 0,
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                py: { xs: 1, sm: 1.5 },
-                px: { xs: 1, sm: 2 }
-              }
-            }}
-          >
-            <Tab 
-              icon={<Schedule />} 
-              iconPosition="start" 
-              label="W trakcie" 
-              sx={{
-                '& .MuiTab-iconWrapper': {
-                  mr: { xs: 0.5, sm: 1 }
-                }
-              }}
-            />
-            <Tab 
-              icon={<CheckCircle />} 
-              iconPosition="start" 
-              label="Ukończone" 
-              sx={{
-                '& .MuiTab-iconWrapper': {
-                  mr: { xs: 0.5, sm: 1 }
-                }
-              }}
-            />
-          </Tabs>
-        </Box>
-        <CardContent sx={{ pt: { xs: 1, sm: 2 } }}>
-          {transfersLoading ? (
-            <Box display="flex" justifyContent="center" p={3}>
-              <CircularProgress />
-            </Box>
-          ) : transfers.length === 0 ? (
-            <Alert severity="info">
-              Brak transferów o wybranym statusie
-            </Alert>
-          ) : (
-            <List sx={{ p: 0 }}>
-              {transfers.map((transfer) => {
-                try {
-                  const formattedDate = format(new Date(transfer.TransferDate), 'PPpp', { locale: pl });
-                  return (
-                    <ListItem 
-                      key={transfer.ID}
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        mb: 2,
-                        p: 0,
-                        '&:last-child': { mb: 0 }
-                      }}
-                    >
-                      <ListItemButton 
-                        onClick={() => navigate(`/transfers/${transfer.ID}`)}
-                        sx={{
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          alignItems: { xs: 'flex-start', sm: 'center' },
-                          p: 2
-                        }}
-                      >
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          width: '100%',
-                          mb: { xs: 1, sm: 0 }
-                        }}>
-                          <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                            <LocalShipping />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={
-                              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                                Transfer #{transfer.ID}
-                              </Typography>
-                            }
-                            sx={{ m: 0 }}
-                          />
-                          <Chip
-                            label={
-                              transfer.Status === 'in_transit' ? 'Oczekujący' :
-                              transfer.Status === 'completed' ? 'Potwierdzony' : 'Anulowany'
-                            }
-                            color={
-                              transfer.Status === 'in_transit' ? 'warning' :
-                              transfer.Status === 'completed' ? 'success' : 'error'
-                            }
-                            size="small"
-                            sx={{ ml: { xs: 'auto', sm: 2 } }}
-                          />
-                        </Box>
-                        
-                        <Box sx={{ 
-                          width: '100%', 
-                          mt: { xs: 1, sm: 0 },
-                          pl: { xs: 0, sm: 7 }
-                        }}>
-                          <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                            <LocationOn fontSize="small" color="action" />
-                            <Typography variant="body2">
-                              Z: {transfer.FromLocationName}
-                            </Typography>
-                          </Box>
-                          <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-                            <LocationOn fontSize="small" color="action" />
-                            <Typography variant="body2">
-                              Do: {transfer.ToLocationName}
-                            </Typography>
-                          </Box>
-                          <Typography variant="caption" display="block" color="text.secondary">
-                            Utworzono: {formattedDate}
-                          </Typography>
-                        </Box>
-                      </ListItemButton>
-                    </ListItem>
-                  );
-                } catch (err) {
-                  console.error('Błąd podczas formatowania daty:', err);
-                  return null;
-                }
-              })}
-            </List>
+      <Box sx={{ mt: 3 }}>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tab label="Transfery w trakcie" />
+          <Tab label="Historia transferów" />
+        </Tabs>
+
+        <Box sx={{ mt: 2 }}>
+          {tabValue === 0 && (
+            <Card>
+              <CardHeader
+                title="Transfery w trakcie"
+                subheader="Lista aktualnych transferów"
+              />
+              <CardContent>
+                {transfersLoading ? (
+                  <Box display="flex" justifyContent="center" p={3}>
+                    <CircularProgress />
+                  </Box>
+                ) : transfers.length === 0 ? (
+                  <Alert severity="info">
+                    Brak transferów w trakcie
+                  </Alert>
+                ) : (
+                  <List sx={{ p: 0 }}>
+                    {transfers.map((transfer) => {
+                      try {
+                        const formattedDate = format(new Date(transfer.TransferDate), 'PPpp', { locale: pl });
+                        return (
+                          <ListItem 
+                            key={transfer.ID}
+                            sx={{
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              mb: 2,
+                              p: 0,
+                              '&:last-child': { mb: 0 }
+                            }}
+                          >
+                            <ListItemButton 
+                              onClick={() => navigate(`/transfers/${transfer.ID}`)}
+                              sx={{
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                p: 2
+                              }}
+                            >
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                width: '100%',
+                                mb: { xs: 1, sm: 0 }
+                              }}>
+                                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                  <LocalShipping />
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                                      Transfer #{transfer.ID}
+                                    </Typography>
+                                  }
+                                  sx={{ m: 0 }}
+                                />
+                                <Chip
+                                  label={
+                                    transfer.Status === 'in_transit' ? 'Oczekujący' :
+                                    transfer.Status === 'completed' ? 'Potwierdzony' : 'Anulowany'
+                                  }
+                                  color={
+                                    transfer.Status === 'in_transit' ? 'warning' :
+                                    transfer.Status === 'completed' ? 'success' : 'error'
+                                  }
+                                  size="small"
+                                  sx={{ ml: { xs: 'auto', sm: 2 } }}
+                                />
+                              </Box>
+                              
+                              <Box sx={{ 
+                                width: '100%', 
+                                mt: { xs: 1, sm: 0 },
+                                pl: { xs: 0, sm: 7 }
+                              }}>
+                                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                  <LocationOn fontSize="small" color="action" />
+                                  <Typography variant="body2">
+                                    Z: {transfer.FromLocationName}
+                                  </Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                  <LocationOn fontSize="small" color="action" />
+                                  <Typography variant="body2">
+                                    Do: {transfer.ToLocationName}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  Utworzono: {formattedDate}
+                                </Typography>
+                              </Box>
+                            </ListItemButton>
+                          </ListItem>
+                        );
+                      } catch (err) {
+                        console.error('Błąd podczas formatowania daty:', err);
+                        return null;
+                      }
+                    })}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+          {tabValue === 1 && (
+            <Card>
+              <CardHeader
+                title="Historia transferów"
+                subheader="Lista wszystkich transferów"
+              />
+              <CardContent>
+                {transfersLoading ? (
+                  <Box display="flex" justifyContent="center" p={3}>
+                    <CircularProgress />
+                  </Box>
+                ) : transfers.length === 0 ? (
+                  <Alert severity="info">
+                    Brak transferów w historii
+                  </Alert>
+                ) : (
+                  <List sx={{ p: 0 }}>
+                    {transfers.map((transfer) => {
+                      try {
+                        const formattedDate = format(new Date(transfer.TransferDate), 'PPpp', { locale: pl });
+                        return (
+                          <ListItem 
+                            key={transfer.ID}
+                            sx={{
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              mb: 2,
+                              p: 0,
+                              '&:last-child': { mb: 0 }
+                            }}
+                          >
+                            <ListItemButton 
+                              onClick={() => navigate(`/transfers/${transfer.ID}`)}
+                              sx={{
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: { xs: 'flex-start', sm: 'center' },
+                                p: 2
+                              }}
+                            >
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                width: '100%',
+                                mb: { xs: 1, sm: 0 }
+                              }}>
+                                <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                  <LocalShipping />
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                                      Transfer #{transfer.ID}
+                                    </Typography>
+                                  }
+                                  sx={{ m: 0 }}
+                                />
+                                <Chip
+                                  label={
+                                    transfer.Status === 'in_transit' ? 'Oczekujący' :
+                                    transfer.Status === 'completed' ? 'Potwierdzony' : 'Anulowany'
+                                  }
+                                  color={
+                                    transfer.Status === 'in_transit' ? 'warning' :
+                                    transfer.Status === 'completed' ? 'success' : 'error'
+                                  }
+                                  size="small"
+                                  sx={{ ml: { xs: 'auto', sm: 2 } }}
+                                />
+                              </Box>
+                              
+                              <Box sx={{ 
+                                width: '100%', 
+                                mt: { xs: 1, sm: 0 },
+                                pl: { xs: 0, sm: 7 }
+                              }}>
+                                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                  <LocationOn fontSize="small" color="action" />
+                                  <Typography variant="body2">
+                                    Z: {transfer.FromLocationName}
+                                  </Typography>
+                                </Box>
+                                <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                                  <LocationOn fontSize="small" color="action" />
+                                  <Typography variant="body2">
+                                    Do: {transfer.ToLocationName}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  Utworzono: {formattedDate}
+                                </Typography>
+                              </Box>
+                            </ListItemButton>
+                          </ListItem>
+                        );
+                      } catch (err) {
+                        console.error('Błąd podczas formatowania daty:', err);
+                        return null;
+                      }
+                    })}
+                  </List>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </Box>
+      </Box>
 
       <Dialog open={isPasswordDialogOpen} onClose={handlePasswordDialogClose} maxWidth="xs" fullWidth>
         <DialogTitle>Zmień hasło</DialogTitle>

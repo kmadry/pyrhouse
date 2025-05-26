@@ -24,6 +24,7 @@ const EquipmentDetails = lazy(() => import('./components/features/EquipmentDetai
 const LocationsPage = lazy(() => import('./components/features/LocationsPage'));
 const LocationDetailsPage = lazy(() => import('./components/features/LocationDetailsPage'));
 const TutorialPage = lazy(() => import('./components/features/TutorialPage'));
+const DutySchedulePage = lazy(() => import('./components/features/DutySchedulePage'));
 const Home = lazy(() => import('./components/features/Home'));
 const List = lazy(() => import('./components/features/List'));
 
@@ -146,6 +147,13 @@ function App() {
               <ErrorBoundary>
               <Suspense fallback={<LoadingSkeleton />}>
                 <TutorialPage />
+              </Suspense>
+              </ErrorBoundary>
+            } />
+            <Route path="duty-schedule" element={
+              <ErrorBoundary>
+              <Suspense fallback={<LoadingSkeleton />}>
+                <DutySchedulePage />
               </Suspense>
               </ErrorBoundary>
             } />
