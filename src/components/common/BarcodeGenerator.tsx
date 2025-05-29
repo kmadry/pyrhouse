@@ -71,26 +71,39 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({
     });
   }, [assets, currentIndex]);
 
-  const generateBarcodeSVGDataUrl = (value: string, options: any = {}) => {
+  const generateBarcodeSVGDataUrl = (value: string, options: any = {}, isPortrait = false) => {
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("width", "240");
-    svg.setAttribute("height", "120");
+
+    // Definicje wymiarów i parametrów w zależności od orientacji
+    const svgWidth = isPortrait ? 240 : 400;
+    const svgHeight = isPortrait ? 400 : 120; // Znacznie wyższy SVG dla pionu
+    const barcodeLineWidth = 2; // Grubsze linie dla pionu
+    const barcodeHeight = 40; // Wyższy kod kreskowy dla pionu
+    const fontSize = 18;    // Większa czcionka dla pionu
+    const margin = 5;       // Większy margines SVG dla pionu
+    const textMargin = 2;     // Większy margines tekstu dla pionu
+
+    svg.setAttribute("width", svgWidth.toString());
+    svg.setAttribute("height", svgHeight.toString());
+    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`); // Ustawienie viewBox
+
     JsBarcode(svg, value, {
       format: 'CODE128',
-      width: 2,
-      height: 40,
+      width: barcodeLineWidth,
+      height: barcodeHeight,
       displayValue: true,
-      fontSize: 18,
-      margin: 5,
+      fontSize: fontSize,
+      margin: margin,
       background: '#FFFFFF',
       lineColor: '#000000',
       textAlign: 'center',
       textPosition: 'bottom',
-      textMargin: 2,
+      textMargin: textMargin,
       text: value,
       ...options
     });
+
     const serializer = new XMLSerializer();
     const svgString = serializer.serializeToString(svg);
     const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
@@ -117,8 +130,8 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({
       for (let i = 0; i < assets.length; i++) {
         if (i > 0) doc.addPage();
         const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = 240;
-        tempCanvas.height = 120;
+        tempCanvas.width = 400;
+        tempCanvas.height = 240;
         JsBarcode(tempCanvas, assets[i].pyrcode, {
           format: 'CODE128',
           width: 2,
@@ -157,19 +170,27 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({
             <style>
               @page { size: ${orientation}; margin: 0; }
               body { margin: 0; display: flex; flex-direction: column; align-items: center; background: white; }
-              .barcode-container { page-break-after: always; display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; }
+              .barcode-container { 
+                page-break-after: always; 
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                height: 100vh; 
+                width: 100%; 
+              }
               .barcode-container:last-child { page-break-after: avoid; }
-              img { max-width: 90%; height: auto; display: block; margin: auto; transform-origin: center center; }
             </style>
           </head>
           <body>
       `;
       for (let i = 0; i < assets.length; i++) {
-        const svgDataUrl = generateBarcodeSVGDataUrl(assets[i].pyrcode);
         const isPortrait = orientation === 'portrait';
+        const svgDataUrl = generateBarcodeSVGDataUrl(assets[i].pyrcode, {}, isPortrait);
         htmlContent += `
           <div class="barcode-container">
-            <img src="${svgDataUrl}" style="${isPortrait ? 'transform: rotate(-90deg); width: auto; height: 90%;' : 'max-width: 90%; height: auto;'}" />
+            <img src="${svgDataUrl}" style="${isPortrait 
+              ? 'transform: rotate(-90deg); width: 95vh; height: auto; margin: auto; display: block;'
+              : 'width: 95%; height: auto; margin: auto; display: block;'}" />
           </div>
         `;
       }
