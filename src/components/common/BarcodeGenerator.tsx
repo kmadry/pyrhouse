@@ -6,6 +6,7 @@ import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import JsBarcode from 'jsbarcode';
 import { jsPDF } from 'jspdf';
+import { FormControlLabel, Radio, RadioGroup } from '@mui/material';
 
 interface Asset {
   id: number;
@@ -32,49 +33,80 @@ interface BarcodeGeneratorProps {
   onClose?: () => void;
 }
 
-export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onClose }) => {
+export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ 
+  assets, 
+  onClose
+}) => {
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [error, setError] = React.useState<string>('');
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [orientation, setOrientation] = React.useState<'landscape' | 'portrait'>('landscape');
   const barcodeRef = useRef<HTMLCanvasElement>(null);
 
   // Generowanie kodu kreskowego
   useEffect(() => {
     if (!assets || !assets.length || !barcodeRef.current) return;
 
-    try {
-      JsBarcode(barcodeRef.current, assets[currentIndex].pyrcode, {
-        format: 'CODE128',
-        width: 2,
-        height: 40,
-        displayValue: true,
-        fontSize: 12,
-        margin: 5,
-        background: '#FFFFFF',
-        lineColor: '#000000',
-        textAlign: 'center',
-        textPosition: 'bottom',
-        textMargin: 2,
-        text: assets[currentIndex].pyrcode
-      });
-    } catch (err) {
-      console.error('Błąd podczas generowania kodu kreskowego:', err);
-      setError('Nie udało się wygenerować kodu kreskowego');
-    }
+    const canvas = barcodeRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // ZAWSZE landscape
+    canvas.width = 240;
+    canvas.height = 120;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    JsBarcode(canvas, assets[currentIndex].pyrcode, {
+      format: 'CODE128',
+      width: 2,
+      height: 40,
+      displayValue: true,
+      fontSize: 12,
+      margin: 5,
+      background: '#FFFFFF',
+      lineColor: '#000000',
+      textAlign: 'center',
+      textPosition: 'bottom',
+      textMargin: 2,
+      text: assets[currentIndex].pyrcode
+    });
   }, [assets, currentIndex]);
+
+  const generateBarcodeSVGDataUrl = (value: string, options: any = {}) => {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "240");
+    svg.setAttribute("height", "120");
+    JsBarcode(svg, value, {
+      format: 'CODE128',
+      width: 2,
+      height: 40,
+      displayValue: true,
+      fontSize: 18,
+      margin: 5,
+      background: '#FFFFFF',
+      lineColor: '#000000',
+      textAlign: 'center',
+      textPosition: 'bottom',
+      textMargin: 2,
+      text: value,
+      ...options
+    });
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(svg);
+    const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+    return 'data:image/svg+xml;base64,' + svgBase64;
+  };
 
   const handleDownloadPDF = async () => {
     if (!barcodeRef.current) return;
-      setIsGenerating(true);
-      
-      try {
+    setIsGenerating(true);
+    try {
       const doc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: [40, 80]
       });
 
-      // Konfiguracja wymiarów
       const pdfWidth = 80;
       const pdfHeight = 40;
       const barcodeWidth = 60;
@@ -82,14 +114,11 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
       const x = (pdfWidth - barcodeWidth) / 2;
       const y = (pdfHeight - barcodeHeight) / 2;
 
-      // Generuj PDF dla każdego zasobu
-        for (let i = 0; i < assets.length; i++) {
-        if (i > 0) {
-          doc.addPage();
-        }
-
-        // Generuj kod kreskowy dla aktualnego zasobu
+      for (let i = 0; i < assets.length; i++) {
+        if (i > 0) doc.addPage();
         const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = 240;
+        tempCanvas.height = 120;
         JsBarcode(tempCanvas, assets[i].pyrcode, {
           format: 'CODE128',
           width: 2,
@@ -104,105 +133,52 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
           textMargin: 2,
           text: assets[i].pyrcode
         });
-
-        // Dodaj kod kreskowy do PDF
-        const barcodeDataUrl = tempCanvas.toDataURL('image/png', 1.0);
-        doc.addImage(barcodeDataUrl, 'PNG', x, y, barcodeWidth, barcodeHeight);
+        doc.addImage(tempCanvas.toDataURL('image/png', 1.0), 'PNG', x, y, barcodeWidth, barcodeHeight);
       }
 
-      // Zapisz PDF
       doc.save(`barcodes-${assets.length}.pdf`);
       setIsGenerating(false);
     } catch (error) {
       console.error('Błąd podczas generowania PDF:', error);
       setError('Nie udało się wygenerować PDF');
-        setIsGenerating(false);
-      }
-    };
-    
-  const handlePrint = async () => {
-    if (!barcodeRef.current) return;
-    setIsGenerating(true);
+      setIsGenerating(false);
+    }
+  };
 
+  const handlePrint = async () => {
+    setIsGenerating(true);
     try {
       const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        throw new Error('Nie można otworzyć okna drukowania');
-      }
-
-      // Przygotuj HTML dla wszystkich kodów kreskowych
+      if (!printWindow) throw new Error('Nie można otworzyć okna drukowania');
       let htmlContent = `
         <html>
           <head>
             <title>Drukuj kody kreskowe</title>
             <style>
-              @page {
-                size: 80mm 50mm;
-                margin: 0;
-        }
-              body {
-                margin: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                background: white;
-              }
-              .barcode-container {
-                page-break-after: always;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                width: 100%;
-              }
-              .barcode-container:last-child {
-                page-break-after: avoid;
-              }
-              img {
-                max-width: 90%;
-                height: auto;
-                display: block;
-                margin: auto;
-                transform-origin: center center;
-              }
+              @page { size: ${orientation}; margin: 0; }
+              body { margin: 0; display: flex; flex-direction: column; align-items: center; background: white; }
+              .barcode-container { page-break-after: always; display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100%; }
+              .barcode-container:last-child { page-break-after: avoid; }
+              img { max-width: 90%; height: auto; display: block; margin: auto; transform-origin: center center; }
             </style>
           </head>
           <body>
       `;
-
-      // Dodaj każdy kod kreskowy
       for (let i = 0; i < assets.length; i++) {
-        const tempCanvas = document.createElement('canvas');
-        JsBarcode(tempCanvas, assets[i].pyrcode, {
-          format: 'CODE128',
-          width: 2,
-          height: 40,
-          displayValue: true,
-          fontSize: 12,
-          margin: 5,
-          background: '#FFFFFF',
-          lineColor: '#000000',
-          textAlign: 'center',
-          textPosition: 'bottom',
-          textMargin: 2,
-          text: assets[i].pyrcode
-        });
-
+        const svgDataUrl = generateBarcodeSVGDataUrl(assets[i].pyrcode);
+        const isPortrait = orientation === 'portrait';
         htmlContent += `
           <div class="barcode-container">
-            <img src="${tempCanvas.toDataURL('image/png', 1.0)}" />
+            <img src="${svgDataUrl}" style="${isPortrait ? 'transform: rotate(-90deg); width: auto; height: 90%;' : 'max-width: 90%; height: auto;'}" />
           </div>
         `;
       }
-
       htmlContent += `
           </body>
         </html>
       `;
-
       printWindow.document.write(htmlContent);
       printWindow.document.close();
-      
       await new Promise(resolve => {
         const imgs = printWindow.document.querySelectorAll('img');
         let loaded = 0;
@@ -213,11 +189,9 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
           };
         });
       });
-
       printWindow.print();
       printWindow.close();
     } catch (err) {
-      console.error('Błąd podczas drukowania:', err);
       setError('Nie udało się wydrukować');
     } finally {
       setIsGenerating(false);
@@ -244,9 +218,8 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12}>
             <Typography variant="h5" sx={{ mb: 3, textAlign: 'center' }}>
-        Generowanie kodów kreskowych
-      </Typography>
-      
+              Generowanie kodów kreskowych
+            </Typography>      
       {error && (
               <Typography color="error" sx={{ mb: 2, textAlign: 'center' }}>
           {error}
@@ -309,6 +282,31 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({ assets, onCl
               >
                 {isGenerating ? 'Generowanie...' : 'Pobierz PDF'}
               </Button>
+              <Box sx={{ mb: 0 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Orientacja druku:
+                </Typography>
+                <RadioGroup
+                  row
+                  value={orientation}
+                  onChange={(e) => setOrientation(e.target.value as 'landscape' | 'portrait')}
+                  sx={{
+                     width: '100%',
+                     display: 'flex',
+                  }}
+                >
+                  <FormControlLabel 
+                    value="landscape" 
+                    control={<Radio />} 
+                    label="Pozioma" 
+                  />
+                  <FormControlLabel 
+                    value="portrait" 
+                    control={<Radio />} 
+                    label="Pionowa" 
+                  />
+                </RadioGroup>
+              </Box>  
               <Button 
                 variant="contained" 
                   color="primary"

@@ -339,7 +339,6 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
         open={showBarcodes}
         onClose={() => {
           setShowBarcodes(false);
-          // Wyczyść tylko dane związane z kodami kreskowymi przy zamykaniu modalu
           setCreatedAssets([]);
         }}
         maxWidth="md"
@@ -352,7 +351,6 @@ export const BulkAddAssetForm: React.FC<BulkAddAssetFormProps> = ({ categories }
               assets={createdAssets}
               onClose={() => {
                 setShowBarcodes(false);
-                // Wyczyść tylko dane związane z kodami kreskowymi przy zamykaniu modalu
                 setCreatedAssets([]);
               }}
             />

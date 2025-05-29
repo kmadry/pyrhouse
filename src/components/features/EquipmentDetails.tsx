@@ -1146,10 +1146,9 @@ const EquipmentDetails: React.FC = () => {
       <Dialog
         open={showBarcode}
         onClose={() => setShowBarcode(false)}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Kod kreskowy</DialogTitle>
         <DialogContent>
           <BarcodeGenerator
             assets={[{
