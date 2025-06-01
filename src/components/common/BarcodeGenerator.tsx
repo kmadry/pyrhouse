@@ -77,7 +77,7 @@ export const BarcodeGenerator: React.FC<BarcodeGeneratorProps> = ({
 
     // Definicje wymiarów i parametrów w zależności od orientacji
     const svgWidth = isPortrait ? 240 : 400;
-    const svgHeight = isPortrait ? 400 : 120; // Znacznie wyższy SVG dla pionu
+    const svgHeight = isPortrait ? 400 : 180; // Znacznie wyższy SVG dla pionu
     const barcodeLineWidth = 2; // Grubsze linie dla pionu
     const barcodeHeight = 40; // Wyższy kod kreskowy dla pionu
     const fontSize = 18;    // Większa czcionka dla pionu

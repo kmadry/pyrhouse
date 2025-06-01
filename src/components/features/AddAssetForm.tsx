@@ -14,7 +14,7 @@ import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 
 // Origin options array
-const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
+const ORIGIN_OPTIONS = ['druga-era', 'probis', 'netland', 'dj-sound', 'oki-event', 'targowe', 'personal', 'other'];
 
 interface Asset {
   id: number;

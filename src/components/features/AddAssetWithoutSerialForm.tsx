@@ -22,6 +22,9 @@ import { BarcodeGenerator } from '../common/BarcodeGenerator';
 const ORIGIN_OPTIONS = [
   { value: 'druga-era', label: 'Druga Era' },
   { value: 'probis', label: 'Probis' },
+  { value: 'netland', label: 'Netland' },
+  { value: 'dj-sound', label: 'DJ Sound' },
+  { value: 'oki-event', label: 'Oki Event' },
   { value: 'targowe', label: 'Targowe' },
   { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Inne' },

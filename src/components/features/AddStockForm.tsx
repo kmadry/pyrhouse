@@ -11,7 +11,7 @@ import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { getApiUrl } from '../../config/api';
 
-const ORIGIN_OPTIONS = ['druga-era', 'probis', 'targowe', 'personal', 'other'];
+const ORIGIN_OPTIONS = ['druga-era', 'probis', 'netland', 'dj-sound', 'oki-event', 'targowe', 'personal', 'other'];
 
 export const AddStockForm: React.FC<{ categories: any[]; loading: boolean }> = ({ categories }) => {
   const stockCategories = categories.filter((category) => category.type === 'stock');
