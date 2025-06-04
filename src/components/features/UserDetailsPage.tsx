@@ -49,7 +49,6 @@ import {
 import { AppSnackbar } from '../ui/AppSnackbar';
 import { useSnackbarMessage } from '../../hooks/useSnackbarMessage';
 import { addUserPointsAPI } from '../../services/userService';
-import { useDutySchedule } from '../../hooks/useDutySchedule';
 
 interface Transfer {
   ID: number;
@@ -93,7 +92,6 @@ const UserDetailsPage: React.FC = () => {
   const [isPointsDialogOpen, setIsPointsDialogOpen] = useState(false);
   const [pointsValue, setPointsValue] = useState('');
   const [isPointsLoading, setIsPointsLoading] = useState(false);
-  const { data: dutyScheduleData, loading: dutyScheduleLoading } = useDutySchedule();
 
   useEffect(() => {
     const fetchUserData = async () => {

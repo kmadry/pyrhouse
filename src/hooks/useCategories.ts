@@ -3,7 +3,7 @@ import { getApiUrl } from '../config/api';
 
 // Cache configuration
 const CACHE_KEY = 'categories_cache';
-const CACHE_EXPIRY = 2 * 60 * 1000; // 2 minutes
+const CACHE_EXPIRY = 60 * 1000; // 1 minute
 
 interface CacheData {
   data: Category[];
